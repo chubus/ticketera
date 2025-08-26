@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+{% block title %}Detalle del Ticket - {{ ticket.numero }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">
+                <i class="fas fa-ticket-alt me-2"></i>
+                Ticket #{{ ticket.numero }}
+            </h2>
+            <div class="d-flex gap-2">
+                <a href="/panel" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Panel
+                </a>
+                <button class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i>Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información del Cliente -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    Información del Cliente
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">{{ ticket.cliente_nombre }}</h6>
+                        <p class="mb-1">
+                            <i class="fas fa-phone me-2"></i>
+                            <strong>Teléfono:</strong> {{ ticket.cliente_telefono or 'No especificado' }}
+                        </p>
+                        <p class="mb-1">
+                            <i class="fas fa-envelope me-2"></i>
+                            <strong>Email:</strong> {{ ticket.cliente_email or 'No especificado' }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            <strong>Dirección de Entrega:</strong>
+                        </p>
+                        <p class="text-white">{{ ticket.cliente_direccion or 'No especificada' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estado y Repartidor -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Estado del Pedido
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge status-{{ ticket.estado }} fs-6 me-2">
+                        {% if ticket.estado == 'pendiente' %}
+                            <i class="fas fa-clock me-1"></i>Pendiente
+                        {% elif ticket.estado == 'en-preparacion' %}
+                            <i class="fas fa-cogs me-1"></i>En Preparación
+                        {% elif ticket.estado == 'en-camino' %}
+                            <i class="fas fa-truck me-1"></i>En Camino
+                        {% elif ticket.estado == 'entregado' %}
+                            <i class="fas fa-check me-1"></i>Entregado
+                        {% else %}
+                            {{ ticket.estado|title }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge priority-{{ ticket.prioridad }} fs-6">
+                        Prioridad: {{ ticket.prioridad|title }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-tie me-2"></i>
+                    Repartidor Asignado
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if ticket.repartidor %}
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-info fs-6 me-2">
+                        <i class="fas fa-user-tie me-1"></i>{{ ticket.repartidor }}
+                    </span>
+                    {% if current_user.role == 'admin' %}
+                    <button class="btn btn-sm btn-outline-warning" onclick="cambiarRepartidor({{ ticket.id }})">
+                        <i class="fas fa-edit me-1"></i>Cambiar
+                    </button>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary fs-6 me-2">
+                        <i class="fas fa-user-slash me-1"></i>Sin asignar
+                    </span>
+                    {% if current_user.role == 'admin' %}
+                    <button class="btn btn-sm btn-outline-info" onclick="asignarRepartidor({{ ticket.id }})">
+                        <i class="fas fa-user-plus me-1"></i>Asignar
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Productos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    Productos Solicitados
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set productos = ticket.productos|from_json %}
+                {% set total_productos = 0 %}
+                
+                {% if productos %}
+                <div class="productos-container">
+                    {% for producto in productos %}
+                        {% set cantidad = producto.cantidad|default(1)|int %}
+                        {% set precio = producto.precio|default(0)|float %}
+                        {% set total_productos = total_productos + (cantidad * precio) %}
+                        <div class="product-item mb-3 p-3 bg-dark border border-secondary rounded">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-primary me-2">{{ loop.index }}</span>
+                                        <h6 class="text-white mb-0">{{ producto.nombre|default('Producto sin nombre') }}</h6>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                                                    <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-store me-2"></i>
+                            <span>{{ producto.sucursal or 'Sucursal no especificada' }}</span>
+                        </div>
+                        <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-tag me-2"></i>
+                            <span>ID: {{ producto.id|default('N/A') }}</span>
+                        </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                                                    <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            <span>{{ cantidad }} unidades</span>
+                        </div>
+                        <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-dollar-sign me-2"></i>
+                            <span>${{ "%.2f"|format(precio) }} c/u</span>
+                        </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="bg-success text-white p-2 rounded">
+                                        <div class="h5 mb-0">
+                                            <strong>${{ "%.2f"|format(cantidad * precio) }}</strong>
+                                        </div>
+                                        <small>Subtotal</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3 p-3 bg-warning text-dark rounded">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-dollar-sign me-2"></i>Precio Final de la Compra
+                        </h5>
+                        <h4 class="mb-0 text-dark">${{ "%.2f"|format(total_productos) }}</h4>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                                    <i class="fas fa-shopping-cart fa-3x text-white mb-3"></i>
+                <h5 class="text-white">No hay productos en este ticket</h5>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Indicaciones Especiales -->
+{% if ticket.indicaciones %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-sticky-note me-2"></i>
+                    Indicaciones Especiales
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0 fs-6">{{ ticket.indicaciones }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Información Adicional -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar me-2"></i>
+                    Información Adicional
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>Fecha de Creación:</strong>
+                            {{ ticket.fecha_creacion.strftime('%d/%m/%Y a las %H:%M') if ticket.fecha_creacion else 'No especificada' }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>Número de Ticket:</strong>
+                            {{ ticket.numero }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones -->
+{% if current_user.role == 'admin' %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>
+                    Acciones Administrativas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary" onclick="editTicket({{ ticket.id }})">
+                        <i class="fas fa-edit me-1"></i>Editar Ticket
+                    </button>
+                    <button class="btn btn-success" onclick="updateStatus({{ ticket.id }}, 'en-preparacion')">
+                        <i class="fas fa-cogs me-1"></i>Marcar en Preparación
+                    </button>
+                    <button class="btn btn-info" onclick="updateStatus({{ ticket.id }}, 'en-camino')">
+                        <i class="fas fa-truck me-1"></i>Marcar En Camino
+                    </button>
+                    <button class="btn btn-success" onclick="updateStatus({{ ticket.id }}, 'entregado')">
+                        <i class="fas fa-check me-1"></i>Marcar Entregado
+                    </button>
+                    <button class="btn btn-warning" onclick="duplicarTicket({{ ticket.id }})">
+                        <i class="fas fa-copy me-1"></i>Duplicar Ticket
+                    </button>
+                    <button class="btn btn-danger" onclick="eliminarTicket({{ ticket.id }}, '{{ ticket.numero }}')">
+                        <i class="fas fa-trash me-1"></i>Eliminar Ticket
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para asignar repartidor -->
+<div class="modal fade" id="asignarRepartidorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar Repartidor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="asignarRepartidorForm">
+                    <input type="hidden" id="asignarTicketId">
+                    <div class="mb-3">
+                        <label for="selectRepartidor" class="form-label">Seleccionar Repartidor</label>
+                        <select class="form-select" id="selectRepartidor" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Repartidor1">Repartidor 1</option>
+                            <option value="Repartidor2">Repartidor 2</option>
+                            <option value="Repartidor3">Repartidor 3</option>
+                            <option value="Repartidor4">Repartidor 4</option>
+                            <option value="Repartidor5">Repartidor 5</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarAsignacionRepartidor()">Asignar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let asignarRepartidorModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    asignarRepartidorModal = new bootstrap.Modal(document.getElementById('asignarRepartidorModal'));
+});
+
+function asignarRepartidor(ticketId) {
+    document.getElementById('asignarTicketId').value = ticketId;
+    asignarRepartidorModal.show();
+}
+
+function cambiarRepartidor(ticketId) {
+    document.getElementById('asignarTicketId').value = ticketId;
+    asignarRepartidorModal.show();
+}
+
+function guardarAsignacionRepartidor() {
+    const ticketId = document.getElementById('asignarTicketId').value;
+    const repartidor = document.getElementById('selectRepartidor').value;
+    
+    if (!repartidor) {
+        showNotification('Por favor selecciona un repartidor', 'warning');
+        return;
+    }
+    
+    fetch(`/ticket/${ticketId}/asignar_repartidor`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `repartidor=${encodeURIComponent(repartidor)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exito) {
+            showNotification(data.mensaje, 'success');
+            asignarRepartidorModal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Error al asignar repartidor', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'error');
+    });
+}
+
+function editTicket(ticketId) {
+    // Redirigir al panel con modal de edición
+    window.location.href = `/panel?edit=${ticketId}`;
+}
+
+function updateStatus(ticketId, newStatus) {
+    fetch(`/ticket/${ticketId}/estado`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `estado=${newStatus}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exito) {
+            showNotification('Estado actualizado correctamente', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Error al actualizar estado', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'error');
+    });
+}
+
+function duplicarTicket(ticketId) {
+    if (confirm('¿Quieres duplicar este ticket? Se creará una copia con el mismo contenido.')) {
+        showNotification('Función de duplicación en desarrollo', 'info');
+    }
+}
+
+function eliminarTicket(ticketId, numeroTicket) {
+    if (confirm(`¿Estás seguro de que quieres eliminar el ticket ${numeroTicket}? Esta acción no se puede deshacer.`)) {
+        fetch(`/ticket/${ticketId}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exito) {
+                showNotification(data.mensaje, 'success');
+                setTimeout(() => window.location.href = '/panel', 1000);
+            } else {
+                showNotification(data.error || 'Error al eliminar ticket', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error de conexión', 'error');
+        });
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Flota{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">
+                <i class="fas fa-truck me-2"></i>
+                Gestión de Flota
+            </h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="refreshPage()">
+                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas por Repartidor -->
+<div class="row mb-4">
+    {% for repartidor in repartidores %}
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="fas fa-user-tie fa-2x text-info me-2"></i>
+                        <h5 class="mb-0 text-white">{{ repartidor }}</h5>
+                    </div>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="text-white">
+                            <strong>{{ stats_repartidores[repartidor]['pendientes'] }}</strong>
+                            <br><small class="text-white">Pendientes</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-white">
+                            <strong>{{ stats_repartidores[repartidor]['en_camino'] }}</strong>
+                            <br><small class="text-white">En Camino</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-white">
+                            <strong>{{ stats_repartidores[repartidor]['entregados'] }}</strong>
+                            <br><small class="text-white">Entregados</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-white">
+                        Total: <strong class="text-white">{{ stats_repartidores[repartidor]['total'] }}</strong> tickets
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tickets Asignados -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-1"></i>
+                    Tickets Asignados ({{ tickets_asignados|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if tickets_asignados %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Repartidor</th>
+                                <th>Estado</th>
+                                <th>Prioridad</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets_asignados %}
+                            <tr>
+                                <td>
+                                    <strong>{{ ticket.numero }}</strong>
+                                </td>
+                                <td>{{ ticket.cliente_nombre }}</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-user-tie me-1"></i>{{ ticket.repartidor }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge status-{{ ticket.estado }}">
+                                        {% if ticket.estado == 'pendiente' %}
+                                            <i class="fas fa-clock me-1"></i>Pendiente
+                                        {% elif ticket.estado == 'en-preparacion' %}
+                                            <i class="fas fa-cogs me-1"></i>En Preparación
+                                        {% elif ticket.estado == 'en-camino' %}
+                                            <i class="fas fa-truck me-1"></i>En Camino
+                                        {% elif ticket.estado == 'entregado' %}
+                                            <i class="fas fa-check me-1"></i>Entregado
+                                        {% else %}
+                                            {{ ticket.estado|title }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge priority-{{ ticket.prioridad }}">
+                                        {{ ticket.prioridad|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ ticket.fecha_creacion.strftime('%d/%m/%Y %H:%M') if ticket.fecha_creacion else 'N/A' }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="verTicket({{ ticket.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning" onclick="cambiarRepartidor({{ ticket.id }})">
+                                            <i class="fas fa-user-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="marcarEntregado({{ ticket.id }})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                                    <i class="fas fa-truck fa-3x text-white mb-3"></i>
+                <h5 class="text-white">No hay tickets asignados</h5>
+                <p class="text-white">Los tickets aparecerán aquí cuando sean asignados a un repartidor.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cambiar repartidor -->
+<div class="modal fade" id="cambiarRepartidorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cambiar Repartidor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cambiarRepartidorForm">
+                    <input type="hidden" id="cambiarTicketId">
+                    <div class="mb-3">
+                        <label for="cambiarSelectRepartidor" class="form-label">Nuevo Repartidor</label>
+                        <select class="form-select" id="cambiarSelectRepartidor" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Repartidor1">Repartidor 1</option>
+                            <option value="Repartidor2">Repartidor 2</option>
+                            <option value="Repartidor3">Repartidor 3</option>
+                            <option value="Repartidor4">Repartidor 4</option>
+                            <option value="Repartidor5">Repartidor 5</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCambioRepartidor()">Cambiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cambiarRepartidorModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    cambiarRepartidorModal = new bootstrap.Modal(document.getElementById('cambiarRepartidorModal'));
+});
+
+function refreshPage() {
+    location.reload();
+}
+
+function verTicket(ticketId) {
+    // Redirigir al panel principal con filtro para este ticket
+    window.location.href = `/panel?ticket=${ticketId}`;
+}
+
+function cambiarRepartidor(ticketId) {
+    document.getElementById('cambiarTicketId').value = ticketId;
+    cambiarRepartidorModal.show();
+}
+
+function guardarCambioRepartidor() {
+    const ticketId = document.getElementById('cambiarTicketId').value;
+    const repartidor = document.getElementById('cambiarSelectRepartidor').value;
+    
+    if (!repartidor) {
+        showNotification('Por favor selecciona un repartidor', 'warning');
+        return;
+    }
+    
+    fetch(`/ticket/${ticketId}/asignar_repartidor`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `repartidor=${encodeURIComponent(repartidor)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exito) {
+            showNotification(data.mensaje, 'success');
+            cambiarRepartidorModal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Error al cambiar repartidor', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'error');
+    });
+}
+
+function marcarEntregado(ticketId) {
+    if (confirm('¿Confirmar que el ticket ha sido entregado?')) {
+        fetch(`/ticket/${ticketId}/estado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'estado=entregado'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exito) {
+                showNotification('Ticket marcado como entregado', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification('Error al actualizar estado', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error de conexión', 'error');
+        });
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

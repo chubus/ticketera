@@ -1,0 +1,41 @@
+services:
+  # Belgrano Tickets - Servicio Independiente con Docker
+  - type: web
+    name: belgrano-ticketera
+    env: docker
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: app.py
+      - key: PORT
+        value: 5001
+      - key: SECRET_KEY
+        value: belgrano_tickets_secret_2025
+      - key: BELGRANO_AHORRO_URL
+        value: https://belgrano-ahorro.onrender.com
+      - key: DATABASE_URL
+        value: sqlite:///belgrano_tickets.db
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ENABLE_METRICS
+        value: true
+      - key: BELGRANO_AHORRO_TIMEOUT
+        value: 30
+      - key: GUNICORN_WORKERS
+        value: 2
+      - key: GUNICORN_TIMEOUT
+        value: 120
+      - key: AUTO_CREATE_USERS
+        value: true
+      - key: ADMIN_EMAIL
+        value: admin@belgranoahorro.com
+      - key: ADMIN_PASSWORD
+        value: admin123
+      - key: FLOTA_PASSWORD
+        value: flota123
+    healthCheckPath: /health
+    autoDeploy: true

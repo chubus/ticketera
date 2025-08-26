@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Editar Usuario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Editar Usuario: {{ usuario.nombre }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Nombre de Usuario *</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ usuario.username }}" required>
+                            <div class="form-text text-white">Debe ser único en el sistema</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email }}" required>
+                            <div class="form-text text-white">Será usado para el login</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ usuario.nombre }}" required>
+                            <div class="form-text text-white">Nombre real del usuario</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Rol *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Seleccionar rol...</option>
+                                <option value="admin" {% if usuario.role == 'admin' %}selected{% endif %}>Administrador</option>
+                                <option value="flota" {% if usuario.role == 'flota' %}selected{% endif %}>Flota</option>
+                            </select>
+                            <div class="form-text text-white">Define los permisos del usuario</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nueva_password" class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="nueva_password" name="nueva_password">
+                            <div class="form-text text-white">Dejar vacío para mantener la actual</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="confirmar_password" class="form-label">Confirmar Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="confirmar_password" name="confirmar_password">
+                            <div class="form-text text-white">Solo si cambias la contraseña</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Guardar Cambios
+                                </button>
+                                <a href="/gestion_usuarios" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Volver
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información del usuario -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información del Usuario
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>ID:</strong> <span class="text-white">{{ usuario.id }}</span></p>
+                        <p><strong>Usuario:</strong> <span class="text-white">{{ usuario.username }}</span></p>
+                        <p><strong>Email:</strong> <span class="text-white">{{ usuario.email }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Nombre:</strong> <span class="text-white">{{ usuario.nombre }}</span></p>
+                        <p><strong>Rol:</strong> 
+                            {% if usuario.role == 'admin' %}
+                                <span class="badge bg-warning">Administrador</span>
+                            {% elif usuario.role == 'flota' %}
+                                <span class="badge bg-info">Flota</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ usuario.role }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Estado:</strong> <span class="badge bg-success">Activo</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const nuevaPassword = document.getElementById('nueva_password');
+    const confirmarPassword = document.getElementById('confirmar_password');
+    
+    form.addEventListener('submit', function(e) {
+        // Si se está cambiando la contraseña, validar
+        if (nuevaPassword.value) {
+            // Validar longitud de contraseña
+            if (nuevaPassword.value.length < 6) {
+                e.preventDefault();
+                alert('La nueva contraseña debe tener al menos 6 caracteres');
+                nuevaPassword.focus();
+                return;
+            }
+            
+            // Validar confirmación de contraseña
+            if (nuevaPassword.value !== confirmarPassword.value) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden');
+                confirmarPassword.focus();
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

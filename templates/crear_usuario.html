@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Crear Usuario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Crear Nuevo Usuario
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Nombre de Usuario *</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="form-text text-white">Debe ser único en el sistema</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="form-text text-white">Será usado para el login</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            <div class="form-text text-white">Nombre real del usuario</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Rol *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Seleccionar rol...</option>
+                                <option value="admin">Administrador</option>
+                                <option value="flota">Flota</option>
+                            </select>
+                            <div class="form-text text-white">Define los permisos del usuario</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Contraseña *</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="form-text text-white">Mínimo 6 caracteres</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="confirmar_password" class="form-label">Confirmar Contraseña *</label>
+                            <input type="password" class="form-control" id="confirmar_password" name="confirmar_password" required>
+                            <div class="form-text text-white">Debe coincidir con la contraseña</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Crear Usuario
+                                </button>
+                                <a href="/gestion_usuarios" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Volver
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información de roles -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información de Roles
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                                            <div class="col-md-6">
+                            <h6 class="text-white">
+                                <i class="fas fa-user-shield me-1"></i>Administrador
+                            </h6>
+                            <ul class="text-white">
+                                <li>Acceso completo al sistema</li>
+                                <li>Gestión de tickets</li>
+                                <li>Gestión de usuarios</li>
+                                <li>Reportes y estadísticas</li>
+                                <li>Asignación de repartidores</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-white">
+                                <i class="fas fa-truck me-1"></i>Flota
+                            </h6>
+                        <ul class="text-white">
+                            <li>Ver tickets asignados</li>
+                            <li>Actualizar estado de tickets</li>
+                            <li>Ver detalles de entregas</li>
+                            <li>Acceso limitado al sistema</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const password = document.getElementById('password');
+    const confirmarPassword = document.getElementById('confirmar_password');
+    
+    form.addEventListener('submit', function(e) {
+        // Validar contraseña
+        if (password.value.length < 6) {
+            e.preventDefault();
+            alert('La contraseña debe tener al menos 6 caracteres');
+            password.focus();
+            return;
+        }
+        
+        // Validar confirmación de contraseña
+        if (password.value !== confirmarPassword.value) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden');
+            confirmarPassword.focus();
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

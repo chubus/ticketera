@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios - La Ticketera{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="text-white">
+                    <i class="fas fa-users"></i> Gestión de Usuarios
+                </h1>
+                <a href="{{ url_for('crear_usuario') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Crear Nuevo Usuario
+                </a>
+            </div>
+
+            {% if usuarios %}
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-header bg-secondary">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Lista de Usuarios ({{ usuarios|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead class="bg-secondary">
+                                <tr>
+                                    <th><i class="fas fa-id-card"></i> ID</th>
+                                    <th><i class="fas fa-user"></i> Usuario</th>
+                                    <th><i class="fas fa-envelope"></i> Email</th>
+                                    <th><i class="fas fa-user-tag"></i> Nombre</th>
+                                    <th><i class="fas fa-shield-alt"></i> Rol</th>
+                                    <th><i class="fas fa-cogs"></i> Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">{{ usuario.id }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ usuario.username }}</strong>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-envelope text-info"></i>
+                                        {{ usuario.email }}
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-user text-warning"></i>
+                                        {{ usuario.nombre }}
+                                    </td>
+                                    <td>
+                                        {% if usuario.role == 'admin' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-crown"></i> Administrador
+                                            </span>
+                                        {% elif usuario.role == 'flota' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-truck"></i> Flota
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-user"></i> {{ usuario.role }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('editar_usuario', user_id=usuario.id) }}" 
+                                               class="btn btn-sm btn-warning" 
+                                               title="Editar usuario">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            {% if usuario.id != current_user.id %}
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteModal{{ usuario.id }}"
+                                                    title="Eliminar usuario">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% else %}
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-secondary" 
+                                                    disabled
+                                                    title="No puedes eliminar tu propia cuenta">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Modal de confirmación de eliminación -->
+                                        {% if usuario.id != current_user.id %}
+                                        <div class="modal fade" id="deleteModal{{ usuario.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content bg-dark text-white">
+                                                    <div class="modal-header bg-danger">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-exclamation-triangle"></i> 
+                                                            Confirmar Eliminación
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>¿Estás seguro de que quieres eliminar al usuario:</p>
+                                                        <div class="alert alert-warning">
+                                                            <strong>{{ usuario.nombre }}</strong><br>
+                                                            <small>{{ usuario.email }}</small><br>
+                                                            <span class="badge bg-secondary">{{ usuario.role }}</span>
+                                                        </div>
+                                                        <p class="text-danger">
+                                                            <i class="fas fa-exclamation-triangle"></i>
+                                                            Esta acción no se puede deshacer.
+                                                        </p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                            <i class="fas fa-times"></i> Cancelar
+                                                        </button>
+                                                        <form method="POST" action="{{ url_for('eliminar_usuario', user_id=usuario.id) }}" style="display: inline;">
+                                                            <button type="submit" class="btn btn-danger">
+                                                                <i class="fas fa-trash"></i> Eliminar
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h4>{{ usuarios|length }}</h4>
+                            <p class="mb-0">Total de Usuarios</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-crown fa-2x mb-2"></i>
+                            <h4>{{ usuarios|selectattr('role', 'equalto', 'admin')|list|length }}</h4>
+                            <p class="mb-0">Administradores</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-truck fa-2x mb-2"></i>
+                            <h4>{{ usuarios|selectattr('role', 'equalto', 'flota')|list|length }}</h4>
+                            <p class="mb-0">Miembros de Flota</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-check fa-2x mb-2"></i>
+                            <h4>{{ usuarios|selectattr('role', 'equalto', 'flota')|list|length }}</h4>
+                            <p class="mb-0">Usuarios Activos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="card bg-dark text-white border-secondary">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay usuarios registrados</h4>
+                    <p class="text-muted">Crea el primer usuario para comenzar</p>
+                    <a href="{{ url_for('crear_usuario') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Crear Primer Usuario
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Scripts para mejorar la experiencia -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Confirmar eliminación
+    const deleteButtons = document.querySelectorAll('[data-bs-target^="#deleteModal"]');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modalId = this.getAttribute('data-bs-target');
+            const modal = new bootstrap.Modal(document.querySelector(modalId));
+            modal.show();
+        });
+    });
+
+    // Tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

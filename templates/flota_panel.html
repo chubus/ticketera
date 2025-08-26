@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Flota - Belgrano Tickets</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .ticket-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #007bff;
+        }
+        .ticket-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .ticket-pendiente { border-left-color: #ffc107; }
+        .ticket-en-camino { border-left-color: #17a2b8; }
+        .ticket-entregado { border-left-color: #28a745; }
+        .ticket-cancelado { border-left-color: #dc3545; }
+        .priority-alta { background-color: #fff3cd; }
+        .priority-normal { background-color: #ffffff; }
+        .navbar-brand {
+            font-weight: bold;
+            color: #007bff !important;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        .btn-action {
+            margin: 2px;
+            min-width: 80px;
+        }
+        .productos-list {
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .status-badge {
+            font-size: 0.8em;
+            padding: 0.3em 0.6em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('panel') }}">
+                <i class="fas fa-truck"></i> Belgrano Tickets - Flota
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user"></i> {{ current_user.nombre }}
+                </span>
+                <a class="nav-link" href="{{ url_for('cambiar_password') }}">
+                    <i class="fas fa-key"></i> Cambiar Contraseña
+                </a>
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-list"></i> Total Tickets</h5>
+                        <h3 id="total-tickets">{{ tickets|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-clock"></i> Pendientes</h5>
+                        <h3 id="pendientes">{{ tickets|selectattr('estado', 'equalto', 'pendiente')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-truck"></i> En Camino</h5>
+                        <h3 id="en-camino">{{ tickets|selectattr('estado', 'equalto', 'en-camino')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-check-circle"></i> Entregados</h5>
+                        <h3 id="entregados">{{ tickets|selectattr('estado', 'equalto', 'entregado')|list|length }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="filtro-estado" class="form-label">Filtrar por Estado:</label>
+                                <select id="filtro-estado" class="form-select">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="en-camino">En Camino</option>
+                                    <option value="entregado">Entregado</option>
+                                    <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtro-prioridad" class="form-label">Filtrar por Prioridad:</label>
+                                <select id="filtro-prioridad" class="form-select">
+                                    <option value="">Todas las prioridades</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="baja">Baja</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="buscar-cliente" class="form-label">Buscar Cliente:</label>
+                                <input type="text" id="buscar-cliente" class="form-control" placeholder="Nombre o email del cliente">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button id="limpiar-filtros" class="btn btn-secondary w-100">
+                                    <i class="fas fa-times"></i> Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Tickets -->
+        <div class="row" id="tickets-container">
+            {% for ticket in tickets %}
+            <div class="col-md-6 col-lg-4 mb-3 ticket-item" 
+                 data-estado="{{ ticket.estado }}" 
+                 data-prioridad="{{ ticket.prioridad }}"
+                 data-cliente="{{ ticket.cliente_nombre|lower }} {{ ticket.cliente_email|lower }}">
+                <div class="card ticket-card ticket-{{ ticket.estado }} priority-{{ ticket.prioridad }}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-ticket-alt"></i> {{ ticket.numero }}
+                        </h6>
+                        <div>
+                            {% if ticket.prioridad == 'alta' %}
+                                <span class="badge bg-danger status-badge">Alta</span>
+                            {% elif ticket.prioridad == 'normal' %}
+                                <span class="badge bg-warning status-badge">Normal</span>
+                            {% else %}
+                                <span class="badge bg-info status-badge">Baja</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-user"></i> {{ ticket.cliente_nombre }}
+                        </h6>
+                        <p class="card-text">
+                            <i class="fas fa-envelope"></i> {{ ticket.cliente_email }}<br>
+                            <i class="fas fa-phone"></i> {{ ticket.cliente_telefono }}<br>
+                            <i class="fas fa-map-marker-alt"></i> {{ ticket.cliente_direccion }}
+                        </p>
+                        
+                        <div class="productos-list mb-2">
+                            <strong><i class="fas fa-shopping-cart"></i> Productos:</strong>
+                            {% set productos = ticket.productos|from_json %}
+                            {% if productos %}
+                                <ul class="list-unstyled">
+                                {% for producto in productos %}
+                                    <li><small>{{ producto.nombre }} - Cant: {{ producto.cantidad }}</small></li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <small class="text-muted">Sin productos especificados</small>
+                            {% endif %}
+                        </div>
+
+                        {% if ticket.indicaciones %}
+                        <p class="card-text">
+                            <strong><i class="fas fa-info-circle"></i> Indicaciones:</strong><br>
+                            <small>{{ ticket.indicaciones }}</small>
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">{{ ticket.estado|title }}</span>
+                            <small class="text-muted">{{ ticket.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-outline-primary btn-sm btn-action" 
+                                    onclick="actualizarEstado({{ ticket.id }}, 'en-camino')">
+                                <i class="fas fa-truck"></i> En Camino
+                            </button>
+                            <button class="btn btn-outline-success btn-sm btn-action" 
+                                    onclick="actualizarEstado({{ ticket.id }}, 'entregado')">
+                                <i class="fas fa-check"></i> Entregado
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm btn-action" 
+                                    onclick="actualizarEstado({{ ticket.id }}, 'cancelado')">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Mensaje cuando no hay tickets -->
+        {% if not tickets %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay tickets asignados</h5>
+                        <p class="text-muted">Los tickets aparecerán aquí cuando sean asignados a tu cuenta.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // WebSocket para actualizaciones en tiempo real
+        const socket = io();
+        
+        socket.on('connect', function() {
+            console.log('Conectado al servidor WebSocket');
+        });
+
+        socket.on('nuevo_ticket', function(data) {
+            console.log('Nuevo ticket recibido:', data);
+            location.reload(); // Recargar para mostrar el nuevo ticket
+        });
+
+        socket.on('ticket_actualizado', function(data) {
+            console.log('Ticket actualizado:', data);
+            location.reload(); // Recargar para mostrar cambios
+        });
+
+        socket.on('ticket_eliminado', function(data) {
+            console.log('Ticket eliminado:', data);
+            location.reload(); // Recargar para remover el ticket
+        });
+
+        // Función para actualizar estado del ticket
+        function actualizarEstado(ticketId, nuevoEstado) {
+            const formData = new FormData();
+            formData.append('estado', nuevoEstado);
+            
+            fetch(`/ticket/${ticketId}/estado`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.exito) {
+                    // Mostrar notificación de éxito
+                    mostrarNotificacion('Estado actualizado correctamente', 'success');
+                    // Recargar la página para mostrar cambios
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    mostrarNotificacion('Error al actualizar estado', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error de conexión', 'danger');
+            });
+        }
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        // Filtros
+        document.getElementById('filtro-estado').addEventListener('change', filtrarTickets);
+        document.getElementById('filtro-prioridad').addEventListener('change', filtrarTickets);
+        document.getElementById('buscar-cliente').addEventListener('input', filtrarTickets);
+        document.getElementById('limpiar-filtros').addEventListener('click', limpiarFiltros);
+
+        function filtrarTickets() {
+            const estado = document.getElementById('filtro-estado').value;
+            const prioridad = document.getElementById('filtro-prioridad').value;
+            const cliente = document.getElementById('buscar-cliente').value.toLowerCase();
+            
+            const tickets = document.querySelectorAll('.ticket-item');
+            
+            tickets.forEach(ticket => {
+                const ticketEstado = ticket.dataset.estado;
+                const ticketPrioridad = ticket.dataset.prioridad;
+                const ticketCliente = ticket.dataset.cliente;
+                
+                const cumpleEstado = !estado || ticketEstado === estado;
+                const cumplePrioridad = !prioridad || ticketPrioridad === prioridad;
+                const cumpleCliente = !cliente || ticketCliente.includes(cliente);
+                
+                if (cumpleEstado && cumplePrioridad && cumpleCliente) {
+                    ticket.style.display = 'block';
+                } else {
+                    ticket.style.display = 'none';
+                }
+            });
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtro-estado').value = '';
+            document.getElementById('filtro-prioridad').value = '';
+            document.getElementById('buscar-cliente').value = '';
+            filtrarTickets();
+        }
+
+        // Actualizar estadísticas en tiempo real
+        function actualizarEstadisticas() {
+            const tickets = document.querySelectorAll('.ticket-item');
+            let total = 0, pendientes = 0, enCamino = 0, entregados = 0;
+            
+            tickets.forEach(ticket => {
+                if (ticket.style.display !== 'none') {
+                    total++;
+                    const estado = ticket.dataset.estado;
+                    switch(estado) {
+                        case 'pendiente': pendientes++; break;
+                        case 'en-camino': enCamino++; break;
+                        case 'entregado': entregados++; break;
+                    }
+                }
+            });
+            
+            document.getElementById('total-tickets').textContent = total;
+            document.getElementById('pendientes').textContent = pendientes;
+            document.getElementById('en-camino').textContent = enCamino;
+            document.getElementById('entregados').textContent = entregados;
+        }
+
+        // Actualizar estadísticas cuando se filtran
+        document.getElementById('filtro-estado').addEventListener('change', actualizarEstadisticas);
+        document.getElementById('filtro-prioridad').addEventListener('change', actualizarEstadisticas);
+        document.getElementById('buscar-cliente').addEventListener('input', actualizarEstadisticas);
+    </script>
+</body>
+</html>

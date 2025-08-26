@@ -1,0 +1,31 @@
+services:
+  # Belgrano Tickets - Servicio Completamente Independiente
+  - type: web
+    name: belgrano-ticketera
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements_ticketera.txt
+    startCommand: python app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: app.py
+      - key: PORT
+        value: 5001
+      - key: SECRET_KEY
+        value: belgrano_tickets_secret_2025
+      - key: BELGRANO_AHORRO_URL
+        value: https://belgrano-ahorro.onrender.com
+      - key: DATABASE_URL
+        value: sqlite:///belgrano_tickets.db
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ENABLE_METRICS
+        value: true
+      - key: BELGRANO_AHORRO_TIMEOUT
+        value: 30
+    healthCheckPath: /health
+    autoDeploy: true

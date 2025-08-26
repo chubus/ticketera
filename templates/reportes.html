@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-0">
+            <i class="fas fa-chart-bar me-2"></i>
+            Reportes y Estadísticas
+        </h2>
+    </div>
+</div>
+
+<!-- Estadísticas Generales -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-ticket-alt fa-2x text-primary mb-2"></i>
+                <h4 class="card-title">{{ total_tickets }}</h4>
+                <p class="card-text text-white">Total de Tickets</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h4 class="card-title">{{ tickets_pendientes }}</h4>
+                <p class="card-text text-white">Pendientes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-truck fa-2x text-info mb-2"></i>
+                <h4 class="card-title">{{ tickets_en_camino }}</h4>
+                <p class="card-text text-white">En Camino</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h4 class="card-title">{{ tickets_entregados }}</h4>
+                <p class="card-text text-white">Entregados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tickets por Repartidor -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-1"></i>
+                    Distribución por Repartidor
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for repartidor, cantidad in tickets_por_repartidor.items() %}
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-tie fa-2x text-info mb-2"></i>
+                                <h6 class="card-title">{{ repartidor }}</h6>
+                                <h4 class="text-primary">{{ cantidad }}</h4>
+                                <small class="text-white">tickets asignados</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

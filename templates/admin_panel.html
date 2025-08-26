@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+{% block title %}Panel de Administración{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Panel de Administración de Tickets
+            </h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="refreshTickets()">
+                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                </button>
+                <button class="btn btn-outline-success" onclick="exportTickets()">
+                    <i class="fas fa-download me-1"></i>Exportar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-ticket-alt fa-2x text-primary mb-2"></i>
+                <h4 class="card-title">{{ tickets|length }}</h4>
+                <p class="card-text text-white">Total de Tickets</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h4 class="card-title">{{ tickets|selectattr('estado', 'equalto', 'pendiente')|list|length }}</h4>
+                <p class="card-text text-white">Pendientes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-truck fa-2x text-info mb-2"></i>
+                <h4 class="card-title">{{ tickets|selectattr('estado', 'equalto', 'en-camino')|list|length }}</h4>
+                <p class="card-text text-white">En Camino</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h4 class="card-title">{{ tickets|selectattr('estado', 'equalto', 'entregado')|list|length }}</h4>
+                <p class="card-text text-white">Entregados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <label for="filterStatus" class="form-label">Estado</label>
+                        <select class="form-select" id="filterStatus" onchange="filterTickets()">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en-preparacion">En Preparación</option>
+                            <option value="en-camino">En Camino</option>
+                            <option value="entregado">Entregado</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="filterPriority" class="form-label">Prioridad</label>
+                        <select class="form-select" id="filterPriority" onchange="filterTickets()">
+                            <option value="">Todas las prioridades</option>
+                            <option value="alta">Alta</option>
+                            <option value="normal">Normal</option>
+                            <option value="baja">Baja</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="searchInput" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Buscar por cliente, número o dirección..." onkeyup="filterTickets()">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="orderBy" class="form-label">Ordenar por</label>
+                        <select class="form-select" id="orderBy" onchange="sortTickets()">
+                            <option value="fecha_desc">Más reciente primero</option>
+                            <option value="fecha_asc">Menos reciente primero</option>
+                            <option value="total_desc">Total mayor a menor</option>
+                            <option value="total_asc">Total menor a mayor</option>
+                            <option value="productos_desc">Más productos primero</option>
+                            <option value="productos_asc">Menos productos primero</option>
+                            <option value="cliente_asc">Cliente A-Z</option>
+                            <option value="cliente_desc">Cliente Z-A</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 mb-2 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Tickets -->
+<div class="row" id="ticketsContainer">
+    {% for ticket in tickets %}
+    <div class="col-12 mb-4 ticket-card" 
+         data-status="{{ ticket.estado }}" 
+         data-priority="{{ ticket.prioridad }}"
+         data-search="{{ ticket.numero.lower() }} {{ ticket.cliente_nombre.lower() }} {{ ticket.cliente_direccion.lower() }}"
+         data-fecha="{{ ticket.fecha_creacion.isoformat() if ticket.fecha_creacion else '' }}"
+         data-total="{{ total_productos }}"
+         data-productos="{{ (ticket.productos|from_json)|length }}"
+         data-cliente="{{ ticket.cliente_nombre.lower() }}">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-ticket-alt me-1"></i>
+                        Ticket #{{ ticket.numero }}
+                    </h6>
+                    <div class="d-flex gap-1">
+                        <span class="badge status-{{ ticket.estado }}">
+                            {% if ticket.estado == 'pendiente' %}
+                                <i class="fas fa-clock me-1"></i>Pendiente
+                            {% elif ticket.estado == 'en-preparacion' %}
+                                <i class="fas fa-cogs me-1"></i>En Preparación
+                            {% elif ticket.estado == 'en-camino' %}
+                                <i class="fas fa-truck me-1"></i>En Camino
+                            {% elif ticket.estado == 'entregado' %}
+                                <i class="fas fa-check me-1"></i>Entregado
+                            {% else %}
+                                {{ ticket.estado|title }}
+                            {% endif %}
+                        </span>
+                        <span class="badge priority-{{ ticket.prioridad }}">
+                            {{ ticket.prioridad|title }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="row">
+                    <!-- Columna 1: Información del Cliente -->
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <h6 class="text-info mb-1 text-white">
+                                <i class="fas fa-user me-1"></i>{{ ticket.cliente_nombre }}
+                            </h6>
+                            <div class="small text-white">
+                                <div><i class="fas fa-map-marker-alt me-1"></i>{{ ticket.cliente_direccion or 'Dirección no especificada' }}</div>
+                                <div><i class="fas fa-phone me-1"></i>{{ ticket.cliente_telefono or 'Teléfono no especificado' }}</div>
+                                <div><i class="fas fa-envelope me-1"></i>{{ ticket.cliente_email or 'Email no especificado' }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Repartidor Asignado -->
+                        <div class="mb-3">
+                            {% if ticket.repartidor %}
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-info me-2">
+                                    <i class="fas fa-user-tie me-1"></i>{{ ticket.repartidor }}
+                                </span>
+                                <button class="btn btn-sm btn-outline-warning" onclick="cambiarRepartidor({{ ticket.id }})">
+                                    <i class="fas fa-edit me-1"></i>Cambiar
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-secondary me-2">
+                                    <i class="fas fa-user-slash me-1"></i>Sin asignar
+                                </span>
+                                <button class="btn btn-sm btn-outline-info" onclick="asignarRepartidor({{ ticket.id }})">
+                                    <i class="fas fa-user-plus me-1"></i>Asignar
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Fecha de Creación -->
+                        <div class="mb-3">
+                            <small class="text-white">
+                                <i class="fas fa-calendar me-1"></i>
+                                Creado: {{ ticket.fecha_creacion.strftime('%d/%m/%Y %H:%M') if ticket.fecha_creacion else 'No especificada' }}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Columna 2: Productos -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2 text-white">
+                                <i class="fas fa-shopping-cart me-1"></i>Productos Solicitados ({{ (ticket.productos|from_json)|length }} items)
+                            </h6>
+                            <div class="productos-container">
+                                {% set productos = ticket.productos|from_json %}
+                                {% set total_productos = 0 %}
+                                {% for producto in productos %}
+                                    {% set cantidad = producto.cantidad|default(1)|int %}
+                                    {% set precio = producto.precio|default(0)|float %}
+                                    {% set total_productos = total_productos + (cantidad * precio) %}
+                                    <div class="product-item mb-2 p-3 bg-dark border border-secondary rounded">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <span class="badge bg-primary me-2">{{ loop.index }}</span>
+                                                    <h6 class="text-white mb-0">{{ producto.nombre|default('Producto sin nombre') }}</h6>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                                                <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-store me-2"></i>
+                            <span>{{ producto.sucursal or 'Sucursal no especificada' }}</span>
+                        </div>
+                        <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-tag me-2"></i>
+                            <span>ID: {{ producto.id|default('N/A') }}</span>
+                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                                                <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            <span>{{ cantidad }} unidades</span>
+                        </div>
+                        <div class="d-flex align-items-center text-white mb-1">
+                            <i class="fas fa-dollar-sign me-2"></i>
+                            <span>${{ "%.2f"|format(precio) }} c/u</span>
+                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 text-end">
+                                                <div class="bg-success text-white p-2 rounded">
+                                                    <div class="h5 mb-0">
+                                                        <strong>${{ "%.2f"|format(cantidad * precio) }}</strong>
+                                                    </div>
+                                                    <small>Subtotal</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-2 p-2 bg-warning text-dark rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-dollar-sign me-2"></i>Total: ${{ "%.2f"|format(total_productos) }}
+                                    </h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna 3: Información Adicional -->
+                    <div class="col-md-3">
+                        <!-- Indicaciones -->
+                        {% if ticket.indicaciones %}
+                        <div class="mb-3">
+                            <h6 class="text-info mb-2 text-white">
+                                <i class="fas fa-sticky-note me-1"></i>Indicaciones
+                            </h6>
+                            <p class="small text-white mb-0">{{ ticket.indicaciones }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Acciones Rápidas -->
+                        <div class="mb-3">
+                            <div class="d-grid gap-2">
+                                <a href="/ticket/{{ ticket.id }}/detalle" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye me-1"></i>Ver Detalle
+                                </a>
+                                <button class="btn btn-sm btn-primary" onclick="editTicket({{ ticket.id }})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="updateStatus({{ ticket.id }}, 'en-preparacion')">
+                                    <i class="fas fa-cogs me-1"></i>Preparar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Adicionales -->
+            <div class="card-footer">
+                <div class="d-flex gap-2 justify-content-center">
+                    <button class="btn btn-sm btn-info" onclick="updateStatus({{ ticket.id }}, 'en-camino')">
+                        <i class="fas fa-truck me-1"></i>Enviar
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="updateStatus({{ ticket.id }}, 'entregado')">
+                        <i class="fas fa-check me-1"></i>Entregado
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="duplicarTicket({{ ticket.id }})">
+                        <i class="fas fa-copy me-1"></i>Duplicar
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarTicket({{ ticket.id }}, '{{ ticket.numero }}')">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal para asignar repartidor -->
+<div class="modal fade" id="asignarRepartidorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar Repartidor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="asignarRepartidorForm">
+                    <input type="hidden" id="asignarTicketId">
+                    <div class="mb-3">
+                        <label for="selectRepartidor" class="form-label">Seleccionar Repartidor</label>
+                        <select class="form-select" id="selectRepartidor" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Repartidor1">Repartidor 1</option>
+                            <option value="Repartidor2">Repartidor 2</option>
+                            <option value="Repartidor3">Repartidor 3</option>
+                            <option value="Repartidor4">Repartidor 4</option>
+                            <option value="Repartidor5">Repartidor 5</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarAsignacionRepartidor()">Asignar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let asignarRepartidorModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    asignarRepartidorModal = new bootstrap.Modal(document.getElementById('asignarRepartidorModal'));
+});
+
+function filterTickets() {
+    const statusFilter = document.getElementById('filterStatus').value;
+    const priorityFilter = document.getElementById('filterPriority').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    const tickets = document.querySelectorAll('.ticket-card');
+    
+    tickets.forEach(ticket => {
+        const status = ticket.dataset.status;
+        const priority = ticket.dataset.priority;
+        const search = ticket.dataset.search;
+        
+        const statusMatch = !statusFilter || status === statusFilter;
+        const priorityMatch = !priorityFilter || priority === priorityFilter;
+        const searchMatch = !searchTerm || search.includes(searchTerm);
+        
+        if (statusMatch && priorityMatch && searchMatch) {
+            ticket.style.display = 'block';
+        } else {
+            ticket.style.display = 'none';
+        }
+    });
+}
+
+function clearFilters() {
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterPriority').value = '';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('orderBy').value = 'fecha_desc';
+    filterTickets();
+}
+
+function sortTickets() {
+    const orderBy = document.getElementById('orderBy').value;
+    const tickets = Array.from(document.querySelectorAll('.ticket-card'));
+    
+    tickets.sort((a, b) => {
+        switch(orderBy) {
+            case 'fecha_desc':
+                return new Date(b.dataset.fecha) - new Date(a.dataset.fecha);
+            case 'fecha_asc':
+                return new Date(a.dataset.fecha) - new Date(b.dataset.fecha);
+            case 'total_desc':
+                return parseFloat(b.dataset.total) - parseFloat(a.dataset.total);
+            case 'total_asc':
+                return parseFloat(a.dataset.total) - parseFloat(b.dataset.total);
+            case 'productos_desc':
+                return parseInt(b.dataset.productos) - parseInt(a.dataset.productos);
+            case 'productos_asc':
+                return parseInt(a.dataset.productos) - parseInt(b.dataset.productos);
+            case 'cliente_asc':
+                return a.dataset.cliente.localeCompare(b.dataset.cliente);
+            case 'cliente_desc':
+                return b.dataset.cliente.localeCompare(a.dataset.cliente);
+            default:
+                return 0;
+        }
+    });
+    
+    const container = document.getElementById('ticketsContainer');
+    tickets.forEach(ticket => container.appendChild(ticket));
+}
+
+function refreshTickets() {
+    location.reload();
+}
+
+function exportTickets() {
+    // Función para exportar tickets (implementar según necesidades)
+    alert('Función de exportación en desarrollo');
+}
+
+function asignarRepartidor(ticketId) {
+    document.getElementById('asignarTicketId').value = ticketId;
+    asignarRepartidorModal.show();
+}
+
+function cambiarRepartidor(ticketId) {
+    document.getElementById('asignarTicketId').value = ticketId;
+    asignarRepartidorModal.show();
+}
+
+function guardarAsignacionRepartidor() {
+    const ticketId = document.getElementById('asignarTicketId').value;
+    const repartidor = document.getElementById('selectRepartidor').value;
+    
+    if (!repartidor) {
+        showNotification('Por favor selecciona un repartidor', 'warning');
+        return;
+    }
+    
+    fetch(`/ticket/${ticketId}/asignar_repartidor`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `repartidor=${encodeURIComponent(repartidor)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exito) {
+            showNotification(data.mensaje, 'success');
+            asignarRepartidorModal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.error || 'Error al asignar repartidor', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'error');
+    });
+}
+
+function editTicket(ticketId) {
+    // Redirigir al panel con modal de edición
+    window.location.href = `/panel?edit=${ticketId}`;
+}
+
+function updateStatus(ticketId, newStatus) {
+    fetch(`/ticket/${ticketId}/estado`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `estado=${newStatus}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exito) {
+            showNotification('Estado actualizado correctamente', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Error al actualizar estado', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'error');
+    });
+}
+
+function duplicarTicket(ticketId) {
+    if (confirm('¿Quieres duplicar este ticket? Se creará una copia con el mismo contenido.')) {
+        showNotification('Función de duplicación en desarrollo', 'info');
+    }
+}
+
+function eliminarTicket(ticketId, numeroTicket) {
+    if (confirm(`¿Estás seguro de que quieres eliminar el ticket ${numeroTicket}? Esta acción no se puede deshacer.`)) {
+        fetch(`/ticket/${ticketId}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exito) {
+                showNotification(data.mensaje, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.error || 'Error al eliminar ticket', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error de conexión', 'error');
+        });
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// WebSocket para actualizaciones en tiempo real
+const socket = io();
+
+socket.on('nuevo_ticket', function(data) {
+    showNotification(`Nuevo ticket recibido: ${data.numero}`, 'info');
+    setTimeout(() => location.reload(), 2000);
+});
+
+socket.on('ticket_actualizado', function(data) {
+    showNotification(`Ticket ${data.ticket_id} actualizado`, 'success');
+    setTimeout(() => location.reload(), 1000);
+});
+
+socket.on('ticket_asignado', function(data) {
+    showNotification(`Ticket asignado a ${data.repartidor}`, 'success');
+    setTimeout(() => location.reload(), 1000);
+});
+
+socket.on('ticket_eliminado', function(data) {
+    showNotification(`Ticket ${data.numero} eliminado`, 'warning');
+    setTimeout(() => location.reload(), 1000);
+});
+</script>
+{% endblock %}
