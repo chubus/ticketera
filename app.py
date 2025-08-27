@@ -34,7 +34,7 @@ BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ah
 
 # URLs de producción (Render.com)
 if os.environ.get('RENDER_ENVIRONMENT') == 'production':
-    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgrano-ahorro.onrender.com')
+    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro.onrender.com')
     BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
 
 print(f"🔗 Configuración API:")
@@ -114,7 +114,18 @@ with app.app_context():
     # Ejecutar inicialización automática
     inicializar_usuarios_automaticamente()
 login_manager = LoginManager(app)
-socketio = SocketIO(app, async_mode='threading')
+
+# Configuración robusta de SocketIO para evitar invalid session
+socketio = SocketIO(
+    app, 
+    async_mode='threading',
+    cors_allowed_origins="*",
+    ping_timeout=60,
+    ping_interval=25,
+    max_http_buffer_size=1e8,
+    logger=True,
+    engineio_logger=True
+)
 
 # Filtro personalizado para JSON
 @app.template_filter('from_json')
@@ -270,6 +281,37 @@ def health_check():
             'timestamp': datetime.now().isoformat()
         }), 500
 
+@app.route('/healthz')
+def healthz():
+    """Endpoint de health check para monitoreo (compatible con Kubernetes)"""
+    try:
+        # Verificar conexión a base de datos
+        db.session.execute('SELECT 1')
+        db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+    
+    # Verificar estado de la API de Ahorro
+    ahorro_api_status = "unhealthy"
+    if api_client:
+        try:
+            health_response = api_client.health_check()
+            if health_response.get('status') == 'healthy':
+                ahorro_api_status = "healthy"
+        except Exception as e:
+            ahorro_api_status = f"unhealthy: {str(e)}"
+    
+    overall_status = "healthy" if db_status == "healthy" else "unhealthy"
+    
+    return jsonify({
+        "status": overall_status,
+        "service": "belgrano-tickets",
+        "database": db_status,
+        "ahorro_api": ahorro_api_status,
+        "ahorro_url": BELGRANO_AHORRO_URL,
+        "timestamp": datetime.now().isoformat()
+    })
+
 @app.route('/debug/reparar_credenciales', methods=['POST'])
 def reparar_credenciales_debug():
     """Ruta para reparar credenciales en producción"""
@@ -374,21 +416,30 @@ def panel():
 @app.route('/api/tickets/recibir', methods=['POST'])
 def recibir_ticket_externo():
     """
-    Endpoint para recibir tickets desde la aplicación principal de Belgrano Ahorro
+    Endpoint para recibir tickets desde la aplicación principal de Belgrano Ahorro con manejo robusto de errores
     """
     try:
         # Autenticación por API Key
         api_key_header = request.headers.get('X-API-Key')
         if not api_key_header or api_key_header != BELGRANO_AHORRO_API_KEY:
+            print(f"❌ API Key inválida: {api_key_header}")
             return jsonify({'error': 'API key inválida'}), 401
 
         data = request.get_json()
-        print(f"Datos recibidos en Ticketera:")
+        print(f"📥 Datos recibidos en Ticketera desde {request.remote_addr}:")
+        print(f"   Headers: {dict(request.headers)}")
         print(f"   Datos: {json.dumps(data, indent=2)}")
         
         if not data:
-            print("No se recibieron datos")
+            print("❌ No se recibieron datos")
             return jsonify({'error': 'Datos no recibidos'}), 400
+        
+        # Validar campos requeridos
+        required_fields = ['numero', 'cliente_nombre', 'total']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            print(f"❌ Campos requeridos faltantes: {missing_fields}")
+            return jsonify({'error': f'Campos requeridos faltantes: {missing_fields}'}), 400
         
         # Determinar prioridad basada en tipo de cliente
         prioridad = data.get('prioridad', 'normal')
@@ -403,7 +454,18 @@ def recibir_ticket_externo():
         if numero_ticket:
             existente = Ticket.query.filter_by(numero=numero_ticket).first()
             if existente:
-                return jsonify({'exito': True, 'ticket_id': existente.id, 'idempotent': True}), 200
+                print(f"✅ Ticket existente encontrado: {numero_ticket} (ID: {existente.id})")
+                return jsonify({
+                    'exito': True, 
+                    'ticket_id': existente.id, 
+                    'idempotent': True,
+                    'numero': existente.numero,
+                    'estado': existente.estado,
+                    'repartidor_asignado': existente.repartidor_nombre,
+                    'fecha_creacion': existente.fecha_creacion.isoformat() if existente.fecha_creacion else None,
+                    'cliente_nombre': existente.cliente_nombre,
+                    'total': existente.total
+                }), 200
 
         # Crear el ticket con los datos recibidos
         ticket = Ticket(
@@ -413,6 +475,7 @@ def recibir_ticket_externo():
             cliente_telefono=data.get('cliente_telefono', data.get('telefono', 'Sin teléfono')),
             cliente_email=data.get('cliente_email', data.get('email', 'sin@email.com')),
             productos=json.dumps(data.get('productos', [])),
+            total=data.get('total', 0),
             estado=data.get('estado', 'pendiente'),
             prioridad=prioridad,
             indicaciones=data.get('indicaciones', data.get('notas', ''))
@@ -426,22 +489,27 @@ def recibir_ticket_externo():
         if repartidor_asignado:
             ticket.repartidor_nombre = repartidor_asignado
             db.session.commit()
-            print(f"Ticket asignado automáticamente a {repartidor_asignado}")
+            print(f"✅ Ticket asignado automáticamente a {repartidor_asignado}")
         
         # Emitir evento WebSocket para actualización en tiempo real
-        socketio.emit('nuevo_ticket', {
-            'ticket_id': ticket.id, 
-            'numero': ticket.numero,
-            'cliente_nombre': ticket.cliente_nombre,
-            'estado': ticket.estado,
-            'repartidor': ticket.repartidor_nombre,
-            'prioridad': ticket.prioridad,
-            'tipo_cliente': tipo_cliente
-        })
+        try:
+            socketio.emit('nuevo_ticket', {
+                'ticket_id': ticket.id, 
+                'numero': ticket.numero,
+                'cliente_nombre': ticket.cliente_nombre,
+                'estado': ticket.estado,
+                'repartidor': ticket.repartidor_nombre,
+                'prioridad': ticket.prioridad,
+                'tipo_cliente': tipo_cliente
+            })
+            print(f"📡 Evento WebSocket emitido para ticket {ticket.id}")
+        except Exception as ws_error:
+            print(f"⚠️ Error emitiendo WebSocket: {ws_error}")
         
         # Mensaje de log más detallado
         tipo_cliente_str = "COMERCIANTE" if tipo_cliente == 'comerciante' else "CLIENTE"
-        print(f"Ticket recibido exitosamente: {ticket.numero} - {ticket.cliente_nombre} ({tipo_cliente_str}) - Prioridad: {ticket.prioridad}")
+        print(f"✅ Ticket recibido exitosamente: {ticket.numero} - {ticket.cliente_nombre} ({tipo_cliente_str}) - Prioridad: {ticket.prioridad}")
+        
         return jsonify({
             'exito': True, 
             'ticket_id': ticket.id, 
@@ -454,7 +522,9 @@ def recibir_ticket_externo():
         })
         
     except Exception as e:
-        print(f"Error al procesar ticket: {e}")
+        print(f"❌ Error al procesar ticket: {e}")
+        import traceback
+        print(f"   Traceback: {traceback.format_exc()}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
