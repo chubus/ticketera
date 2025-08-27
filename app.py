@@ -442,7 +442,16 @@ def recibir_ticket_externo():
         # Mensaje de log más detallado
         tipo_cliente_str = "COMERCIANTE" if tipo_cliente == 'comerciante' else "CLIENTE"
         print(f"Ticket recibido exitosamente: {ticket.numero} - {ticket.cliente_nombre} ({tipo_cliente_str}) - Prioridad: {ticket.prioridad}")
-        return jsonify({'exito': True, 'ticket_id': ticket.id, 'repartidor_asignado': ticket.repartidor_nombre})
+        return jsonify({
+            'exito': True, 
+            'ticket_id': ticket.id, 
+            'numero': ticket.numero,
+            'estado': ticket.estado,
+            'repartidor_asignado': ticket.repartidor_nombre,
+            'fecha_creacion': ticket.fecha_creacion.isoformat() if ticket.fecha_creacion else None,
+            'cliente_nombre': ticket.cliente_nombre,
+            'total': ticket.total
+        })
         
     except Exception as e:
         print(f"Error al procesar ticket: {e}")
