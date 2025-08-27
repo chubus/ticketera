@@ -46,7 +46,7 @@ print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
 # Importar cliente API
 try:
     from api_client import create_api_client, test_api_connection
-    api_client = create_api_client()
+    api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
     print("Cliente API de Belgrano Ahorro inicializado")
 except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
@@ -283,34 +283,8 @@ def health_check():
 
 @app.route('/healthz')
 def healthz():
-    """Endpoint de health check para monitoreo (compatible con Kubernetes)"""
-    try:
-        # Verificar conexión a base de datos
-        db.session.execute('SELECT 1')
-        db_status = "healthy"
-    except Exception as e:
-        db_status = f"unhealthy: {str(e)}"
-    
-    # Verificar estado de la API de Ahorro
-    ahorro_api_status = "unhealthy"
-    if api_client:
-        try:
-            health_response = api_client.health_check()
-            if health_response.get('status') == 'healthy':
-                ahorro_api_status = "healthy"
-        except Exception as e:
-            ahorro_api_status = f"unhealthy: {str(e)}"
-    
-    overall_status = "healthy" if db_status == "healthy" else "unhealthy"
-    
-    return jsonify({
-        "status": overall_status,
-        "service": "belgrano-tickets",
-        "database": db_status,
-        "ahorro_api": ahorro_api_status,
-        "ahorro_url": BELGRANO_AHORRO_URL,
-        "timestamp": datetime.now().isoformat()
-    })
+    """Endpoint de health check para Render"""
+    return "ok", 200
 
 @app.route('/debug/reparar_credenciales', methods=['POST'])
 def reparar_credenciales_debug():

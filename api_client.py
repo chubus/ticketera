@@ -15,9 +15,11 @@ logger = logging.getLogger(__name__)
 class BelgranoAhorroAPIClient:
     """Cliente para consumir la API de Belgrano Ahorro"""
     
-    def __init__(self, base_url=None, api_key=None):
-        self.base_url = base_url or BELGRANO_AHORRO_URL
-        self.api_key = api_key or BELGRANO_AHORRO_API_KEY
+    def __init__(self, base_url, api_key):
+        if not base_url or not api_key:
+            raise ValueError("base_url y api_key son requeridos")
+        self.base_url = base_url
+        self.api_key = api_key
         self.timeout = 30
         self.session = requests.Session()
         
@@ -124,14 +126,18 @@ class BelgranoAhorroAPIClient:
             logger.error(f"Error sincronizando tickets: {e}")
             return False
 
-def create_api_client():
+def create_api_client(url=None, api_key=None):
     """Crear instancia del cliente API"""
-    return BelgranoAhorroAPIClient(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+    if url is None or api_key is None:
+        raise ValueError("url y api_key son requeridos para crear el cliente API")
+    return BelgranoAhorroAPIClient(url, api_key)
 
-def test_api_connection():
+def test_api_connection(url=None, api_key=None):
     """Probar conexión con la API de Belgrano Ahorro"""
     try:
-        client = BelgranoAhorroAPIClient(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+        if url is None or api_key is None:
+            raise ValueError("url y api_key son requeridos para probar la conexión")
+        client = BelgranoAhorroAPIClient(url, api_key)
         health = client.health_check()
         
         if health.get('status') == 'healthy':
