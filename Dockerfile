@@ -34,5 +34,8 @@ EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5001/healthz || exit 1
 
-# Comando para ejecutar la aplicación con gunicorn en Render
-CMD ["sh","-c","gunicorn -w 2 -b 0.0.0.0:${PORT:-10000} app:app"]
+# Hacer el script ejecutable
+RUN chmod +x run.sh
+
+# Comando para ejecutar la aplicación usando el script de inicio
+CMD ["./run.sh"]
