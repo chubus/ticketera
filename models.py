@@ -30,6 +30,7 @@ class Ticket(db.Model):
     cliente_telefono = db.Column(db.String(50), nullable=False)
     cliente_email = db.Column(db.String(120), nullable=False)
     productos = db.Column(db.Text, nullable=False)  # JSON string con productos y negocios
+    total = db.Column(db.Float, nullable=False, default=0.0)  # Total del pedido
     estado = db.Column(db.String(20), default='pendiente')  # pendiente, en_proceso, entregado, cancelado
     prioridad = db.Column(db.String(20), default='normal')  # baja, normal, alta, urgente
     indicaciones = db.Column(db.Text)

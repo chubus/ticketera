@@ -40,6 +40,14 @@ init_database() {
         handle_error "Script de inicialización no encontrado: scripts/init_users_flota.py"
     fi
     
+    # Actualizar esquema de base de datos primero
+    echo "🔧 Actualizando esquema de base de datos..."
+    if python3 actualizar_db.py; then
+        echo "✅ Esquema de base de datos actualizado"
+    else
+        echo "⚠️ Error actualizando esquema, continuando..."
+    fi
+    
     # Ejecutar script de inicialización
     if python3 scripts/init_users_flota.py; then
         echo "✅ Base de datos inicializada correctamente"
