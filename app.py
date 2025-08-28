@@ -34,7 +34,7 @@ BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ah
 
 # URLs de producción (Render.com)
 if os.environ.get('RENDER_ENVIRONMENT') == 'production':
-    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro.onrender.com')
+    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
     BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
 
 print(f"🔗 Configuración API:")
@@ -440,7 +440,7 @@ def recibir_ticket_externo():
                     'cliente_nombre': existente.cliente_nombre,
                     'total': existente.total
                 }), 200
-
+        
         # Crear el ticket con los datos recibidos
         ticket = Ticket(
             numero=numero_ticket or f'TICKET-{datetime.now().strftime("%Y%m%d%H%M%S")}',
@@ -467,15 +467,15 @@ def recibir_ticket_externo():
         
         # Emitir evento WebSocket para actualización en tiempo real
         try:
-            socketio.emit('nuevo_ticket', {
-                'ticket_id': ticket.id, 
-                'numero': ticket.numero,
-                'cliente_nombre': ticket.cliente_nombre,
-                'estado': ticket.estado,
+        socketio.emit('nuevo_ticket', {
+            'ticket_id': ticket.id, 
+            'numero': ticket.numero,
+            'cliente_nombre': ticket.cliente_nombre,
+            'estado': ticket.estado,
                 'repartidor': ticket.repartidor_nombre,
-                'prioridad': ticket.prioridad,
-                'tipo_cliente': tipo_cliente
-            })
+            'prioridad': ticket.prioridad,
+            'tipo_cliente': tipo_cliente
+        })
             print(f"📡 Evento WebSocket emitido para ticket {ticket.id}")
         except Exception as ws_error:
             print(f"⚠️ Error emitiendo WebSocket: {ws_error}")
