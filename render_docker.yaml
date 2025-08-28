@@ -16,7 +16,7 @@ services:
       - key: SECRET_KEY
         value: belgrano_tickets_secret_2025
       - key: BELGRANO_AHORRO_URL
-        value: https://belgrano-ahorro.onrender.com
+        value: https://belgranoahorro-hp30.onrender.com
       - key: DATABASE_URL
         value: sqlite:///belgrano_tickets.db
       - key: LOG_LEVEL
