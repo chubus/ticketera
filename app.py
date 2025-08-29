@@ -606,6 +606,49 @@ def actualizar_estado_ticket(ticket_id):
     
     return jsonify({'exito': True, 'mensaje': 'Ticket actualizado correctamente'})
 
+@app.route('/ticket/<int:ticket_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_ticket(ticket_id):
+    """Editar ticket existente - NUNCA se borra, solo se actualiza"""
+    if current_user.role != 'admin':
+        return 'Acceso no permitido', 403
+    
+    ticket = Ticket.query.get_or_404(ticket_id)
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        nuevo_estado = request.form.get('estado')
+        nueva_prioridad = request.form.get('prioridad')
+        nuevas_indicaciones = request.form.get('indicaciones')
+        nuevo_repartidor = request.form.get('repartidor_nombre')
+        
+        # Actualizar solo los campos que se enviaron
+        if nuevo_estado:
+            ticket.estado = nuevo_estado
+        if nueva_prioridad:
+            ticket.prioridad = nueva_prioridad
+        if nuevas_indicaciones is not None:  # Permitir strings vacíos
+            ticket.indicaciones = nuevas_indicaciones
+        if nuevo_repartidor:
+            ticket.repartidor_nombre = nuevo_repartidor
+        
+        # Guardar cambios
+        db.session.commit()
+        
+        # Emitir evento WebSocket para actualización en tiempo real
+        socketio.emit('ticket_actualizado', {
+            'ticket_id': ticket.id,
+            'estado': ticket.estado,
+            'prioridad': ticket.prioridad,
+            'repartidor': ticket.repartidor_nombre
+        })
+        
+        flash('Ticket actualizado correctamente', 'success')
+        return redirect(url_for('panel'))
+    
+    # Para GET, mostrar formulario de edición
+    return render_template('editar_ticket.html', ticket=ticket)
+
 
 
 @app.route('/gestion_flota')
@@ -693,22 +736,38 @@ def detalle_ticket(ticket_id):
 @app.route('/ticket/<int:ticket_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_ticket(ticket_id):
+    """Eliminar ticket - SOLO con confirmación explícita del administrador"""
     if current_user.role != 'admin':
         return jsonify({'error': 'Acceso no permitido'}), 403
+    
+    # Verificar confirmación explícita
+    confirmacion = request.form.get('confirmacion')
+    if confirmacion != 'ELIMINAR_PERMANENTEMENTE':
+        return jsonify({'error': 'Se requiere confirmación explícita para eliminar tickets'}), 400
     
     ticket = Ticket.query.get_or_404(ticket_id)
     numero_ticket = ticket.numero
     
-    db.session.delete(ticket)
-    db.session.commit()
-    
-    # Emitir evento WebSocket
-    socketio.emit('ticket_eliminado', {
-        'ticket_id': ticket_id,
-        'numero': numero_ticket
-    })
-    
-    return jsonify({'exito': True, 'mensaje': 'Ticket eliminado correctamente'})
+    # Crear registro de auditoría antes de eliminar
+    try:
+        # Aquí podrías guardar un log de la eliminación si es necesario
+        print(f"⚠️ TICKET ELIMINADO por {current_user.username}: {numero_ticket} (ID: {ticket_id})")
+        
+        db.session.delete(ticket)
+        db.session.commit()
+        
+        # Emitir evento WebSocket
+        socketio.emit('ticket_eliminado', {
+            'ticket_id': ticket_id,
+            'numero': numero_ticket
+        })
+        
+        return jsonify({'exito': True, 'mensaje': f'Ticket {numero_ticket} eliminado permanentemente'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error eliminando ticket {ticket_id}: {e}")
+        return jsonify({'error': 'Error al eliminar el ticket'}), 500
 
 # ===== GESTIÓN DE USUARIOS =====
 

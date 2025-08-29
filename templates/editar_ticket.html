@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Editar Ticket - {{ ticket.numero }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Ticket: {{ ticket.numero }}
+                </h2>
+                <a href="{{ url_for('panel') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Panel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario de Edición -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Información del Ticket
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- Información del Cliente -->
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_nombre" class="form-label">Cliente</label>
+                                <input type="text" class="form-control" id="cliente_nombre" 
+                                       value="{{ ticket.cliente_nombre }}" readonly>
+                                <small class="text-muted">No editable - Información del cliente</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="cliente_email" 
+                                       value="{{ ticket.cliente_email }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_telefono" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="cliente_telefono" 
+                                       value="{{ ticket.cliente_telefono }}" readonly>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_direccion" class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="cliente_direccion" 
+                                       value="{{ ticket.cliente_direccion }}" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Estado y Prioridad -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="estado" class="form-label">Estado</label>
+                                <select class="form-select" id="estado" name="estado" required>
+                                    <option value="pendiente" {% if ticket.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                    <option value="en-preparacion" {% if ticket.estado == 'en-preparacion' %}selected{% endif %}>En Preparación</option>
+                                    <option value="en-camino" {% if ticket.estado == 'en-camino' %}selected{% endif %}>En Camino</option>
+                                    <option value="entregado" {% if ticket.estado == 'entregado' %}selected{% endif %}>Entregado</option>
+                                    <option value="cancelado" {% if ticket.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="prioridad" class="form-label">Prioridad</label>
+                                <select class="form-select" id="prioridad" name="prioridad" required>
+                                    <option value="baja" {% if ticket.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+                                    <option value="normal" {% if ticket.prioridad == 'normal' %}selected{% endif %}>Normal</option>
+                                    <option value="alta" {% if ticket.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="repartidor_nombre" class="form-label">Repartidor</label>
+                                <select class="form-select" id="repartidor_nombre" name="repartidor_nombre">
+                                    <option value="">Sin asignar</option>
+                                    <option value="Repartidor1" {% if ticket.repartidor_nombre == 'Repartidor1' %}selected{% endif %}>Repartidor 1</option>
+                                    <option value="Repartidor2" {% if ticket.repartidor_nombre == 'Repartidor2' %}selected{% endif %}>Repartidor 2</option>
+                                    <option value="Repartidor3" {% if ticket.repartidor_nombre == 'Repartidor3' %}selected{% endif %}>Repartidor 3</option>
+                                    <option value="Repartidor4" {% if ticket.repartidor_nombre == 'Repartidor4' %}selected{% endif %}>Repartidor 4</option>
+                                    <option value="Repartidor5" {% if ticket.repartidor_nombre == 'Repartidor5' %}selected{% endif %}>Repartidor 5</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Indicaciones -->
+                        <div class="mb-3">
+                            <label for="indicaciones" class="form-label">Indicaciones Especiales</label>
+                            <textarea class="form-control" id="indicaciones" name="indicaciones" rows="3">{{ ticket.indicaciones or '' }}</textarea>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Guardar Cambios
+                            </button>
+                            <a href="{{ url_for('panel') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Ticket -->
+        <div class="col-md-4">
+            <!-- Resumen del Ticket -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Resumen del Ticket
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Número:</strong></div>
+                        <div class="col-6">{{ ticket.numero }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Fecha:</strong></div>
+                        <div class="col-6">{{ ticket.fecha_creacion.strftime('%d/%m/%Y %H:%M') if ticket.fecha_creacion else 'N/A' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Estado:</strong></div>
+                        <div class="col-6">
+                            <span class="badge bg-{{ 'warning' if ticket.estado == 'pendiente' else 'info' if ticket.estado == 'en-camino' else 'success' if ticket.estado == 'entregado' else 'secondary' }}">
+                                {{ ticket.estado.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Prioridad:</strong></div>
+                        <div class="col-6">
+                            <span class="badge bg-{{ 'danger' if ticket.prioridad == 'alta' else 'warning' if ticket.prioridad == 'normal' else 'secondary' }}">
+                                {{ ticket.prioridad.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Repartidor:</strong></div>
+                        <div class="col-6">{{ ticket.repartidor_nombre or 'Sin asignar' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total del Ticket -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-dollar-sign me-2"></i>Total del Ticket
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-0">${{ "%.2f"|format(ticket.total) }}</h3>
+                    <small class="text-muted">Total confirmado</small>
+                </div>
+            </div>
+
+            <!-- Productos del Ticket -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Productos ({{ (ticket.productos|from_json)|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% set productos = ticket.productos|from_json %}
+                    {% for producto in productos %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="fw-bold">{{ producto.nombre }}</div>
+                            <div class="small text-muted">
+                                {{ producto.cantidad }} x ${{ "%.2f"|format(producto.precio) }} = ${{ "%.2f"|format(producto.cantidad * producto.precio) }}
+                            </div>
+                            {% if producto.sucursal %}
+                                <div class="small text-info">
+                                    <i class="fas fa-store me-1"></i>{{ producto.sucursal }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Cambios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres guardar los cambios en este ticket?</p>
+                <p class="text-muted small">Los cambios se aplicarán inmediatamente y se notificará a todos los usuarios conectados.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarCambios()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarCambios() {
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+    modal.hide();
+    
+    // Enviar formulario
+    document.querySelector('form').submit();
+}
+
+// Mostrar modal al hacer submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+});
+</script>
+{% endblock %}

@@ -525,8 +525,8 @@ function guardarAsignacionRepartidor() {
 }
 
 function editTicket(ticketId) {
-    // Redirigir al panel con modal de edición
-    window.location.href = `/panel?edit=${ticketId}`;
+    // Redirigir a la página de edición del ticket
+    window.location.href = `/ticket/${ticketId}/editar`;
 }
 
 function updateStatus(ticketId, newStatus) {
@@ -559,12 +559,16 @@ function duplicarTicket(ticketId) {
 }
 
 function eliminarTicket(ticketId, numeroTicket) {
-    if (confirm(`¿Estás seguro de que quieres eliminar el ticket ${numeroTicket}? Esta acción no se puede deshacer.`)) {
+    // Confirmación doble para eliminar tickets
+    const confirmacion = prompt(`⚠️ ELIMINACIÓN PERMANENTE ⚠️\n\nPara eliminar el ticket ${numeroTicket} debes escribir exactamente:\n\nELIMINAR_PERMANENTEMENTE\n\nEsta acción NO se puede deshacer.`);
+    
+    if (confirmacion === 'ELIMINAR_PERMANENTEMENTE') {
         fetch(`/ticket/${ticketId}/eliminar`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-            }
+            },
+            body: `confirmacion=${encodeURIComponent(confirmacion)}`
         })
         .then(response => response.json())
         .then(data => {
@@ -579,6 +583,8 @@ function eliminarTicket(ticketId, numeroTicket) {
             console.error('Error:', error);
             showNotification('Error de conexión', 'error');
         });
+    } else if (confirmacion !== null) {
+        showNotification('Confirmación incorrecta. El ticket NO fue eliminado.', 'warning');
     }
 }
 
