@@ -505,15 +505,15 @@ def recibir_ticket_externo():
         
         # Emitir evento WebSocket para actualización en tiempo real
         try:
-        socketio.emit('nuevo_ticket', {
-            'ticket_id': ticket.id, 
-            'numero': ticket.numero,
-            'cliente_nombre': ticket.cliente_nombre,
-            'estado': ticket.estado,
+            socketio.emit('nuevo_ticket', {
+                'ticket_id': ticket.id, 
+                'numero': ticket.numero,
+                'cliente_nombre': ticket.cliente_nombre,
+                'estado': ticket.estado,
                 'repartidor': ticket.repartidor_nombre,
-            'prioridad': ticket.prioridad,
-            'tipo_cliente': tipo_cliente
-        })
+                'prioridad': ticket.prioridad,
+                'tipo_cliente': tipo_cliente
+            })
             print(f"📡 Evento WebSocket emitido para ticket {ticket.id}")
         except Exception as ws_error:
             print(f"⚠️ Error emitiendo WebSocket: {ws_error}")
