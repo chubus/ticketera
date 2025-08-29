@@ -377,9 +377,47 @@ def reparar_credenciales_debug():
 @login_required
 def panel():
     if current_user.role == 'admin':
-        # Ordenar tickets por fecha de creación (más reciente primero)
-        tickets = Ticket.query.order_by(Ticket.fecha_creacion.desc()).all()
-        return render_template('admin_panel.html', tickets=tickets)
+        # Obtener filtros de la URL
+        estado_filter = request.args.get('estado', 'todos')
+        fecha_filter = request.args.get('fecha', 'todos')
+        
+        # Consulta base
+        query = Ticket.query
+        
+        # Aplicar filtros
+        if estado_filter != 'todos':
+            query = query.filter_by(estado=estado_filter)
+        
+        if fecha_filter == 'hoy':
+            from datetime import datetime, timedelta
+            hoy = datetime.now().date()
+            query = query.filter(Ticket.fecha_creacion >= hoy)
+        elif fecha_filter == 'semana':
+            from datetime import datetime, timedelta
+            semana_pasada = datetime.now().date() - timedelta(days=7)
+            query = query.filter(Ticket.fecha_creacion >= semana_pasada)
+        elif fecha_filter == 'mes':
+            from datetime import datetime, timedelta
+            mes_pasado = datetime.now().date() - timedelta(days=30)
+            query = query.filter(Ticket.fecha_creacion >= mes_pasado)
+        
+        # Ordenar por fecha de creación (más reciente primero)
+        tickets = query.order_by(Ticket.fecha_creacion.desc()).all()
+        
+        # Estadísticas
+        total_tickets = Ticket.query.count()
+        tickets_pendientes = Ticket.query.filter_by(estado='pendiente').count()
+        tickets_en_camino = Ticket.query.filter_by(estado='en-camino').count()
+        tickets_entregados = Ticket.query.filter_by(estado='entregado').count()
+        
+        return render_template('admin_panel.html', 
+                             tickets=tickets, 
+                             total_tickets=total_tickets,
+                             tickets_pendientes=tickets_pendientes,
+                             tickets_en_camino=tickets_en_camino,
+                             tickets_entregados=tickets_entregados,
+                             estado_filter=estado_filter,
+                             fecha_filter=fecha_filter)
     elif current_user.role == 'flota':
         tickets = Ticket.query.filter_by(asignado_a=current_user.id).order_by(Ticket.fecha_creacion.desc()).all()
         return render_template('flota_panel.html', tickets=tickets)
