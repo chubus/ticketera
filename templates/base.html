@@ -100,7 +100,7 @@
         .btn-warning {
             background-color: var(--celeste-claro);
             border-color: var(--celeste-claro);
-            color: #1a1a1a;
+            color: var(--text-bright);
         }
 
         .btn-danger {
@@ -197,6 +197,59 @@
         /* Mejorar contraste de texto */
         .text-light {
             color: var(--text-light) !important;
+        }
+
+        /* Asegurar que todos los textos sean blancos o turquesa */
+        .text-dark {
+            color: var(--text-bright) !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        .text-secondary {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Estilos para badges y elementos con fondo claro */
+        .bg-warning {
+            background-color: var(--turquesa) !important;
+            color: var(--text-bright) !important;
+        }
+
+        .bg-light {
+            background-color: var(--card-bg) !important;
+            color: var(--text-bright) !important;
+        }
+
+        /* Asegurar que todos los elementos tengan texto claro */
+        .card-body, .card-header, .card-footer {
+            color: var(--text-bright) !important;
+        }
+
+        .form-label {
+            color: var(--text-bright) !important;
+        }
+
+        .small {
+            color: var(--text-muted) !important;
+        }
+
+        /* Estilos para modales */
+        .modal-content {
+            background-color: var(--card-bg);
+            color: var(--text-bright);
+        }
+
+        .modal-header {
+            background-color: var(--darker-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-footer {
+            background-color: var(--darker-bg);
+            border-top: 1px solid var(--border-color);
         }
 
         .text-muted {
