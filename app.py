@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, render_template, redirect, url_for, request, flash, abort, jsonify
 from flask_login import LoginManager, UserMixin, current_user, login_user, logout_user, login_required
 from flask_socketio import SocketIO
@@ -52,16 +53,40 @@ except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
 
-# Importar blueprint de DevOps
-try:
-    from devops_routes import devops_bp
-    app.register_blueprint(devops_bp)
-    print("Blueprint de DevOps registrado")
-except ImportError as e:
-    print(f"No se pudo registrar el blueprint de DevOps: {e}")
-
 # Inicializar db con la app
 db.init_app(app)
+
+# Variable global para controlar registro de blueprints
+_blueprints_registered = False
+
+# Función para registrar blueprints
+def register_blueprints():
+    """Registrar todos los blueprints de la aplicación"""
+    global _blueprints_registered
+    
+    if _blueprints_registered:
+        print("Blueprints ya registrados, saltando...")
+        return
+    
+    # Verificar si el blueprint ya está registrado
+    if 'devops' in app.blueprints:
+        print("Blueprint de DevOps ya registrado, saltando...")
+        _blueprints_registered = True
+        return
+    
+    try:
+        from devops_routes import devops_bp
+        app.register_blueprint(devops_bp)
+        print("Blueprint de DevOps registrado")
+        _blueprints_registered = True
+    except ImportError as e:
+        print(f"No se pudo registrar el blueprint de DevOps: {e}")
+    except Exception as e:
+        print(f"Error registrando blueprint: {e}")
+
+# Solo registrar blueprints si no estamos siendo importados por scripts
+if not any(script in sys.argv[0] for script in ['actualizar_db.py', 'init_users_flota.py']):
+    register_blueprints()
 
 # Crear contexto de aplicación para inicializar la base de datos
 with app.app_context():
