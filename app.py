@@ -52,6 +52,14 @@ except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
 
+# Importar blueprint de DevOps
+try:
+    from devops_routes import devops_bp
+    app.register_blueprint(devops_bp)
+    print("Blueprint de DevOps registrado")
+except ImportError as e:
+    print(f"No se pudo registrar el blueprint de DevOps: {e}")
+
 # Inicializar db con la app
 db.init_app(app)
 
