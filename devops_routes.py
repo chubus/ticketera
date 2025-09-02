@@ -4,6 +4,7 @@ import requests
 from functools import wraps
 from datetime import datetime
 import logging
+from urllib.parse import urljoin
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,12 +16,35 @@ logger = logging.getLogger(__name__)
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
 
 # Configuración de comunicación con Belgrano Ahorro
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'http://localhost:5000')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')  # sin default fijo
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')  
+API_TIMEOUT_SECS = int(os.environ.get('API_TIMEOUT_SECS', '8'))
+
+
+def get_api_base() -> str:
+    """Obtiene la base de la API:
+    - Si hay BELGRANO_AHORRO_URL en entorno, usa esa (y agrega /api/)
+    - Si no, construye desde la request actual (request.url_root + 'api/')
+    - Fallback final a http://127.0.0.1:10000/api/
+    """
+    env_base = os.environ.get('BELGRANO_AHORRO_URL')
+    if env_base:
+        return env_base.rstrip('/') + '/api/'
+    try:
+        # e.g. https://ticketerabelgrano.onrender.com/ -> + api/
+        return urljoin(request.url_root, 'api/')
+    except Exception:
+        return 'http://127.0.0.1:10000/api/'
+
+
+def build_api_url(path: str) -> str:
+    return urljoin(get_api_base(), path.lstrip('/'))
+
 
 # Credenciales DevOps (en producción deberían estar en variables de entorno)
 DEVOPS_USERNAME = os.environ.get('DEVOPS_USERNAME', 'devops')
 DEVOPS_PASSWORD = os.environ.get('DEVOPS_PASSWORD', 'devops2025')
+
 
 def devops_required(f):
     """Decorador para verificar acceso DevOps"""
@@ -30,6 +54,7 @@ def devops_required(f):
             return redirect(url_for('devops.login'))
         return f(*args, **kwargs)
     return decorated_function
+
 
 @devops_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -48,6 +73,7 @@ def login():
 
     return render_template('devops/login.html')
 
+
 @devops_bp.route('/logout')
 def logout():
     """Logout de DevOps"""
@@ -55,6 +81,7 @@ def logout():
     session.pop('devops_username', None)
     flash('Sesión DevOps cerrada', 'info')
     return redirect(url_for('devops.login'))
+
 
 @devops_bp.route('/dashboard')
 @devops_required
@@ -90,6 +117,7 @@ def productos():
         flash('Error cargando productos', 'error')
         return render_template('devops/productos.html', productos=[])
 
+
 @devops_bp.route('/productos/agregar', methods=['POST'])
 @devops_required
 def agregar_producto():
@@ -105,9 +133,10 @@ def agregar_producto():
         }
         
         response = requests.post(
-            f"{BELGRANO_AHORRO_URL}/api/productos",
+            build_api_url('productos'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 201:
@@ -120,6 +149,7 @@ def agregar_producto():
         flash('Error interno al agregar producto', 'error')
     
     return redirect(url_for('devops.productos'))
+
 
 @devops_bp.route('/productos/editar/<int:id>', methods=['POST'])
 @devops_required
@@ -136,9 +166,10 @@ def editar_producto(id):
         }
         
         response = requests.put(
-            f"{BELGRANO_AHORRO_URL}/api/productos/{id}",
+            build_api_url(f'productos/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -152,14 +183,16 @@ def editar_producto(id):
     
     return redirect(url_for('devops.productos'))
 
+
 @devops_bp.route('/productos/eliminar/<int:id>', methods=['POST'])
 @devops_required
 def eliminar_producto(id):
     """Eliminar producto"""
     try:
         response = requests.delete(
-            f"{BELGRANO_AHORRO_URL}/api/productos/{id}",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url(f'productos/{id}'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -189,6 +222,7 @@ def sucursales():
         flash('Error cargando sucursales', 'error')
         return render_template('devops/sucursales.html', sucursales=[])
 
+
 @devops_bp.route('/sucursales/agregar', methods=['POST'])
 @devops_required
 def agregar_sucursal():
@@ -204,9 +238,10 @@ def agregar_sucursal():
         }
         
         response = requests.post(
-            f"{BELGRANO_AHORRO_URL}/api/sucursales",
+            build_api_url('sucursales'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 201:
@@ -219,6 +254,7 @@ def agregar_sucursal():
         flash('Error interno al agregar sucursal', 'error')
     
     return redirect(url_for('devops.sucursales'))
+
 
 @devops_bp.route('/sucursales/editar/<int:id>', methods=['POST'])
 @devops_required
@@ -235,9 +271,10 @@ def editar_sucursal(id):
         }
         
         response = requests.put(
-            f"{BELGRANO_AHORRO_URL}/api/sucursales/{id}",
+            build_api_url(f'sucursales/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -251,14 +288,16 @@ def editar_sucursal(id):
     
     return redirect(url_for('devops.sucursales'))
 
+
 @devops_bp.route('/sucursales/eliminar/<int:id>', methods=['POST'])
 @devops_required
 def eliminar_sucursal(id):
     """Eliminar sucursal"""
     try:
         response = requests.delete(
-            f"{BELGRANO_AHORRO_URL}/api/sucursales/{id}",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url(f'sucursales/{id}'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -289,6 +328,7 @@ def ofertas():
         flash('Error cargando ofertas', 'error')
         return render_template('devops/ofertas.html', ofertas=[], productos=[])
 
+
 @devops_bp.route('/ofertas/agregar', methods=['POST'])
 @devops_required
 def agregar_oferta():
@@ -305,9 +345,10 @@ def agregar_oferta():
         }
         
         response = requests.post(
-            f"{BELGRANO_AHORRO_URL}/api/ofertas",
+            build_api_url('ofertas'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 201:
@@ -320,6 +361,7 @@ def agregar_oferta():
         flash('Error interno al agregar oferta', 'error')
     
     return redirect(url_for('devops.ofertas'))
+
 
 @devops_bp.route('/ofertas/editar/<int:id>', methods=['POST'])
 @devops_required
@@ -337,9 +379,10 @@ def editar_oferta(id):
         }
         
         response = requests.put(
-            f"{BELGRANO_AHORRO_URL}/api/ofertas/{id}",
+            build_api_url(f'ofertas/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -353,14 +396,16 @@ def editar_oferta(id):
     
     return redirect(url_for('devops.ofertas'))
 
+
 @devops_bp.route('/ofertas/eliminar/<int:id>', methods=['POST'])
 @devops_required
 def eliminar_oferta(id):
     """Eliminar oferta"""
     try:
         response = requests.delete(
-            f"{BELGRANO_AHORRO_URL}/api/ofertas/{id}",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url(f'ofertas/{id}'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -390,6 +435,7 @@ def precios():
         flash('Error cargando precios', 'error')
         return render_template('devops/precios.html', precios=[])
 
+
 @devops_bp.route('/precios/actualizar', methods=['POST'])
 @devops_required
 def actualizar_precios():
@@ -404,13 +450,14 @@ def actualizar_precios():
         # Actualizar cada precio individualmente
         for cambio in cambios:
             response = requests.put(
-                f"{BELGRANO_AHORRO_URL}/api/productos/{cambio['id']}",
+                build_api_url(f"productos/{cambio['id']}"),
                 headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-                json={'precio': cambio['precio']}
+                json={'precio': cambio['precio']},
+                timeout=API_TIMEOUT_SECS
             )
             
             if response.status_code != 200:
-                return jsonify({'success': False, 'error': f'Error actualizando producto {cambio["id"]}'})
+                return jsonify({'success': False, 'error': f"Error actualizando producto {cambio['id']}"})
         
         return jsonify({'success': True, 'message': f'{len(cambios)} precios actualizados exitosamente'})
         
@@ -434,6 +481,7 @@ def negocios():
         flash('Error cargando negocios', 'error')
         return render_template('devops/negocios.html', negocios=[])
 
+
 @devops_bp.route('/negocios/agregar', methods=['POST'])
 @devops_required
 def agregar_negocio():
@@ -450,9 +498,10 @@ def agregar_negocio():
         }
         
         response = requests.post(
-            f"{BELGRANO_AHORRO_URL}/api/negocios",
+            build_api_url('negocios'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 201:
@@ -465,6 +514,7 @@ def agregar_negocio():
         flash('Error interno al agregar negocio', 'error')
     
     return redirect(url_for('devops.negocios'))
+
 
 @devops_bp.route('/negocios/editar/<int:id>', methods=['POST'])
 @devops_required
@@ -482,9 +532,10 @@ def editar_negocio(id):
         }
         
         response = requests.put(
-            f"{BELGRANO_AHORRO_URL}/api/negocios/{id}",
+            build_api_url(f'negocios/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data
+            json=data,
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -498,14 +549,16 @@ def editar_negocio(id):
     
     return redirect(url_for('devops.negocios'))
 
+
 @devops_bp.route('/negocios/eliminar/<int:id>', methods=['POST'])
 @devops_required
 def eliminar_negocio(id):
     """Eliminar negocio"""
     try:
         response = requests.delete(
-            f"{BELGRANO_AHORRO_URL}/api/negocios/{id}",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url(f'negocios/{id}'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         
         if response.status_code == 200:
@@ -527,8 +580,9 @@ def get_productos_from_belgrano():
     """Obtener productos desde Belgrano Ahorro"""
     try:
         response = requests.get(
-            f"{BELGRANO_AHORRO_URL}/api/productos",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url('productos'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         if response.status_code == 200:
             return response.json()
@@ -537,12 +591,14 @@ def get_productos_from_belgrano():
         logger.error(f"Error obteniendo productos: {e}")
         return []
 
+
 def get_sucursales_from_belgrano():
     """Obtener sucursales desde Belgrano Ahorro"""
     try:
         response = requests.get(
-            f"{BELGRANO_AHORRO_URL}/api/sucursales",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url('sucursales'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         if response.status_code == 200:
             return response.json()
@@ -551,12 +607,14 @@ def get_sucursales_from_belgrano():
         logger.error(f"Error obteniendo sucursales: {e}")
         return []
 
+
 def get_ofertas_from_belgrano():
     """Obtener ofertas desde Belgrano Ahorro"""
     try:
         response = requests.get(
-            f"{BELGRANO_AHORRO_URL}/api/ofertas",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url('ofertas'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         if response.status_code == 200:
             return response.json()
@@ -565,12 +623,14 @@ def get_ofertas_from_belgrano():
         logger.error(f"Error obteniendo ofertas: {e}")
         return []
 
+
 def get_precios_from_belgrano():
     """Obtener precios desde Belgrano Ahorro"""
     try:
         response = requests.get(
-            f"{BELGRANO_AHORRO_URL}/api/precios",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url('precios'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         if response.status_code == 200:
             return response.json()
@@ -579,12 +639,14 @@ def get_precios_from_belgrano():
         logger.error(f"Error obteniendo precios: {e}")
         return []
 
+
 def get_negocios_from_belgrano():
     """Obtener negocios desde Belgrano Ahorro"""
     try:
         response = requests.get(
-            f"{BELGRANO_AHORRO_URL}/api/negocios",
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'}
+            build_api_url('negocios'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
         )
         if response.status_code == 200:
             return response.json()
