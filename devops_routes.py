@@ -91,7 +91,7 @@ def dashboard():
         # Obtener estadísticas básicas
         stats = {
             'productos_count': len(get_productos_from_belgrano()),
-            'sucursales_count': len(get_sucursales_from_belgrano()),
+            'negocios_count': len(get_negocios_from_belgrano()),
             'ofertas_count': len(get_ofertas_from_belgrano()),
             'precios_count': len(get_precios_from_belgrano())
         }
@@ -394,7 +394,7 @@ def dashboard():
         # Obtener estadísticas básicas
         stats = {
             'productos_count': len(get_productos_from_belgrano()),
-            'sucursales_count': len(get_sucursales_from_belgrano()),
+            'negocios_count': len(get_negocios_from_belgrano()),
             'ofertas_count': len(get_ofertas_from_belgrano()),
             'precios_count': len(get_precios_from_belgrano())
         }
@@ -510,157 +510,10 @@ def eliminar_producto(id):
     return redirect(url_for('devops.productos'))
 
 # ==========================================
-# ENDPOINTS DE SUCURSALES
+# ENDPOINTS DE SUCURSALES - ELIMINADOS
 # ==========================================
-
-@devops_bp.route('/sucursales')
-@devops_required
-def sucursales():
-    """Gestión de sucursales"""
-    try:
-        sucursales = get_sucursales_from_belgrano()
-        return render_template('devops/sucursales.html', sucursales=sucursales)
-    except Exception as e:
-        logger.error(f"Error obteniendo sucursales: {e}")
-        flash('Error cargando sucursales', 'error')
-        return render_template('devops/sucursales.html', sucursales=[])
-
-
-@devops_bp.route('/sucursales/agregar', methods=['POST'])
-@devops_required
-def agregar_sucursal():
-    """Agregar nueva sucursal (con fallback local)"""
-    try:
-        data = {
-            'nombre': request.form.get('nombre'),
-            'direccion': request.form.get('direccion'),
-            'ciudad': request.form.get('ciudad'),
-            'telefono': request.form.get('telefono'),
-            'email': request.form.get('email'),
-            'activa': True
-        }
-        
-        # Intentar agregar a la API primero
-        try:
-            response = requests.post(
-                build_api_url('sucursales'),
-                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-                json=data,
-                timeout=API_TIMEOUT_SECS
-            )
-            
-            if response.status_code == 201:
-                flash('Sucursal agregada exitosamente a la API', 'success')
-                return redirect(url_for('devops.sucursales'))
-            elif response.status_code == 404:
-                logger.warning("API endpoint /api/sucursales no encontrado, usando fallback local")
-            else:
-                logger.warning(f"API respondió {response.status_code}: {response.text}")
-        except Exception as e:
-            logger.error(f"Error llamando API sucursales: {e}")
-        
-        # Fallback local: guardar en productos.json
-        try:
-            # Cargar datos existentes
-            if os.path.exists('productos.json'):
-                with open('productos.json', 'r', encoding='utf-8') as f:
-                    datos = json.load(f)
-            else:
-                datos = {'productos': [], 'sucursales': {}, 'ofertas': {}, 'negocios': {}, 'categorias': {}}
-            
-            # Agrupar sucursales por negocio (usar 'default' si no se especifica)
-            negocio_id = request.form.get('negocio_id') or 'default'
-            datos.setdefault('sucursales', {})
-            datos['sucursales'].setdefault(negocio_id, {})
-            
-            # Generar ID único para la sucursal
-            sucursal_id = str(int(datetime.utcnow().timestamp()*1000))
-            
-            # Crear la sucursal
-            datos['sucursales'][negocio_id][sucursal_id] = {
-                'id': sucursal_id,
-                'nombre': data['nombre'],
-                'direccion': data.get('direccion'),
-                'ciudad': data.get('ciudad'),
-                'telefono': data.get('telefono'),
-                'email': data.get('email'),
-                'activa': True,
-                'fecha_creacion': datetime.utcnow().isoformat(),
-                'negocio_id': negocio_id
-            }
-            
-            # Guardar en productos.json
-            with open('productos.json', 'w', encoding='utf-8') as f:
-                json.dump(datos, f, ensure_ascii=False, indent=2)
-            
-            flash('Sucursal agregada localmente (fallback)', 'success')
-            logger.info(f"Sucursal '{data['nombre']}' agregada localmente con ID: {sucursal_id}")
-            
-        except Exception as e:
-            logger.error(f"Error guardando sucursal localmente: {e}")
-            flash('Error guardando sucursal localmente', 'error')
-            
-    except Exception as e:
-        logger.error(f"Error agregando sucursal: {e}")
-        flash('Error interno al agregar sucursal', 'error')
-    
-    return redirect(url_for('devops.sucursales'))
-
-
-@devops_bp.route('/sucursales/editar/<int:id>', methods=['POST'])
-@devops_required
-def editar_sucursal(id):
-    """Editar sucursal existente"""
-    try:
-        data = {
-            'nombre': request.form.get('nombre'),
-            'direccion': request.form.get('direccion'),
-            'ciudad': request.form.get('ciudad'),
-            'telefono': request.form.get('telefono'),
-            'email': request.form.get('email'),
-            'activa': request.form.get('activa') == 'on'
-        }
-        
-        response = requests.put(
-            build_api_url(f'sucursales/{id}'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data,
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 200:
-            flash('Sucursal actualizada exitosamente', 'success')
-        else:
-            flash(f'Error al actualizar sucursal: {response.text}', 'error')
-            
-    except Exception as e:
-        logger.error(f"Error editando sucursal: {e}")
-        flash('Error interno al editar sucursal', 'error')
-    
-    return redirect(url_for('devops.sucursales'))
-
-
-@devops_bp.route('/sucursales/eliminar/<int:id>', methods=['POST'])
-@devops_required
-def eliminar_sucursal(id):
-    """Eliminar sucursal"""
-    try:
-        response = requests.delete(
-            build_api_url(f'sucursales/{id}'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 200:
-            flash('Sucursal eliminada exitosamente', 'success')
-        else:
-            flash(f'Error al eliminar sucursal: {response.text}', 'error')
-            
-    except Exception as e:
-        logger.error(f"Error eliminando sucursal: {e}")
-        flash('Error interno al eliminar sucursal', 'error')
-    
-    return redirect(url_for('devops.sucursales'))
+# Las sucursales han sido eliminadas para simplificar el panel DevOps
+# Ahora solo se manejan negocios que se reflejan directamente en Belgrano Ahorro
 
 # ==========================================
 # ENDPOINTS DE OFERTAS
@@ -669,27 +522,27 @@ def eliminar_sucursal(id):
 @devops_bp.route('/ofertas')
 @devops_required
 def ofertas():
-    """Gestión de ofertas"""
+    """Gestión de ofertas con texto libre para productos"""
     try:
         ofertas = get_ofertas_from_belgrano()
-        productos = get_productos_from_belgrano()
-        return render_template('devops/ofertas.html', ofertas=ofertas, productos=productos)
+        return render_template('devops/ofertas_mejorado.html', ofertas=ofertas)
     except Exception as e:
         logger.error(f"Error obteniendo ofertas: {e}")
         flash('Error cargando ofertas', 'error')
-        return render_template('devops/ofertas.html', ofertas=[], productos=[])
+        return render_template('devops/ofertas_mejorado.html', ofertas=[])
 
 
 @devops_bp.route('/ofertas/agregar', methods=['POST'])
 @devops_required
 def agregar_oferta():
-    """Agregar nueva oferta"""
+    """Agregar nueva oferta con nombre de producto en texto libre"""
     try:
         data = {
             'titulo': request.form.get('titulo'),
             'descripcion': request.form.get('descripcion'),
             'descuento': float(request.form.get('descuento')),
-            'producto_id': int(request.form.get('producto_id')),
+            'producto_nombre': request.form.get('producto_nombre'),  # Nombre del producto en texto libre
+            'producto_id': request.form.get('producto_id', ''),  # Opcional
             'fecha_inicio': request.form.get('fecha_inicio'),
             'fecha_fin': request.form.get('fecha_fin'),
             'activa': True
@@ -717,13 +570,14 @@ def agregar_oferta():
 @devops_bp.route('/ofertas/editar/<int:id>', methods=['POST'])
 @devops_required
 def editar_oferta(id):
-    """Editar oferta existente"""
+    """Editar oferta existente con nombre de producto en texto libre"""
     try:
         data = {
             'titulo': request.form.get('titulo'),
             'descripcion': request.form.get('descripcion'),
             'descuento': float(request.form.get('descuento')),
-            'producto_id': int(request.form.get('producto_id')),
+            'producto_nombre': request.form.get('producto_nombre'),  # Nombre del producto en texto libre
+            'producto_id': request.form.get('producto_id', ''),  # Opcional
             'fecha_inicio': request.form.get('fecha_inicio'),
             'fecha_fin': request.form.get('fecha_fin'),
             'activa': request.form.get('activa') == 'on'
@@ -815,6 +669,62 @@ def actualizar_precios():
     except Exception as e:
         logger.error(f"Error actualizando precios: {e}")
         return jsonify({'success': False, 'error': 'Error interno al actualizar precios'})
+
+@devops_bp.route('/productos/gestión-avanzada')
+@devops_required
+def gestion_avanzada_productos():
+    """Gestión avanzada de productos de todos los negocios"""
+    try:
+        # Obtener todos los productos desde Belgrano Ahorro
+        productos = get_productos_from_belgrano()
+        negocios = get_negocios_from_belgrano()
+        
+        return render_template('devops/gestion_avanzada_productos.html', 
+                             productos=productos, negocios=negocios)
+    except Exception as e:
+        logger.error(f"Error en gestión avanzada de productos: {e}")
+        flash('Error cargando gestión avanzada de productos', 'error')
+        return render_template('devops/gestion_avanzada_productos.html', 
+                             productos=[], negocios=[])
+
+@devops_bp.route('/productos/actualizar-detalle', methods=['POST'])
+@devops_required
+def actualizar_detalle_producto():
+    """Actualizar detalles completos de un producto"""
+    try:
+        data = request.get_json()
+        producto_id = data.get('id')
+        
+        if not producto_id:
+            return jsonify({'success': False, 'error': 'ID de producto requerido'})
+        
+        # Preparar datos para actualización
+        update_data = {
+            'nombre': data.get('nombre'),
+            'descripcion': data.get('descripcion'),
+            'precio': float(data.get('precio', 0)),
+            'stock': int(data.get('stock', 0)),
+            'categoria': data.get('categoria'),
+            'activo': data.get('activo', True),
+            'modificado_desde': 'devops'
+        }
+        
+        # Actualizar producto
+        response = requests.put(
+            build_api_url(f"productos/{producto_id}"),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            json=update_data,
+            timeout=API_TIMEOUT_SECS
+        )
+        
+        if response.status_code == 200:
+            return jsonify({'success': True, 'message': 'Producto actualizado exitosamente'})
+        else:
+            return jsonify({'success': False, 'error': f'Error actualizando producto: {response.text}'})
+        
+    except Exception as e:
+        logger.error(f"Error actualizando detalle de producto: {e}")
+        return jsonify({'success': False, 'error': 'Error interno al actualizar producto'})
 
 # ==========================================
 # ENDPOINTS DE NEGOCIOS

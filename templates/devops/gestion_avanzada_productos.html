@@ -1,0 +1,318 @@
+{% extends "devops/base.html" %}
+
+{% block title %}Gestión Avanzada de Productos - DevOps{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-cogs"></i> Gestión Avanzada de Productos</h2>
+                <div>
+                    <a href="{{ url_for('devops.dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtros y Búsqueda -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter"></i> Filtros y Búsqueda</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="buscar-producto" class="form-label">Buscar Producto:</label>
+                            <input type="text" class="form-control" id="buscar-producto" placeholder="Nombre del producto...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtro-negocio" class="form-label">Negocio:</label>
+                            <select class="form-select" id="filtro-negocio">
+                                <option value="">Todos los negocios</option>
+                                {% for negocio in negocios %}
+                                <option value="{{ negocio.nombre }}">{{ negocio.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtro-categoria" class="form-label">Categoría:</label>
+                            <select class="form-select" id="filtro-categoria">
+                                <option value="">Todas las categorías</option>
+                                <option value="Alimentos">Alimentos</option>
+                                <option value="Bebidas">Bebidas</option>
+                                <option value="Limpieza">Limpieza</option>
+                                <option value="Higiene">Higiene</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-primary w-100" onclick="aplicarFiltros()">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Productos -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-list"></i> Productos ({{ productos|length }} total)</h5>
+                    <div>
+                        <button class="btn btn-success" onclick="guardarTodos()">
+                            <i class="fas fa-save"></i> Guardar Todos los Cambios
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tabla-productos">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Categoría</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos %}
+                                <tr data-producto-id="{{ producto.id }}" data-categoria="{{ producto.categoria }}">
+                                    <td>
+                                        <small class="text-muted">{{ producto.id[:8] }}...</small>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="{{ producto.nombre }}" 
+                                               data-field="nombre"
+                                               onchange="marcarCambio(this)">
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control form-control-sm" 
+                                                  rows="2" 
+                                                  data-field="descripcion"
+                                                  onchange="marcarCambio(this)">{{ producto.descripcion }}</textarea>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" 
+                                                   value="{{ producto.precio }}" 
+                                                   step="0.01"
+                                                   data-field="precio"
+                                                   onchange="marcarCambio(this)">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               value="{{ producto.stock }}" 
+                                               min="0"
+                                               data-field="stock"
+                                               onchange="marcarCambio(this)">
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm" 
+                                                data-field="categoria"
+                                                onchange="marcarCambio(this)">
+                                            <option value="Alimentos" {% if producto.categoria == 'Alimentos' %}selected{% endif %}>Alimentos</option>
+                                            <option value="Bebidas" {% if producto.categoria == 'Bebidas' %}selected{% endif %}>Bebidas</option>
+                                            <option value="Limpieza" {% if producto.categoria == 'Limpieza' %}selected{% endif %}>Limpieza</option>
+                                            <option value="Higiene" {% if producto.categoria == 'Higiene' %}selected{% endif %}>Higiene</option>
+                                            <option value="Otros" {% if producto.categoria == 'Otros' %}selected{% endif %}>Otros</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   {% if producto.activo %}checked{% endif %}
+                                                   data-field="activo"
+                                                   onchange="marcarCambio(this)">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="guardarProducto('{{ producto.id }}')">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-info" onclick="revertirCambios('{{ producto.id }}')">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Cambios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmButton">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let cambiosPendientes = new Set();
+let productosOriginales = {};
+
+// Guardar datos originales
+document.addEventListener('DOMContentLoaded', function() {
+    {% for producto in productos %}
+    productosOriginales['{{ producto.id }}'] = {
+        nombre: '{{ producto.nombre|e }}',
+        descripcion: '{{ producto.descripcion|e }}',
+        precio: {{ producto.precio }},
+        stock: {{ producto.stock }},
+        categoria: '{{ producto.categoria }}',
+        activo: {{ producto.activo|lower }}
+    };
+    {% endfor %}
+});
+
+function marcarCambio(element) {
+    const row = element.closest('tr');
+    const productoId = row.dataset.productoId;
+    cambiosPendientes.add(productoId);
+    row.classList.add('table-warning');
+}
+
+function guardarProducto(productoId) {
+    const row = document.querySelector(`tr[data-producto-id="${productoId}"]`);
+    const data = {
+        id: productoId,
+        nombre: row.querySelector('[data-field="nombre"]').value,
+        descripcion: row.querySelector('[data-field="descripcion"]').value,
+        precio: parseFloat(row.querySelector('[data-field="precio"]').value),
+        stock: parseInt(row.querySelector('[data-field="stock"]').value),
+        categoria: row.querySelector('[data-field="categoria"]').value,
+        activo: row.querySelector('[data-field="activo"]').checked
+    };
+
+    fetch('/devops/productos/actualizar-detalle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            cambiosPendientes.delete(productoId);
+            row.classList.remove('table-warning');
+            row.classList.add('table-success');
+            setTimeout(() => row.classList.remove('table-success'), 2000);
+            mostrarNotificacion('Producto actualizado exitosamente', 'success');
+        } else {
+            mostrarNotificacion('Error: ' + result.error, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarNotificacion('Error al actualizar producto', 'danger');
+    });
+}
+
+function revertirCambios(productoId) {
+    const original = productosOriginales[productoId];
+    const row = document.querySelector(`tr[data-producto-id="${productoId}"]`);
+    
+    row.querySelector('[data-field="nombre"]').value = original.nombre;
+    row.querySelector('[data-field="descripcion"]').value = original.descripcion;
+    row.querySelector('[data-field="precio"]').value = original.precio;
+    row.querySelector('[data-field="stock"]').value = original.stock;
+    row.querySelector('[data-field="categoria"]').value = original.categoria;
+    row.querySelector('[data-field="activo"]').checked = original.activo;
+    
+    cambiosPendientes.delete(productoId);
+    row.classList.remove('table-warning');
+    mostrarNotificacion('Cambios revertidos', 'info');
+}
+
+function guardarTodos() {
+    if (cambiosPendientes.size === 0) {
+        mostrarNotificacion('No hay cambios pendientes', 'info');
+        return;
+    }
+
+    document.getElementById('confirmMessage').textContent = 
+        `¿Estás seguro de que quieres guardar los cambios en ${cambiosPendientes.size} producto(s)?`;
+    
+    document.getElementById('confirmButton').onclick = function() {
+        const promises = Array.from(cambiosPendientes).map(productoId => {
+            return new Promise((resolve) => {
+                guardarProducto(productoId);
+                resolve();
+            });
+        });
+        
+        Promise.all(promises).then(() => {
+            mostrarNotificacion('Todos los cambios guardados', 'success');
+        });
+        
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+    };
+    
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+function aplicarFiltros() {
+    const busqueda = document.getElementById('buscar-producto').value.toLowerCase();
+    const negocio = document.getElementById('filtro-negocio').value;
+    const categoria = document.getElementById('filtro-categoria').value;
+    
+    const filas = document.querySelectorAll('#tabla-productos tbody tr');
+    
+    filas.forEach(fila => {
+        const nombre = fila.querySelector('[data-field="nombre"]').value.toLowerCase();
+        const cat = fila.dataset.categoria;
+        
+        let mostrar = true;
+        
+        if (busqueda && !nombre.includes(busqueda)) mostrar = false;
+        if (categoria && cat !== categoria) mostrar = false;
+        
+        fila.style.display = mostrar ? '' : 'none';
+    });
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}
