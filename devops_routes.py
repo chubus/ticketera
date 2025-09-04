@@ -849,7 +849,7 @@ def agregar_negocio():
         }
         
         response = requests.post(
-            build_api_url('negocios'),
+            build_api_url('v1/negocios'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
             json=data,
             timeout=API_TIMEOUT_SECS
@@ -883,7 +883,7 @@ def editar_negocio(id):
         }
         
         response = requests.put(
-            build_api_url(f'negocios/{id}'),
+            build_api_url(f'v1/negocios/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
             json=data,
             timeout=API_TIMEOUT_SECS
@@ -907,7 +907,7 @@ def eliminar_negocio(id):
     """Eliminar negocio"""
     try:
         response = requests.delete(
-            build_api_url(f'negocios/{id}'),
+            build_api_url(f'v1/negocios/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
             timeout=API_TIMEOUT_SECS
         )
@@ -1027,7 +1027,7 @@ def get_negocios_from_belgrano():
     """Obtener negocios desde Belgrano Ahorro"""
     try:
         response = requests.get(
-            build_api_url('negocios'),
+            build_api_url('v1/negocios'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
             timeout=API_TIMEOUT_SECS
         )
