@@ -90,10 +90,11 @@ def dashboard():
     try:
         # Obtener estadísticas básicas
         stats = {
-            'productos_count': len(get_productos_from_belgrano()),
-            'negocios_count': len(get_negocios_from_belgrano()),
-            'ofertas_count': len(get_ofertas_from_belgrano()),
-            'precios_count': len(get_precios_from_belgrano())
+            'productos': len(get_productos_from_belgrano()),
+            'negocios': len(get_negocios_from_belgrano()),
+            'ofertas': len(get_ofertas_from_belgrano()),
+            'precios': len(get_precios_from_belgrano()),
+            'sucursales': len(get_sucursales_from_belgrano())
         }
         return render_template('devops/dashboard.html', stats=stats)
     except Exception as e:
@@ -312,12 +313,29 @@ def agregar_sucursal():
 def ofertas():
     """Gestión de ofertas con texto libre para productos"""
     try:
-        ofertas = get_ofertas_from_belgrano()
-        return render_template('devops/ofertas_mejorado.html', ofertas=ofertas)
+        logger.info("Accediendo a página de ofertas")
+        
+        # Intentar obtener ofertas con manejo robusto de errores
+        ofertas = []
+        try:
+            ofertas = get_ofertas_from_belgrano()
+            logger.info(f"Ofertas obtenidas: {len(ofertas)}")
+        except Exception as api_error:
+            logger.warning(f"Error obteniendo ofertas de API: {api_error}")
+            # Continuar con lista vacía
+        
+        # Verificar que ofertas es una lista válida
+        if not isinstance(ofertas, list):
+            logger.warning("Ofertas no es una lista, convirtiendo a lista vacía")
+            ofertas = []
+        
+        return render_template('devops/ofertas_fix.html', ofertas=ofertas)
+        
     except Exception as e:
-        logger.error(f"Error obteniendo ofertas: {e}")
+        logger.error(f"Error crítico en página de ofertas: {e}")
         flash('Error cargando ofertas', 'error')
-        return render_template('devops/ofertas_mejorado.html', ofertas=[])
+        # Retornar página con lista vacía
+        return render_template('devops/ofertas_fix.html', ofertas=[])
 
 
 @devops_bp.route('/ofertas/agregar', methods=['POST'])
@@ -546,17 +564,61 @@ def agregar_negocio():
             'activo': True
         }
         
-        response = requests.post(
-            build_api_url('v1/negocios'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data,
-            timeout=API_TIMEOUT_SECS
-        )
+        # Intentar agregar a la API primero
+        try:
+            response = requests.post(
+                build_api_url('v1/negocios'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 201:
+                flash('Negocio agregado exitosamente a la API', 'success')
+                return redirect(url_for('devops.negocios'))
+            elif response.status_code == 404:
+                logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
+            else:
+                logger.warning(f"API respondió {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.error(f"Error llamando API negocios: {e}")
         
-        if response.status_code == 201:
-            flash('Negocio agregado exitosamente', 'success')
-        else:
-            flash(f'Error al agregar negocio: {response.text}', 'error')
+        # Fallback local: guardar en productos.json
+        try:
+            # Cargar datos existentes
+            if os.path.exists('productos.json'):
+                with open('productos.json', 'r', encoding='utf-8') as f:
+                    datos = json.load(f)
+            else:
+                datos = {'productos': [], 'sucursales': {}, 'ofertas': {}, 'negocios': {}, 'categorias': {}}
+            
+            # Generar ID único para el negocio
+            negocio_id = str(int(datetime.utcnow().timestamp()*1000))
+            
+            # Crear el negocio
+            datos.setdefault('negocios', {})
+            datos['negocios'][negocio_id] = {
+                'id': negocio_id,
+                'nombre': data['nombre'],
+                'descripcion': data.get('descripcion'),
+                'categoria': data.get('categoria'),
+                'direccion': data.get('direccion'),
+                'telefono': data.get('telefono'),
+                'email': data.get('email'),
+                'activo': True,
+                'fecha_creacion': datetime.utcnow().isoformat()
+            }
+            
+            # Guardar en productos.json
+            with open('productos.json', 'w', encoding='utf-8') as f:
+                json.dump(datos, f, ensure_ascii=False, indent=2)
+            
+            flash('Negocio agregado localmente (fallback)', 'success')
+            logger.info(f"Negocio '{data['nombre']}' agregado localmente con ID: {negocio_id}")
+            
+        except Exception as e:
+            logger.error(f"Error guardando negocio localmente: {e}")
+            flash('Error guardando negocio localmente', 'error')
             
     except Exception as e:
         logger.error(f"Error agregando negocio: {e}")
@@ -580,6 +642,8 @@ def editar_negocio(id):
             'activo': request.form.get('activo') == 'on'
         }
         
+        # Intentar actualizar en la API primero
+        try:
         response = requests.put(
             build_api_url(f'v1/negocios/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
@@ -588,9 +652,46 @@ def editar_negocio(id):
         )
         
         if response.status_code == 200:
-            flash('Negocio actualizado exitosamente', 'success')
+                flash('Negocio actualizado exitosamente en la API', 'success')
+                return redirect(url_for('devops.negocios'))
+            elif response.status_code == 404:
+                logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
+            else:
+                logger.warning(f"API respondió {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.error(f"Error llamando API negocios: {e}")
+        
+        # Fallback local: actualizar en productos.json
+        try:
+            if os.path.exists('productos.json'):
+                with open('productos.json', 'r', encoding='utf-8') as f:
+                    datos_json = json.load(f)
+                
+                if 'negocios' in datos_json and str(id) in datos_json['negocios']:
+                    datos_json['negocios'][str(id)].update({
+                        'nombre': data['nombre'],
+                        'descripcion': data.get('descripcion'),
+                        'categoria': data.get('categoria'),
+                        'direccion': data.get('direccion'),
+                        'telefono': data.get('telefono'),
+                        'email': data.get('email'),
+                        'activo': data.get('activo', True),
+                        'fecha_modificacion': datetime.utcnow().isoformat()
+                    })
+                    
+                    with open('productos.json', 'w', encoding='utf-8') as f:
+                        json.dump(datos_json, f, ensure_ascii=False, indent=2)
+                    
+                    flash('Negocio actualizado localmente (fallback)', 'success')
+                    logger.info(f"Negocio ID {id} actualizado localmente")
+                else:
+                    flash('Negocio no encontrado', 'error')
         else:
-            flash(f'Error al actualizar negocio: {response.text}', 'error')
+                flash('No hay datos locales disponibles', 'error')
+                
+        except Exception as e:
+            logger.error(f"Error actualizando negocio localmente: {e}")
+            flash('Error actualizando negocio localmente', 'error')
             
     except Exception as e:
         logger.error(f"Error editando negocio: {e}")
@@ -604,6 +705,8 @@ def editar_negocio(id):
 def eliminar_negocio(id):
     """Eliminar negocio"""
     try:
+        # Intentar eliminar en la API primero
+    try:
         response = requests.delete(
             build_api_url(f'v1/negocios/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
@@ -611,9 +714,38 @@ def eliminar_negocio(id):
         )
         
         if response.status_code == 200:
-            flash('Negocio eliminado exitosamente', 'success')
+                flash('Negocio eliminado exitosamente de la API', 'success')
+                return redirect(url_for('devops.negocios'))
+            elif response.status_code == 404:
+                logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
+            else:
+                logger.warning(f"API respondió {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.error(f"Error llamando API negocios: {e}")
+        
+        # Fallback local: eliminar de productos.json
+        try:
+            if os.path.exists('productos.json'):
+                with open('productos.json', 'r', encoding='utf-8') as f:
+                    datos_json = json.load(f)
+                
+                if 'negocios' in datos_json and str(id) in datos_json['negocios']:
+                    negocio_nombre = datos_json['negocios'][str(id)].get('nombre', 'Sin nombre')
+                    del datos_json['negocios'][str(id)]
+                    
+                    with open('productos.json', 'w', encoding='utf-8') as f:
+                        json.dump(datos_json, f, ensure_ascii=False, indent=2)
+                    
+                    flash(f'Negocio "{negocio_nombre}" eliminado localmente (fallback)', 'success')
+                    logger.info(f"Negocio ID {id} eliminado localmente")
+                else:
+                    flash('Negocio no encontrado', 'error')
         else:
-            flash(f'Error al eliminar negocio: {response.text}', 'error')
+                flash('No hay datos locales disponibles', 'error')
+                
+        except Exception as e:
+            logger.error(f"Error eliminando negocio localmente: {e}")
+            flash('Error eliminando negocio localmente', 'error')
             
     except Exception as e:
         logger.error(f"Error eliminando negocio: {e}")
@@ -690,7 +822,7 @@ def get_sucursales_from_belgrano():
 
 
 def get_ofertas_from_belgrano():
-    """Obtener ofertas desde Belgrano Ahorro"""
+    """Obtener ofertas desde Belgrano Ahorro (con fallback local)"""
     try:
         response = requests.get(
             build_api_url('ofertas'),
@@ -699,14 +831,29 @@ def get_ofertas_from_belgrano():
         )
         if response.status_code == 200:
             return response.json()
-        return []
+        elif response.status_code == 404:
+            logger.warning("API endpoint /api/ofertas no encontrado, usando datos locales")
+        else:
+            logger.warning(f"API respondió {response.status_code}")
     except Exception as e:
         logger.error(f"Error obteniendo ofertas: {e}")
-        return []
+    
+    # Fallback local: cargar desde productos.json
+    try:
+        if os.path.exists('productos.json'):
+            with open('productos.json', 'r', encoding='utf-8') as f:
+                datos = json.load(f)
+            ofertas = datos.get('ofertas', {})
+            # Convertir a lista para el template
+            return list(ofertas.values())
+    except Exception as e:
+        logger.error(f"Error cargando ofertas locales: {e}")
+    
+    return []
 
 
 def get_precios_from_belgrano():
-    """Obtener precios desde Belgrano Ahorro"""
+    """Obtener precios desde Belgrano Ahorro (con fallback local)"""
     try:
         response = requests.get(
             build_api_url('precios'),
@@ -715,14 +862,30 @@ def get_precios_from_belgrano():
         )
         if response.status_code == 200:
             return response.json()
-        return []
+        elif response.status_code == 404:
+            logger.warning("API endpoint /api/precios no encontrado, usando datos locales")
+        else:
+            logger.warning(f"API respondió {response.status_code}")
     except Exception as e:
         logger.error(f"Error obteniendo precios: {e}")
-        return []
+    
+    # Fallback local: cargar desde productos.json
+    try:
+        if os.path.exists('productos.json'):
+            with open('productos.json', 'r', encoding='utf-8') as f:
+                datos = json.load(f)
+            # Los precios están en los productos, extraer solo los precios
+            productos = datos.get('productos', [])
+            precios = [{"id": p.get("id"), "nombre": p.get("nombre"), "precio": p.get("precio")} for p in productos if p.get("precio")]
+            return precios
+    except Exception as e:
+        logger.error(f"Error cargando precios locales: {e}")
+    
+    return []
 
 
 def get_negocios_from_belgrano():
-    """Obtener negocios desde Belgrano Ahorro"""
+    """Obtener negocios desde Belgrano Ahorro (con fallback local)"""
     try:
         response = requests.get(
             build_api_url('v1/negocios'),
@@ -731,7 +894,22 @@ def get_negocios_from_belgrano():
         )
         if response.status_code == 200:
             return response.json()
-        return []
+        elif response.status_code == 404:
+            logger.warning("API endpoint /api/v1/negocios no encontrado, usando datos locales")
+        else:
+            logger.warning(f"API respondió {response.status_code}")
     except Exception as e:
         logger.error(f"Error obteniendo negocios: {e}")
+    
+    # Fallback local: cargar desde productos.json
+    try:
+        if os.path.exists('productos.json'):
+            with open('productos.json', 'r', encoding='utf-8') as f:
+                datos = json.load(f)
+            negocios = datos.get('negocios', {})
+            # Convertir a lista para el template
+            return list(negocios.values())
+    except Exception as e:
+        logger.error(f"Error cargando negocios locales: {e}")
+    
         return []
