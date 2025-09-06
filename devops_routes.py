@@ -6,8 +6,8 @@ from datetime import datetime
 import logging
 from urllib.parse import urljoin
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
-from flask_login import login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
+# from flask_login import login_required, current_user  # No se usan actualmente
+# from werkzeug.security import generate_password_hash, check_password_hash  # No se usan actualmente
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -17,24 +17,21 @@ devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
 
 # Configuración de comunicación con Belgrano Ahorro
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')  # sin default fijo
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')  
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
 API_TIMEOUT_SECS = int(os.environ.get('API_TIMEOUT_SECS', '8'))
 
 
 def get_api_base() -> str:
     """Obtiene la base de la API:
     - Si hay BELGRANO_AHORRO_URL en entorno, usa esa (y agrega /api/)
-    - Si no, construye desde la request actual (request.url_root + 'api/')
-    - Fallback final a http://127.0.0.1:10000/api/
+    - Si no, usa la URL de Belgrano Ahorro por defecto
     """
     env_base = os.environ.get('BELGRANO_AHORRO_URL')
     if env_base:
         return env_base.rstrip('/') + '/api/'
-    try:
-        # e.g. https://ticketerabelgrano.onrender.com/ -> + api/
-        return urljoin(request.url_root, 'api/')
-    except Exception:
-        return 'http://127.0.0.1:10000/api/'
+    else:
+        # URL por defecto de Belgrano Ahorro
+        return 'https://belgranoahorro-hp30.onrender.com/api/'
 
 
 def build_api_url(path: str) -> str:
@@ -325,50 +322,132 @@ def agregar_sucursal():
 @devops_bp.route('/ofertas')
 @devops_required
 def ofertas():
-    """Gestión de ofertas con texto libre para productos"""
+    """Gestión de ofertas con listas de productos y opción de crear productos nuevos"""
     try:
         logger.info("Accediendo a página de ofertas")
         
-        # Intentar obtener ofertas con manejo robusto de errores
+        # Obtener ofertas
         ofertas = []
         try:
             ofertas = get_ofertas_from_belgrano()
             logger.info(f"Ofertas obtenidas: {len(ofertas)}")
         except Exception as api_error:
             logger.warning(f"Error obteniendo ofertas de API: {api_error}")
-            # Continuar con lista vacía
-        
-        # Verificar que ofertas es una lista válida
-        if not isinstance(ofertas, list):
-            logger.warning("Ofertas no es una lista, convirtiendo a lista vacía")
             ofertas = []
         
-        return render_template('devops/ofertas_fix.html', ofertas=ofertas)
+        # Obtener productos para las listas
+        productos = []
+        try:
+            productos = get_productos_from_belgrano()
+            logger.info(f"Productos obtenidos: {len(productos)}")
+        except Exception as api_error:
+            logger.warning(f"Error obteniendo productos de API: {api_error}")
+            productos = []
+        
+        # Obtener negocios para las listas
+        negocios = []
+        try:
+            negocios = get_negocios_from_belgrano()
+            logger.info(f"Negocios obtenidos: {len(negocios)}")
+        except Exception as api_error:
+            logger.warning(f"Error obteniendo negocios de API: {api_error}")
+            negocios = []
+        
+        # Obtener sucursales para las listas
+        sucursales = []
+        try:
+            sucursales = get_sucursales_from_belgrano()
+            logger.info(f"Sucursales obtenidas: {len(sucursales)}")
+        except Exception as api_error:
+            logger.warning(f"Error obteniendo sucursales de API: {api_error}")
+            sucursales = []
+        
+        # Verificar que las listas son válidas
+        if not isinstance(ofertas, list):
+            ofertas = []
+        if not isinstance(productos, list):
+            productos = []
+        if not isinstance(negocios, list):
+            negocios = []
+        if not isinstance(sucursales, list):
+            sucursales = []
+        
+        return render_template('devops/ofertas_fix.html', 
+                             ofertas=ofertas, 
+                             productos=productos, 
+                             negocios=negocios, 
+                             sucursales=sucursales)
         
     except Exception as e:
         logger.error(f"Error crítico en página de ofertas: {e}")
         flash('Error cargando ofertas', 'error')
-        # Retornar página con lista vacía
-        return render_template('devops/ofertas_fix.html', ofertas=[])
+        return render_template('devops/ofertas_fix.html', 
+                             ofertas=[], 
+                             productos=[], 
+                             negocios=[], 
+                             sucursales=[])
 
 
 @devops_bp.route('/ofertas/agregar', methods=['POST'])
 @devops_required
 def agregar_oferta():
-    """Agregar nueva oferta con nombre de producto en texto libre"""
+    """Agregar nueva oferta con productos, negocios y sucursales"""
     try:
+        # Verificar si se está creando un producto nuevo
+        crear_producto_nuevo = request.form.get('crear_producto_nuevo') == 'on'
+        
+        if crear_producto_nuevo:
+            # Crear producto nuevo primero
+            producto_data = {
+                'nombre': request.form.get('producto_nombre'),
+                'descripcion': request.form.get('producto_descripcion', ''),
+                'precio': float(request.form.get('producto_precio', 0)),
+                'categoria': request.form.get('producto_categoria', ''),
+                'stock': int(request.form.get('producto_stock', 0)),
+                'activo': True,
+                'fecha_creacion': datetime.utcnow().isoformat(),
+                'prioridad': 'alta',
+                'origen': 'devops'
+            }
+            
+            # Crear el producto
+            producto_response = requests.post(
+                build_api_url('productos'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=producto_data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if producto_response.status_code == 201:
+                producto_id = producto_response.json().get('id', '')
+                logger.info(f"Producto '{producto_data['nombre']}' creado exitosamente con ID: {producto_id}")
+            else:
+                logger.warning(f"Error creando producto: {producto_response.text}")
+                producto_id = ''
+        else:
+            producto_id = request.form.get('producto_id', '')
+        
+        # Datos de la oferta
         data = {
             'titulo': request.form.get('titulo'),
             'descripcion': request.form.get('descripcion'),
             'descuento': float(request.form.get('descuento')),
-            'producto_nombre': request.form.get('producto_nombre'),  # Nombre del producto en texto libre
-            'producto_id': request.form.get('producto_id', ''),  # Opcional
+            'producto_nombre': request.form.get('producto_nombre'),
+            'producto_id': producto_id,
+            'negocio_id': request.form.get('negocio_id', ''),
+            'negocio_nombre': request.form.get('negocio_nombre', ''),
+            'sucursal_id': request.form.get('sucursal_id', ''),
+            'sucursal_nombre': request.form.get('sucursal_nombre', ''),
+            'precio_oferta': float(request.form.get('precio_oferta', 0)),
+            'cantidad_disponible': int(request.form.get('cantidad_disponible', 0)),
             'fecha_inicio': request.form.get('fecha_inicio'),
             'fecha_fin': request.form.get('fecha_fin'),
             'activa': True,
             'fecha_creacion': datetime.utcnow().isoformat(),
             'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
-            'origen': 'devops'  # Identificar que viene del panel de DevOps
+            'origen': 'devops',  # Identificar que viene del panel de DevOps
+            'destacada': True,  # Para que se destaque en la página principal
+            'tipo_oferta': 'devops'  # Tipo especial para ofertas de DevOps
         }
         
         response = requests.post(
@@ -389,6 +468,75 @@ def agregar_oferta():
         flash('Error interno al agregar oferta', 'error')
     
     return redirect(url_for('devops.ofertas'))
+
+
+@devops_bp.route('/ofertas/destacadas')
+@devops_required
+def ofertas_destacadas():
+    """Obtener ofertas destacadas para la página principal"""
+    try:
+        ofertas_destacadas = get_ofertas_destacadas_from_belgrano()
+        return jsonify({
+            'success': True,
+            'ofertas': ofertas_destacadas,
+            'total': len(ofertas_destacadas)
+        })
+    except Exception as e:
+        logger.error(f"Error obteniendo ofertas destacadas: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'ofertas': []
+        }), 500
+
+
+@devops_bp.route('/ofertas/crear-producto', methods=['POST'])
+@devops_required
+def crear_producto_desde_oferta():
+    """Crear producto nuevo desde la página de ofertas"""
+    try:
+        data = {
+            'nombre': request.form.get('nombre'),
+            'descripcion': request.form.get('descripcion', ''),
+            'precio': float(request.form.get('precio', 0)),
+            'categoria': request.form.get('categoria', ''),
+            'stock': int(request.form.get('stock', 0)),
+            'activo': True,
+            'fecha_creacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
+        }
+        
+        response = requests.post(
+            build_api_url('productos'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            json=data,
+            timeout=API_TIMEOUT_SECS
+        )
+        
+        if response.status_code == 201:
+            logger.info(f"Producto '{data['nombre']}' creado exitosamente desde ofertas")
+            flash('Producto creado exitosamente y sincronizado con Belgrano Ahorro', 'success')
+            return jsonify({
+                'success': True,
+                'message': 'Producto creado exitosamente',
+                'producto_id': response.json().get('id', ''),
+                'producto_nombre': data['nombre']
+            })
+        else:
+            flash(f'Error al crear producto: {response.text}', 'error')
+            return jsonify({
+                'success': False,
+                'message': f'Error al crear producto: {response.text}'
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error creando producto desde ofertas: {e}")
+        flash('Error interno al crear producto', 'error')
+        return jsonify({
+            'success': False,
+            'message': 'Error interno al crear producto'
+        }), 500
 
 
 @devops_bp.route('/ofertas/editar/<int:id>', methods=['POST'])
@@ -948,4 +1096,29 @@ def get_negocios_from_belgrano():
     except Exception as e:
         logger.error(f"Error cargando negocios locales: {e}")
     
+        return []
+
+
+def get_ofertas_destacadas_from_belgrano():
+    """Obtener ofertas destacadas para la página principal de Belgrano Ahorro"""
+    try:
+        # Obtener todas las ofertas
+        ofertas = get_ofertas_from_belgrano()
+        
+        # Filtrar ofertas destacadas (con prioridad alta y origen devops)
+        ofertas_destacadas = []
+        for oferta in ofertas:
+            if (oferta.get('destacada', False) or 
+                oferta.get('prioridad') == 'alta' or 
+                oferta.get('origen') == 'devops'):
+                ofertas_destacadas.append(oferta)
+        
+        # Ordenar por fecha de creación (más recientes primero)
+        ofertas_destacadas.sort(key=lambda x: x.get('fecha_creacion', ''), reverse=True)
+        
+        # Limitar a las primeras 10 ofertas destacadas
+        return ofertas_destacadas[:10]
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo ofertas destacadas: {e}")
         return []
