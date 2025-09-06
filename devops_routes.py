@@ -130,7 +130,10 @@ def agregar_producto():
             'precio': float(request.form.get('precio')),
             'categoria': request.form.get('categoria'),
             'stock': int(request.form.get('stock', 0)),
-            'activo': True
+            'activo': True,
+            'fecha_creacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         response = requests.post(
@@ -141,7 +144,8 @@ def agregar_producto():
         )
         
         if response.status_code == 201:
-            flash('Producto agregado exitosamente', 'success')
+            logger.info(f"Producto '{data['nombre']}' sincronizado exitosamente con Belgrano Ahorro")
+            flash('Producto agregado exitosamente y sincronizado con Belgrano Ahorro', 'success')
         else:
             flash(f'Error al agregar producto: {response.text}', 'error')
             
@@ -163,7 +167,10 @@ def editar_producto(id):
             'precio': float(request.form.get('precio')),
             'categoria': request.form.get('categoria'),
             'stock': int(request.form.get('stock', 0)),
-            'activo': request.form.get('activo') == 'on'
+            'activo': request.form.get('activo') == 'on',
+            'fecha_modificacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         response = requests.put(
@@ -174,7 +181,8 @@ def editar_producto(id):
         )
         
         if response.status_code == 200:
-            flash('Producto actualizado exitosamente', 'success')
+            logger.info(f"Producto ID {id} actualizado y sincronizado con Belgrano Ahorro")
+            flash('Producto actualizado exitosamente y sincronizado con Belgrano Ahorro', 'success')
         else:
             flash(f'Error al actualizar producto: {response.text}', 'error')
             
@@ -235,7 +243,10 @@ def agregar_sucursal():
             'ciudad': request.form.get('ciudad'),
             'telefono': request.form.get('telefono'),
             'email': request.form.get('email'),
-            'activa': True
+            'activa': True,
+            'fecha_creacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         # Intentar agregar a la API primero
@@ -248,14 +259,17 @@ def agregar_sucursal():
             )
             
             if response.status_code == 201:
-                flash('Sucursal agregada exitosamente a la API', 'success')
+                logger.info(f"Sucursal '{data['nombre']}' sincronizada exitosamente con Belgrano Ahorro")
+                flash('Sucursal agregada exitosamente y sincronizada con Belgrano Ahorro', 'success')
                 return redirect(url_for('devops.sucursales'))
             elif response.status_code == 404:
                 logger.warning("API endpoint /api/sucursales no encontrado, usando fallback local")
             else:
                 logger.warning(f"API respondió {response.status_code}: {response.text}")
+                flash(f'Error en API Belgrano Ahorro ({response.status_code}), guardando localmente', 'warning')
         except Exception as e:
             logger.error(f"Error llamando API sucursales: {e}")
+            flash('Error conectando con Belgrano Ahorro, guardando localmente', 'warning')
         
         # Fallback local: guardar en productos.json
         try:
@@ -351,7 +365,10 @@ def agregar_oferta():
             'producto_id': request.form.get('producto_id', ''),  # Opcional
             'fecha_inicio': request.form.get('fecha_inicio'),
             'fecha_fin': request.form.get('fecha_fin'),
-            'activa': True
+            'activa': True,
+            'fecha_creacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         response = requests.post(
@@ -362,7 +379,8 @@ def agregar_oferta():
         )
         
         if response.status_code == 201:
-            flash('Oferta agregada exitosamente', 'success')
+            logger.info(f"Oferta '{data['titulo']}' sincronizada exitosamente con Belgrano Ahorro")
+            flash('Oferta agregada exitosamente y sincronizada con Belgrano Ahorro', 'success')
         else:
             flash(f'Error al agregar oferta: {response.text}', 'error')
             
@@ -386,7 +404,10 @@ def editar_oferta(id):
             'producto_id': request.form.get('producto_id', ''),  # Opcional
             'fecha_inicio': request.form.get('fecha_inicio'),
             'fecha_fin': request.form.get('fecha_fin'),
-            'activa': request.form.get('activa') == 'on'
+            'activa': request.form.get('activa') == 'on',
+            'fecha_modificacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         response = requests.put(
@@ -397,7 +418,8 @@ def editar_oferta(id):
         )
         
         if response.status_code == 200:
-            flash('Oferta actualizada exitosamente', 'success')
+            logger.info(f"Oferta ID {id} actualizada y sincronizada con Belgrano Ahorro")
+            flash('Oferta actualizada exitosamente y sincronizada con Belgrano Ahorro', 'success')
         else:
             flash(f'Error al actualizar oferta: {response.text}', 'error')
             
@@ -561,7 +583,10 @@ def agregar_negocio():
             'direccion': request.form.get('direccion'),
             'telefono': request.form.get('telefono'),
             'email': request.form.get('email'),
-            'activo': True
+            'activo': True,
+            'fecha_creacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         # Intentar agregar a la API primero
@@ -574,14 +599,17 @@ def agregar_negocio():
             )
             
             if response.status_code == 201:
-                flash('Negocio agregado exitosamente a la API', 'success')
+                logger.info(f"Negocio '{data['nombre']}' sincronizado exitosamente con Belgrano Ahorro")
+                flash('Negocio agregado exitosamente y sincronizado con Belgrano Ahorro', 'success')
                 return redirect(url_for('devops.negocios'))
             elif response.status_code == 404:
                 logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
             else:
                 logger.warning(f"API respondió {response.status_code}: {response.text}")
+                flash(f'Error en API Belgrano Ahorro ({response.status_code}), guardando localmente', 'warning')
         except Exception as e:
             logger.error(f"Error llamando API negocios: {e}")
+            flash('Error conectando con Belgrano Ahorro, guardando localmente', 'warning')
         
         # Fallback local: guardar en productos.json
         try:
@@ -606,7 +634,9 @@ def agregar_negocio():
                 'telefono': data.get('telefono'),
                 'email': data.get('email'),
                 'activo': True,
-                'fecha_creacion': datetime.utcnow().isoformat()
+                'fecha_creacion': datetime.utcnow().isoformat(),
+                'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+                'origen': 'devops'  # Identificar que viene del panel de DevOps
             }
             
             # Guardar en productos.json
@@ -639,7 +669,10 @@ def editar_negocio(id):
             'direccion': request.form.get('direccion'),
             'telefono': request.form.get('telefono'),
             'email': request.form.get('email'),
-            'activo': request.form.get('activo') == 'on'
+            'activo': request.form.get('activo') == 'on',
+            'fecha_modificacion': datetime.utcnow().isoformat(),
+            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
+            'origen': 'devops'  # Identificar que viene del panel de DevOps
         }
         
         # Intentar actualizar en la API primero
@@ -652,14 +685,17 @@ def editar_negocio(id):
             )
             
             if response.status_code == 200:
-                flash('Negocio actualizado exitosamente en la API', 'success')
+                logger.info(f"Negocio ID {id} actualizado y sincronizado con Belgrano Ahorro")
+                flash('Negocio actualizado exitosamente y sincronizado con Belgrano Ahorro', 'success')
                 return redirect(url_for('devops.negocios'))
             elif response.status_code == 404:
                 logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
             else:
                 logger.warning(f"API respondió {response.status_code}: {response.text}")
+                flash(f'Error en API Belgrano Ahorro ({response.status_code}), actualizando localmente', 'warning')
         except Exception as e:
             logger.error(f"Error llamando API negocios: {e}")
+            flash('Error conectando con Belgrano Ahorro, actualizando localmente', 'warning')
         
         # Fallback local: actualizar en productos.json
         try:
