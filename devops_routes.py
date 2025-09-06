@@ -317,8 +317,8 @@ def ofertas():
         
         # Intentar obtener ofertas con manejo robusto de errores
         ofertas = []
-    try:
-        ofertas = get_ofertas_from_belgrano()
+        try:
+            ofertas = get_ofertas_from_belgrano()
             logger.info(f"Ofertas obtenidas: {len(ofertas)}")
         except Exception as api_error:
             logger.warning(f"Error obteniendo ofertas de API: {api_error}")
@@ -566,14 +566,14 @@ def agregar_negocio():
         
         # Intentar agregar a la API primero
         try:
-        response = requests.post(
-            build_api_url('v1/negocios'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data,
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 201:
+            response = requests.post(
+                build_api_url('v1/negocios'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 201:
                 flash('Negocio agregado exitosamente a la API', 'success')
                 return redirect(url_for('devops.negocios'))
             elif response.status_code == 404:
@@ -589,7 +589,7 @@ def agregar_negocio():
             if os.path.exists('productos.json'):
                 with open('productos.json', 'r', encoding='utf-8') as f:
                     datos = json.load(f)
-        else:
+            else:
                 datos = {'productos': [], 'sucursales': {}, 'ofertas': {}, 'negocios': {}, 'categorias': {}}
             
             # Generar ID único para el negocio
@@ -686,7 +686,7 @@ def editar_negocio(id):
                     logger.info(f"Negocio ID {id} actualizado localmente")
                 else:
                     flash('Negocio no encontrado', 'error')
-        else:
+            else:
                 flash('No hay datos locales disponibles', 'error')
                 
         except Exception as e:
@@ -706,14 +706,14 @@ def eliminar_negocio(id):
     """Eliminar negocio"""
     try:
         # Intentar eliminar en la API primero
-    try:
-        response = requests.delete(
-            build_api_url(f'v1/negocios/{id}'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 200:
+        try:
+            response = requests.delete(
+                build_api_url(f'v1/negocios/{id}'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                timeout=API_TIMEOUT_SECS
+            )
+
+            if response.status_code == 200:
                 flash('Negocio eliminado exitosamente de la API', 'success')
                 return redirect(url_for('devops.negocios'))
             elif response.status_code == 404:
@@ -740,7 +740,7 @@ def eliminar_negocio(id):
                     logger.info(f"Negocio ID {id} eliminado localmente")
                 else:
                     flash('Negocio no encontrado', 'error')
-        else:
+            else:
                 flash('No hay datos locales disponibles', 'error')
                 
         except Exception as e:
