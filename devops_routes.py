@@ -427,27 +427,95 @@ def agregar_oferta():
         else:
             producto_id = request.form.get('producto_id', '')
         
-        # Datos de la oferta
+        # Datos de la oferta - 100% customizable
         data = {
+            # Información básica
             'titulo': request.form.get('titulo'),
             'descripcion': request.form.get('descripcion'),
-            'descuento': float(request.form.get('descuento')),
+            'descuento': float(request.form.get('descuento', 0)),
+            'descuento_porcentaje': float(request.form.get('descuento_porcentaje', 0)),
+            'descuento_fijo': float(request.form.get('descuento_fijo', 0)),
+            
+            # Producto
             'producto_nombre': request.form.get('producto_nombre'),
             'producto_id': producto_id,
+            'producto_categoria': request.form.get('producto_categoria', ''),
+            'producto_marca': request.form.get('producto_marca', ''),
+            'producto_modelo': request.form.get('producto_modelo', ''),
+            
+            # Negocio y sucursal
             'negocio_id': request.form.get('negocio_id', ''),
             'negocio_nombre': request.form.get('negocio_nombre', ''),
             'sucursal_id': request.form.get('sucursal_id', ''),
             'sucursal_nombre': request.form.get('sucursal_nombre', ''),
+            'sucursal_direccion': request.form.get('sucursal_direccion', ''),
+            
+            # Precios y cantidades
+            'precio_original': float(request.form.get('precio_original', 0)),
             'precio_oferta': float(request.form.get('precio_oferta', 0)),
+            'precio_final': float(request.form.get('precio_final', 0)),
             'cantidad_disponible': int(request.form.get('cantidad_disponible', 0)),
+            'cantidad_minima': int(request.form.get('cantidad_minima', 1)),
+            'cantidad_maxima': int(request.form.get('cantidad_maxima', 0)),
+            
+            # Fechas y horarios
             'fecha_inicio': request.form.get('fecha_inicio'),
             'fecha_fin': request.form.get('fecha_fin'),
-            'activa': True,
+            'hora_inicio': request.form.get('hora_inicio', '00:00'),
+            'hora_fin': request.form.get('hora_fin', '23:59'),
+            'dias_semana': request.form.get('dias_semana', ''),  # L,M,M,J,V,S,D
+            
+            # Personalización visual
+            'color_principal': request.form.get('color_principal', '#FF6B35'),
+            'color_secundario': request.form.get('color_secundario', '#F7931E'),
+            'imagen_url': request.form.get('imagen_url', ''),
+            'icono': request.form.get('icono', ''),
+            'badge_texto': request.form.get('badge_texto', 'OFERTA'),
+            'badge_color': request.form.get('badge_color', '#FF0000'),
+            
+            # Configuración de visibilidad
+            'activa': request.form.get('activa', 'on') == 'on',
+            'visible_home': request.form.get('visible_home', 'on') == 'on',
+            'visible_categoria': request.form.get('visible_categoria', 'on') == 'on',
+            'visible_busqueda': request.form.get('visible_busqueda', 'on') == 'on',
+            'destacada': request.form.get('destacada', 'on') == 'on',
+            'urgente': request.form.get('urgente', 'off') == 'on',
+            'exclusiva': request.form.get('exclusiva', 'off') == 'on',
+            
+            # Configuración de prioridad
+            'prioridad': request.form.get('prioridad', 'alta'),  # baja, media, alta, maxima
+            'orden_destacado': int(request.form.get('orden_destacado', 1)),
+            'peso_seo': int(request.form.get('peso_seo', 100)),
+            
+            # Metadatos
             'fecha_creacion': datetime.utcnow().isoformat(),
-            'prioridad': 'alta',  # Para que aparezca primero en Belgrano Ahorro
-            'origen': 'devops',  # Identificar que viene del panel de DevOps
-            'destacada': True,  # Para que se destaque en la página principal
-            'tipo_oferta': 'devops'  # Tipo especial para ofertas de DevOps
+            'origen': 'devops',
+            'tipo_oferta': request.form.get('tipo_oferta', 'devops'),
+            'tags': request.form.get('tags', ''),  # Tags separados por comas
+            'notas_internas': request.form.get('notas_internas', ''),
+            
+            # Configuración de notificaciones
+            'notificar_usuarios': request.form.get('notificar_usuarios', 'off') == 'on',
+            'notificar_admin': request.form.get('notificar_admin', 'on') == 'on',
+            'email_notificacion': request.form.get('email_notificacion', ''),
+            
+            # Configuración de seguimiento
+            'trackear_clicks': request.form.get('trackear_clicks', 'on') == 'on',
+            'trackear_conversiones': request.form.get('trackear_conversiones', 'on') == 'on',
+            'objetivo_conversion': request.form.get('objetivo_conversion', ''),
+            
+            # Configuración avanzada
+            'condiciones_especiales': request.form.get('condiciones_especiales', ''),
+            'restricciones': request.form.get('restricciones', ''),
+            'codigo_promocional': request.form.get('codigo_promocional', ''),
+            'link_externo': request.form.get('link_externo', ''),
+            'iframe_embed': request.form.get('iframe_embed', ''),
+            
+            # Configuración de Belgrano Ahorro
+            'mostrar_en_belgrano': request.form.get('mostrar_en_belgrano', 'on') == 'on',
+            'posicion_belgrano': request.form.get('posicion_belgrano', 'destacada'),
+            'categoria_belgrano': request.form.get('categoria_belgrano', ''),
+            'subcategoria_belgrano': request.form.get('subcategoria_belgrano', '')
         }
         
         response = requests.post(
@@ -468,6 +536,191 @@ def agregar_oferta():
         flash('Error interno al agregar oferta', 'error')
     
     return redirect(url_for('devops.ofertas'))
+
+
+@devops_bp.route('/test/conexion')
+@devops_required
+def test_conexion():
+    """Test de conexión con Belgrano Ahorro"""
+    try:
+        resultado = test_conexion_belgrano_ahorro()
+        return jsonify({
+            'success': True,
+            'conexion': resultado,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Error en test de conexión: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
+
+@devops_bp.route('/test/sincronizacion')
+@devops_required
+def test_sincronizacion():
+    """Test de sincronización con Belgrano Ahorro"""
+    try:
+        resultado = sincronizar_todos_los_datos()
+        return jsonify({
+            'success': True,
+            'sincronizacion': resultado,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Error en test de sincronización: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
+
+@devops_bp.route('/test/validar-oferta', methods=['POST'])
+@devops_required
+def test_validar_oferta():
+    """Test de validación de datos de oferta"""
+    try:
+        data = request.get_json()
+        errores = validar_datos_oferta(data)
+        
+        return jsonify({
+            'success': len(errores) == 0,
+            'errores': errores,
+            'datos_validos': len(errores) == 0,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Error en validación de oferta: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
+
+@devops_bp.route('/ofertas/configuracion', methods=['GET', 'POST'])
+@devops_required
+def configuracion_ofertas():
+    """Configuración avanzada de ofertas"""
+    if request.method == 'POST':
+        try:
+            # Guardar configuración global de ofertas
+            config_data = {
+                'configuracion_global': {
+                    'colores_por_defecto': {
+                        'principal': request.form.get('color_principal_default', '#FF6B35'),
+                        'secundario': request.form.get('color_secundario_default', '#F7931E'),
+                        'badge': request.form.get('color_badge_default', '#FF0000')
+                    },
+                    'prioridad_por_defecto': request.form.get('prioridad_default', 'alta'),
+                    'duracion_por_defecto': int(request.form.get('duracion_default', 30)),
+                    'notificaciones_activas': request.form.get('notificaciones_activas', 'on') == 'on',
+                    'tracking_activo': request.form.get('tracking_activo', 'on') == 'on'
+                },
+                'fecha_actualizacion': datetime.utcnow().isoformat(),
+                'origen': 'devops'
+            }
+            
+            # Enviar configuración a Belgrano Ahorro
+            response = requests.post(
+                build_api_url('ofertas/configuracion'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=config_data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code in [200, 201]:
+                flash('Configuración de ofertas actualizada exitosamente', 'success')
+            else:
+                flash(f'Error actualizando configuración: {response.text}', 'warning')
+                
+        except Exception as e:
+            logger.error(f"Error actualizando configuración de ofertas: {e}")
+            flash('Error interno al actualizar configuración', 'error')
+    
+    return render_template('devops/configuracion_ofertas.html')
+
+
+@devops_bp.route('/ofertas/plantillas', methods=['GET', 'POST'])
+@devops_required
+def plantillas_ofertas():
+    """Gestión de plantillas de ofertas"""
+    if request.method == 'POST':
+        try:
+            # Crear nueva plantilla
+            plantilla_data = {
+                'nombre': request.form.get('nombre_plantilla'),
+                'descripcion': request.form.get('descripcion_plantilla'),
+                'configuracion': {
+                    'colores': {
+                        'principal': request.form.get('color_principal'),
+                        'secundario': request.form.get('color_secundario'),
+                        'badge': request.form.get('color_badge')
+                    },
+                    'estilo': request.form.get('estilo_plantilla'),
+                    'layout': request.form.get('layout_plantilla'),
+                    'animaciones': request.form.get('animaciones', 'off') == 'on'
+                },
+                'fecha_creacion': datetime.utcnow().isoformat(),
+                'origen': 'devops'
+            }
+            
+            response = requests.post(
+                build_api_url('ofertas/plantillas'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=plantilla_data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 201:
+                flash('Plantilla creada exitosamente', 'success')
+            else:
+                flash(f'Error creando plantilla: {response.text}', 'error')
+                
+        except Exception as e:
+            logger.error(f"Error creando plantilla: {e}")
+            flash('Error interno al crear plantilla', 'error')
+    
+    return render_template('devops/plantillas_ofertas.html')
+
+
+@devops_bp.route('/ofertas/analytics')
+@devops_required
+def analytics_ofertas():
+    """Analytics y métricas de ofertas"""
+    try:
+        # Obtener analytics de ofertas
+        response = requests.get(
+            build_api_url('ofertas/analytics'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
+        )
+        
+        if response.status_code == 200:
+            analytics = response.json()
+        else:
+            analytics = {
+                'ofertas_activas': 0,
+                'total_clicks': 0,
+                'total_conversiones': 0,
+                'tasa_conversion': 0,
+                'ofertas_destacadas': 0
+            }
+            
+    except Exception as e:
+        logger.error(f"Error obteniendo analytics: {e}")
+        analytics = {
+            'ofertas_activas': 0,
+            'total_clicks': 0,
+            'total_conversiones': 0,
+            'tasa_conversion': 0,
+            'ofertas_destacadas': 0
+        }
+    
+    return render_template('devops/analytics_ofertas.html', analytics=analytics)
 
 
 @devops_bp.route('/ofertas/destacadas')
@@ -1122,3 +1375,108 @@ def get_ofertas_destacadas_from_belgrano():
     except Exception as e:
         logger.error(f"Error obteniendo ofertas destacadas: {e}")
         return []
+
+
+def validar_datos_oferta(data):
+    """Validar datos de oferta antes de enviar a Belgrano Ahorro"""
+    errores = []
+    
+    # Validaciones básicas
+    if not data.get('titulo'):
+        errores.append('El título es obligatorio')
+    
+    if not data.get('producto_nombre'):
+        errores.append('El nombre del producto es obligatorio')
+    
+    if data.get('precio_oferta', 0) <= 0:
+        errores.append('El precio de oferta debe ser mayor a 0')
+    
+    if data.get('cantidad_disponible', 0) < 0:
+        errores.append('La cantidad disponible no puede ser negativa')
+    
+    # Validaciones de fechas
+    if data.get('fecha_inicio') and data.get('fecha_fin'):
+        try:
+            fecha_inicio = datetime.fromisoformat(data['fecha_inicio'].replace('Z', '+00:00'))
+            fecha_fin = datetime.fromisoformat(data['fecha_fin'].replace('Z', '+00:00'))
+            if fecha_inicio >= fecha_fin:
+                errores.append('La fecha de inicio debe ser anterior a la fecha de fin')
+        except ValueError:
+            errores.append('Formato de fecha inválido')
+    
+    # Validaciones de colores
+    if data.get('color_principal') and not data['color_principal'].startswith('#'):
+        errores.append('El color principal debe ser un código hexadecimal válido')
+    
+    return errores
+
+
+def test_conexion_belgrano_ahorro():
+    """Test de conexión con Belgrano Ahorro"""
+    try:
+        response = requests.get(
+            build_api_url('health'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=5
+        )
+        return {
+            'conectado': response.status_code == 200,
+            'status_code': response.status_code,
+            'tiempo_respuesta': response.elapsed.total_seconds(),
+            'url': build_api_url('health')
+        }
+    except Exception as e:
+        return {
+            'conectado': False,
+            'error': str(e),
+            'url': build_api_url('health')
+        }
+
+
+def sincronizar_todos_los_datos():
+    """Sincronizar todos los datos con Belgrano Ahorro"""
+    resultados = {
+        'productos': {'exitoso': False, 'total': 0, 'errores': []},
+        'negocios': {'exitoso': False, 'total': 0, 'errores': []},
+        'ofertas': {'exitoso': False, 'total': 0, 'errores': []},
+        'sucursales': {'exitoso': False, 'total': 0, 'errores': []}
+    }
+    
+    try:
+        # Test de conexión
+        test_conexion = test_conexion_belgrano_ahorro()
+        if not test_conexion['conectado']:
+            logger.error(f"No se puede conectar con Belgrano Ahorro: {test_conexion}")
+            return resultados
+        
+        # Obtener datos locales
+        try:
+            if os.path.exists('productos.json'):
+                with open('productos.json', 'r', encoding='utf-8') as f:
+                    datos_locales = json.load(f)
+                
+                # Sincronizar productos
+                productos = datos_locales.get('productos', [])
+                resultados['productos']['total'] = len(productos)
+                
+                # Sincronizar negocios
+                negocios = datos_locales.get('negocios', {})
+                resultados['negocios']['total'] = len(negocios)
+                
+                # Sincronizar ofertas
+                ofertas = datos_locales.get('ofertas', {})
+                resultados['ofertas']['total'] = len(ofertas)
+                
+                # Sincronizar sucursales
+                sucursales = datos_locales.get('sucursales', {})
+                resultados['sucursales']['total'] = len(sucursales)
+                
+                logger.info(f"Sincronización iniciada: {resultados}")
+                
+        except Exception as e:
+            logger.error(f"Error cargando datos locales: {e}")
+    
+    except Exception as e:
+        logger.error(f"Error en sincronización: {e}")
+    
+    return resultados
