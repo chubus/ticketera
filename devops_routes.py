@@ -1111,7 +1111,30 @@ def negocios():
     """Gestión de negocios"""
     try:
         negocios = get_negocios_from_belgrano()
-        return render_template('devops/negocios.html', negocios=negocios)
+        
+        # Debug: Log de la estructura de negocios
+        logger.info(f"Negocios obtenidos: {len(negocios)}")
+        if negocios:
+            logger.info(f"Primer negocio estructura: {negocios[0] if negocios else 'No hay negocios'}")
+        
+        # Asegurar que todos los negocios tengan los campos necesarios
+        negocios_procesados = []
+        for negocio in negocios:
+            if isinstance(negocio, dict):
+                # Asegurar campos requeridos
+                negocio_procesado = {
+                    'id': negocio.get('id', ''),
+                    'nombre': negocio.get('nombre', 'Sin nombre'),
+                    'descripcion': negocio.get('descripcion', ''),
+                    'categoria': negocio.get('categoria', ''),
+                    'direccion': negocio.get('direccion', ''),
+                    'telefono': negocio.get('telefono', ''),
+                    'email': negocio.get('email', ''),
+                    'activo': negocio.get('activo', True)
+                }
+                negocios_procesados.append(negocio_procesado)
+        
+        return render_template('devops/negocios.html', negocios=negocios_procesados)
     except Exception as e:
         logger.error(f"Error obteniendo negocios: {e}")
         flash('Error cargando negocios', 'error')
@@ -1366,6 +1389,26 @@ def eliminar_negocio(id):
     
     return redirect(url_for('devops.negocios'))
 
+
+@devops_bp.route('/negocios/debug')
+@devops_required
+def debug_negocios():
+    """Debug: Ver estructura de negocios"""
+    try:
+        negocios_raw = get_negocios_from_belgrano()
+        return jsonify({
+            'success': True,
+            'total_negocios': len(negocios_raw),
+            'negocios': negocios_raw,
+            'primer_negocio': negocios_raw[0] if negocios_raw else None
+        })
+    except Exception as e:
+        logger.error(f"Error en debug negocios: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # ==========================================
 # FUNCIONES AUXILIARES
 # ==========================================
@@ -1506,7 +1549,15 @@ def get_negocios_from_belgrano():
             timeout=API_TIMEOUT_SECS
         )
         if response.status_code == 200:
-            return response.json()
+            negocios_api = response.json()
+            # Asegurar que los negocios de la API tengan la estructura correcta
+            if isinstance(negocios_api, list):
+                return negocios_api
+            elif isinstance(negocios_api, dict):
+                return list(negocios_api.values())
+            else:
+                logger.warning("Formato inesperado de negocios desde API")
+                return []
         elif response.status_code == 404:
             logger.warning("API endpoint /api/v1/negocios no encontrado, usando datos locales")
         else:
@@ -1520,12 +1571,18 @@ def get_negocios_from_belgrano():
             with open('productos.json', 'r', encoding='utf-8') as f:
                 datos = json.load(f)
             negocios = datos.get('negocios', {})
-            # Convertir a lista para el template
-            return list(negocios.values())
+            # Convertir a lista para el template y asegurar estructura
+            negocios_lista = []
+            for negocio_id, negocio_data in negocios.items():
+                # Asegurar que el negocio tenga un ID
+                if 'id' not in negocio_data:
+                    negocio_data['id'] = negocio_id
+                negocios_lista.append(negocio_data)
+            return negocios_lista
     except Exception as e:
         logger.error(f"Error cargando negocios locales: {e}")
     
-        return []
+    return []
 
 
 def sincronizar_con_belgrano_ahorro():
