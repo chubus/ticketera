@@ -1,9 +1,6 @@
 #!/bin/bash
-# -*- coding: utf-8 -*-
-"""
-Script de inicio para la Ticketera
-Inicializa la base de datos de forma segura y arranca el servidor Gunicorn
-"""
+# Script de inicio para la Ticketera
+# Inicializa la base de datos de forma segura y arranca el servidor Gunicorn
 
 set -e  # Salir si cualquier comando falla
 
