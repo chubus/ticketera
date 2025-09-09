@@ -93,11 +93,11 @@ def dashboard():
         
         # Obtener estadísticas básicas
         stats = {
-            'productos': len(get_productos_from_belgrano()),
-            'negocios': len(get_negocios_from_belgrano()),
-            'ofertas': len(get_ofertas_from_belgrano()),
-            'precios': len(get_precios_from_belgrano()),
-            'sucursales': len(get_sucursales_from_belgrano())
+            'productos': len(get_productos_from_belgrano() or []),
+            'negocios': len(get_negocios_from_belgrano() or []),
+            'ofertas': len(get_ofertas_from_belgrano() or []),
+            'precios': len(get_precios_from_belgrano() or []),
+            'sucursales': len(get_sucursales_from_belgrano() or [])
         }
         
         # Agregar información de sincronización
@@ -525,9 +525,9 @@ def agregar_oferta():
             'fecha_creacion': datetime.utcnow().isoformat(),
             'origen': 'devops',
             'tipo_oferta': request.form.get('tipo_oferta', 'devops'),
-            'tags': request.form.get('tags', '').split(',') if request.form.get('tags') else [],
-            'notas_internas': request.form.get('notas_internas', '')
-        }
+              'tags': request.form.get('tags', '').split(',') if request.form.get('tags') else [],
+              'notas_internas': request.form.get('notas_internas', '')
+          }
 
         # Intentar agregar a la API primero
         try:
@@ -606,7 +606,7 @@ def test_conexion():
     try:
         resultado = test_conexion_belgrano_ahorro()
         return jsonify({
-            'success': True,
+            'success': bool(resultado.get('conectado')),
             'conexion': resultado,
             'timestamp': datetime.utcnow().isoformat()
         })
@@ -1505,14 +1505,14 @@ def get_ofertas_from_belgrano():
     except Exception as e:
         logger.error(f"Error cargando ofertas locales: {e}")
     
-        return []
+    return []
 
 
 def get_precios_from_belgrano():
     """Obtener precios desde Belgrano Ahorro (con fallback local)"""
     try:
         response = requests.get(
-              build_api_url('v1/precios'),
+            build_api_url('v1/precios'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
             timeout=API_TIMEOUT_SECS
         )
@@ -1537,7 +1537,7 @@ def get_precios_from_belgrano():
     except Exception as e:
         logger.error(f"Error cargando precios locales: {e}")
     
-        return []
+    return []
 
 
 def get_negocios_from_belgrano():
@@ -1582,7 +1582,7 @@ def get_negocios_from_belgrano():
     except Exception as e:
         logger.error(f"Error cargando negocios locales: {e}")
     
-    return []
+        return []
 
 
 def sincronizar_con_belgrano_ahorro():
@@ -1591,23 +1591,23 @@ def sincronizar_con_belgrano_ahorro():
         logger.info("Iniciando sincronización con Belgrano Ahorro...")
         
         # Sincronizar productos
-        productos = get_productos_from_belgrano()
+        productos = get_productos_from_belgrano() or []
         logger.info(f"Sincronizados {len(productos)} productos")
         
         # Sincronizar negocios
-        negocios = get_negocios_from_belgrano()
+        negocios = get_negocios_from_belgrano() or []
         logger.info(f"Sincronizados {len(negocios)} negocios")
         
         # Sincronizar sucursales
-        sucursales = get_sucursales_from_belgrano()
+        sucursales = get_sucursales_from_belgrano() or []
         logger.info(f"Sincronizadas {len(sucursales)} sucursales")
         
         # Sincronizar ofertas
-        ofertas = get_ofertas_from_belgrano()
+        ofertas = get_ofertas_from_belgrano() or []
         logger.info(f"Sincronizadas {len(ofertas)} ofertas")
         
         # Sincronizar precios
-        precios = get_precios_from_belgrano()
+        precios = get_precios_from_belgrano() or []
         logger.info(f"Sincronizados {len(precios)} precios")
         
         logger.info("Sincronización completada exitosamente")
@@ -1621,7 +1621,13 @@ def sincronizar_con_belgrano_ahorro():
         
     except Exception as e:
         logger.error(f"Error en sincronización: {e}")
-        return None
+        return {
+            'productos': 0,
+            'negocios': 0,
+            'sucursales': 0,
+            'ofertas': 0,
+            'precios': 0
+        }
 
 def notificar_cambio_a_belgrano(tipo_cambio, datos):
     """Notificar a Belgrano Ahorro sobre cambios realizados desde DevOps"""
