@@ -928,9 +928,9 @@ def editar_oferta(id):
             else:
                 flash('Oferta no encontrada localmente', 'error')
 
-        except Exception as e:
-            logger.error(f"Error actualizando oferta localmente: {e}")
-            flash('Error actualizando oferta localmente', 'error')
+    except Exception as e:
+        logger.error(f"Error actualizando oferta localmente: {e}")
+        flash('Error actualizando oferta localmente', 'error')
     
     return redirect(url_for('devops.ofertas'))
 
