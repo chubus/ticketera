@@ -958,7 +958,7 @@ def eliminar_oferta(id):
                 return redirect(url_for('devops.ofertas'))
             elif response.status_code == 404:
                 logger.warning("API endpoint /api/v1/ofertas no encontrado, usando fallback local")
-        else:
+            else:
                 logger.warning(f"API respondió {response.status_code}: {response.text}")
         except Exception as e:
             logger.error(f"Error llamando API ofertas: {e}")
