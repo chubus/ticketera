@@ -89,31 +89,106 @@ def logout():
 def dashboard():
     """Dashboard principal de DevOps"""
     try:
-        # Sincronizar datos antes de mostrar el dashboard
-        sync_result = sincronizar_con_belgrano_ahorro()
+        logger.info("Cargando dashboard de DevOps...")
         
-        # Obtener estadísticas básicas
+        # Obtener estadísticas básicas con manejo robusto de errores
         stats = {
-            'productos': len(get_productos_from_belgrano() or []),
-            'negocios': len(get_negocios_from_belgrano() or []),
-            'ofertas': len(get_ofertas_from_belgrano() or []),
-            'precios': len(get_precios_from_belgrano() or []),
-            'sucursales': len(get_sucursales_from_belgrano() or [])
+            'productos': 0,
+            'negocios': 0,
+            'ofertas': 0,
+            'precios': 0,
+            'sucursales': 0,
+            'sync_status': 'warning',
+            'sync_message': 'Verificando conexión...',
+            'api_status': 'unknown',
+            'last_sync': None
         }
         
-        # Agregar información de sincronización
-        if sync_result:
+        # Verificar estado de la API
+        try:
+            api_status = mantener_sincronizacion_activa()
+            stats['api_status'] = 'connected' if api_status else 'disconnected'
+        except Exception as e:
+            logger.warning(f"Error verificando API: {e}")
+            stats['api_status'] = 'error'
+        
+        # Obtener datos con manejo individual de errores
+        try:
+            productos = get_productos_from_belgrano()
+            stats['productos'] = len(productos) if productos else 0
+            logger.info(f"Productos cargados: {stats['productos']}")
+        except Exception as e:
+            logger.warning(f"Error cargando productos: {e}")
+            stats['productos'] = 0
+        
+        try:
+            negocios = get_negocios_from_belgrano()
+            stats['negocios'] = len(negocios) if negocios else 0
+            logger.info(f"Negocios cargados: {stats['negocios']}")
+        except Exception as e:
+            logger.warning(f"Error cargando negocios: {e}")
+            stats['negocios'] = 0
+        
+        try:
+            ofertas = get_ofertas_from_belgrano()
+            stats['ofertas'] = len(ofertas) if ofertas else 0
+            logger.info(f"Ofertas cargadas: {stats['ofertas']}")
+        except Exception as e:
+            logger.warning(f"Error cargando ofertas: {e}")
+            stats['ofertas'] = 0
+        
+        try:
+            precios = get_precios_from_belgrano()
+            stats['precios'] = len(precios) if precios else 0
+            logger.info(f"Precios cargados: {stats['precios']}")
+        except Exception as e:
+            logger.warning(f"Error cargando precios: {e}")
+            stats['precios'] = 0
+        
+        try:
+            sucursales = get_sucursales_from_belgrano()
+            stats['sucursales'] = len(sucursales) if sucursales else 0
+            logger.info(f"Sucursales cargadas: {stats['sucursales']}")
+        except Exception as e:
+            logger.warning(f"Error cargando sucursales: {e}")
+            stats['sucursales'] = 0
+        
+        # Determinar estado de sincronización
+        total_items = stats['productos'] + stats['negocios'] + stats['ofertas'] + stats['precios'] + stats['sucursales']
+        
+        if stats['api_status'] == 'connected' and total_items > 0:
             stats['sync_status'] = 'success'
-            stats['sync_message'] = 'Datos sincronizados correctamente'
-        else:
+            stats['sync_message'] = f'✅ Conectado - {total_items} elementos sincronizados'
+        elif stats['api_status'] == 'connected':
             stats['sync_status'] = 'warning'
-            stats['sync_message'] = 'Error en sincronización, usando datos locales'
-            
+            stats['sync_message'] = '⚠️ Conectado pero sin datos'
+        elif total_items > 0:
+            stats['sync_status'] = 'warning'
+            stats['sync_message'] = f'⚠️ Desconectado - {total_items} elementos locales'
+        else:
+            stats['sync_status'] = 'error'
+            stats['sync_message'] = '❌ Sin conexión y sin datos locales'
+        
+        stats['last_sync'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        
+        logger.info(f"Dashboard cargado exitosamente: {stats}")
         return render_template('devops/dashboard.html', stats=stats)
+        
     except Exception as e:
-        logger.error(f"Error en dashboard DevOps: {e}")
-        flash('Error cargando dashboard', 'error')
-        return render_template('devops/dashboard.html', stats={})
+        logger.error(f"Error crítico en dashboard DevOps: {e}")
+        flash('Error crítico cargando dashboard', 'error')
+        # Retornar dashboard con datos mínimos
+        return render_template('devops/dashboard.html', stats={
+            'productos': 0,
+            'negocios': 0,
+            'ofertas': 0,
+            'precios': 0,
+            'sucursales': 0,
+            'sync_status': 'error',
+            'sync_message': '❌ Error crítico en el sistema',
+            'api_status': 'error',
+            'last_sync': None
+        })
 
 
 # ==========================================
@@ -1280,7 +1355,13 @@ def editar_negocio(id):
                     # Buscar y actualizar el negocio
                     negocios = datos_json.get('negocios', {})
                     if str(id) in negocios:
-                        negocios[str(id)].update(data)
+                        # Preservar datos existentes y actualizar solo los campos enviados
+                        negocio_existente = negocios[str(id)]
+                        for key, value in data.items():
+                            if value is not None and value != '':
+                                negocio_existente[key] = value
+                        
+                        negocios[str(id)] = negocio_existente
                         datos_json['negocios'] = negocios
                         
                         # Guardar en productos.json
@@ -1297,6 +1378,7 @@ def editar_negocio(id):
                         })
                     else:
                         flash('Negocio no encontrado localmente', 'error')
+                        logger.warning(f"Negocio ID {id} no encontrado en datos locales")
                     
             except Exception as e:
                 logger.error(f"Error actualizando negocio localmente: {e}")
@@ -1350,6 +1432,8 @@ def eliminar_negocio(id):
                     # Eliminar el negocio
                     negocios = datos.get('negocios', {})
                     if str(id) in negocios:
+                        # Obtener información del negocio antes de eliminarlo para logging
+                        negocio_eliminado = negocios[str(id)]
                         del negocios[str(id)]
                         datos['negocios'] = negocios
                         
@@ -1358,14 +1442,16 @@ def eliminar_negocio(id):
                             json.dump(datos, f, ensure_ascii=False, indent=2)
                         
                         flash('Negocio eliminado exitosamente (eliminado localmente)', 'success')
-                        logger.info(f"Negocio ID {id} eliminado localmente")
+                        logger.info(f"Negocio ID {id} ({negocio_eliminado.get('nombre', 'Sin nombre')}) eliminado localmente")
                         
                         # Sincronizar cambio local inmediatamente con verificación
                         sincronizar_cambio_inmediato('negocio_eliminado_local', {
-                            'id': id
+                            'id': id,
+                            'nombre': negocio_eliminado.get('nombre', 'Sin nombre')
                         })
                     else:
                         flash('Negocio no encontrado localmente', 'error')
+                        logger.warning(f"Negocio ID {id} no encontrado en datos locales")
                     
             except Exception as e:
                 logger.error(f"Error eliminando negocio localmente: {e}")
@@ -1407,6 +1493,99 @@ def sincronizar_manual():
         logger.error(f"Error en sincronización manual: {e}")
         flash('Error interno en sincronización', 'error')
         return redirect(url_for('devops.dashboard'))
+
+@devops_bp.route('/dashboard/refresh', methods=['POST'])
+@devops_required
+def refresh_dashboard():
+    """Refrescar datos del dashboard"""
+    try:
+        logger.info("Refrescando dashboard...")
+        
+        # Ejecutar sincronización completa
+        resultado = sincronizar_datos_completos()
+        
+        # Verificar conexión activa
+        conexion_activa = mantener_sincronizacion_activa()
+        
+        if resultado['total'] == 3 and conexion_activa:
+            flash('✅ Dashboard actualizado - Todos los módulos conectados', 'success')
+        elif resultado['total'] > 0:
+            flash(f'⚠️ Dashboard actualizado - {resultado["total"]}/3 módulos conectados', 'warning')
+        else:
+            flash('❌ Error actualizando dashboard - Usando datos locales', 'error')
+        
+        return redirect(url_for('devops.dashboard'))
+        
+    except Exception as e:
+        logger.error(f"Error refrescando dashboard: {e}")
+        flash('Error actualizando dashboard', 'error')
+        return redirect(url_for('devops.dashboard'))
+
+@devops_bp.route('/dashboard/status')
+@devops_required
+def dashboard_status():
+    """Obtener estado del dashboard en tiempo real"""
+    try:
+        # Verificar estado de la API
+        api_status = mantener_sincronizacion_activa()
+        
+        # Obtener conteos rápidos
+        stats = {
+            'api_connected': api_status,
+            'productos': len(get_productos_from_belgrano() or []),
+            'negocios': len(get_negocios_from_belgrano() or []),
+            'ofertas': len(get_ofertas_from_belgrano() or []),
+            'precios': len(get_precios_from_belgrano() or []),
+            'sucursales': len(get_sucursales_from_belgrano() or []),
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo estado del dashboard: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@devops_bp.route('/negocios/<int:id>')
+@devops_required
+def obtener_negocio(id):
+    """Obtener información detallada de un negocio específico"""
+    try:
+        # Buscar en datos locales primero
+        negocio = None
+        
+        if os.path.exists('productos.json'):
+            with open('productos.json', 'r', encoding='utf-8') as f:
+                datos = json.load(f)
+            
+            negocios = datos.get('negocios', {})
+            if str(id) in negocios:
+                negocio = negocios[str(id)]
+                negocio['id'] = id  # Asegurar que el ID esté presente
+        
+        if negocio:
+            return jsonify({
+                'success': True,
+                'negocio': negocio
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Negocio no encontrado'
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Error obteniendo negocio {id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @devops_bp.route('/negocios/debug')
 @devops_required
