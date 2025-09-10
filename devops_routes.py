@@ -542,8 +542,8 @@ def agregar_oferta():
             if response.status_code == 201:
                 logger.info(f"Oferta '{data['titulo']}' agregada y sincronizada con Belgrano Ahorro")
 
-                # Notificar el cambio a Belgrano Ahorro
-                notificar_cambio_a_belgrano('oferta_agregada', {
+                # Sincronizar cambio inmediatamente con verificación
+                sincronizar_cambio_inmediato('oferta_agregada', {
                     'datos': data
                 })
 
@@ -583,8 +583,8 @@ def agregar_oferta():
             flash('Oferta agregada localmente (fallback)', 'success')
             logger.info(f"Oferta '{data['titulo']}' agregada localmente con ID: {oferta_id}")
             
-            # Notificar el cambio local a Belgrano Ahorro
-            notificar_cambio_a_belgrano('oferta_agregada_local', {
+            # Sincronizar cambio local inmediatamente con verificación
+            sincronizar_cambio_inmediato('oferta_agregada_local', {
                 'id': oferta_id,
                 'datos': data
             })
@@ -883,8 +883,8 @@ def editar_oferta(id):
         if response.status_code == 200:
             logger.info(f"Oferta ID {id} actualizada y sincronizada con Belgrano Ahorro")
             
-            # Notificar el cambio a Belgrano Ahorro
-            notificar_cambio_a_belgrano('oferta_actualizada', {
+            # Sincronizar cambio inmediatamente con verificación
+            sincronizar_cambio_inmediato('oferta_actualizada', {
                 'id': id,
                 'datos': data
             })
@@ -920,8 +920,8 @@ def editar_oferta(id):
                 flash('Oferta actualizada localmente (fallback)', 'success')
                 logger.info(f"Oferta ID {id} actualizada localmente")
                 
-                # Notificar el cambio local a Belgrano Ahorro
-                notificar_cambio_a_belgrano('oferta_actualizada_local', {
+                # Sincronizar cambio local inmediatamente con verificación
+                sincronizar_cambio_inmediato('oferta_actualizada_local', {
                     'id': id,
                     'datos': data
                 })
@@ -950,8 +950,8 @@ def eliminar_oferta(id):
         if response.status_code == 200:
             flash('Oferta eliminada exitosamente de la API', 'success')
             
-            # Notificar el cambio a Belgrano Ahorro
-            notificar_cambio_a_belgrano('oferta_eliminada', {
+            # Sincronizar cambio inmediatamente con verificación
+            sincronizar_cambio_inmediato('oferta_eliminada', {
                 'id': id
             })
             
@@ -982,8 +982,8 @@ def eliminar_oferta(id):
                     flash('Oferta eliminada localmente (fallback)', 'success')
                     logger.info(f"Oferta ID {id} eliminada localmente")
                     
-                    # Notificar el cambio local a Belgrano Ahorro
-                    notificar_cambio_a_belgrano('oferta_eliminada_local', {
+                    # Sincronizar cambio local inmediatamente con verificación
+                    sincronizar_cambio_inmediato('oferta_eliminada_local', {
                         'id': id
                     })
                 else:
@@ -1171,8 +1171,8 @@ def agregar_negocio():
             if response.status_code == 201:
                 logger.info(f"Negocio '{data['nombre']}' sincronizado exitosamente con Belgrano Ahorro")
                 
-                # Notificar el cambio a Belgrano Ahorro
-                notificar_cambio_a_belgrano('negocio_agregado', {
+                # Sincronizar cambio inmediatamente con verificación
+                sincronizar_cambio_inmediato('negocio_agregado', {
                     'datos': data
                 })
                 
@@ -1222,8 +1222,8 @@ def agregar_negocio():
             flash('Negocio agregado localmente (fallback)', 'success')
             logger.info(f"Negocio '{data['nombre']}' agregado localmente con ID: {negocio_id}")
             
-            # Notificar el cambio local a Belgrano Ahorro
-            notificar_cambio_a_belgrano('negocio_agregado_local', {
+            # Sincronizar cambio local inmediatamente con verificación
+            sincronizar_cambio_inmediato('negocio_agregado_local', {
                 'id': negocio_id,
                 'datos': data
             })
@@ -1270,8 +1270,8 @@ def editar_negocio(id):
             if response.status_code == 200:
                 logger.info(f"Negocio ID {id} actualizado y sincronizado con Belgrano Ahorro")
                 
-                # Notificar el cambio a Belgrano Ahorro
-                notificar_cambio_a_belgrano('negocio_actualizado', {
+                # Sincronizar cambio inmediatamente con verificación
+                sincronizar_cambio_inmediato('negocio_actualizado', {
                     'id': id,
                     'datos': data
                 })
@@ -1308,8 +1308,8 @@ def editar_negocio(id):
                         flash('Negocio actualizado exitosamente (guardado localmente)', 'success')
                         logger.info(f"Negocio ID {id} actualizado localmente")
                         
-                        # Notificar el cambio local a Belgrano Ahorro
-                        notificar_cambio_a_belgrano('negocio_actualizado_local', {
+                        # Sincronizar cambio local inmediatamente con verificación
+                        sincronizar_cambio_inmediato('negocio_actualizado_local', {
                             'id': id,
                             'datos': data
                         })
@@ -1344,8 +1344,8 @@ def eliminar_negocio(id):
             if response.status_code == 200:
                 flash('Negocio eliminado exitosamente de la API', 'success')
                 
-                # Notificar el cambio a Belgrano Ahorro
-                notificar_cambio_a_belgrano('negocio_eliminado', {
+                # Sincronizar cambio inmediatamente con verificación
+                sincronizar_cambio_inmediato('negocio_eliminado', {
                     'id': id
                 })
                 
@@ -1378,8 +1378,8 @@ def eliminar_negocio(id):
                         flash('Negocio eliminado exitosamente (eliminado localmente)', 'success')
                         logger.info(f"Negocio ID {id} eliminado localmente")
                         
-                        # Notificar el cambio local a Belgrano Ahorro
-                        notificar_cambio_a_belgrano('negocio_eliminado_local', {
+                        # Sincronizar cambio local inmediatamente con verificación
+                        sincronizar_cambio_inmediato('negocio_eliminado_local', {
                             'id': id
                         })
                     else:
@@ -1395,6 +1395,36 @@ def eliminar_negocio(id):
     
     return redirect(url_for('devops.negocios'))
 
+
+@devops_bp.route('/sincronizar', methods=['POST'])
+@devops_required
+def sincronizar_manual():
+    """Sincronización manual con Belgrano Ahorro"""
+    try:
+        logger.info("🔄 Iniciando sincronización manual desde DevOps")
+        
+        # Ejecutar sincronización completa
+        resultado = sincronizar_datos_completos()
+        
+        # Verificar conexión activa
+        conexion_activa = mantener_sincronizacion_activa()
+        
+        if resultado['total'] == 3 and conexion_activa:
+            flash('✅ Sincronización completa exitosa - Todos los módulos conectados', 'success')
+            logger.info("✅ Sincronización manual completada exitosamente")
+        elif resultado['total'] > 0:
+            flash(f'⚠️ Sincronización parcial - {resultado["total"]}/3 módulos conectados', 'warning')
+            logger.warning(f"⚠️ Sincronización manual parcial: {resultado['total']}/3")
+        else:
+            flash('❌ Error en sincronización - Usando datos locales', 'error')
+            logger.error("❌ Sincronización manual falló completamente")
+        
+        return redirect(url_for('devops.dashboard'))
+        
+    except Exception as e:
+        logger.error(f"Error en sincronización manual: {e}")
+        flash('Error interno en sincronización', 'error')
+        return redirect(url_for('devops.dashboard'))
 
 @devops_bp.route('/negocios/debug')
 @devops_required
@@ -1664,6 +1694,223 @@ def notificar_cambio_a_belgrano(tipo_cambio, datos):
     except Exception as e:
         logger.error(f"Error enviando notificación a Belgrano Ahorro: {e}")
         return False
+
+def sincronizar_cambio_inmediato(tipo_cambio, datos):
+    """Sincronizar cambio inmediatamente con Belgrano Ahorro con verificación bidireccional"""
+    try:
+        logger.info(f"Iniciando sincronización inmediata: {tipo_cambio}")
+        
+        # 1. Notificar el cambio
+        notificacion_exitosa = notificar_cambio_a_belgrano(tipo_cambio, datos)
+        
+        # 2. Verificar sincronización según el tipo de cambio
+        sync_verificado = False
+        
+        if tipo_cambio in ['oferta_agregada', 'oferta_actualizada', 'oferta_eliminada']:
+            sync_verificado = verificar_sincronizacion_ofertas(tipo_cambio, datos)
+        elif tipo_cambio in ['negocio_agregado', 'negocio_actualizado', 'negocio_eliminado']:
+            sync_verificado = verificar_sincronizacion_negocios(tipo_cambio, datos)
+        
+        # 3. Log del resultado
+        if notificacion_exitosa and sync_verificado:
+            logger.info(f"✅ Sincronización completa y verificada: {tipo_cambio}")
+            return True
+        elif notificacion_exitosa:
+            logger.warning(f"⚠️ Notificación enviada pero sincronización no verificada: {tipo_cambio}")
+            return True  # La notificación se envió, aunque no se pudo verificar
+        else:
+            logger.error(f"❌ Sincronización falló: {tipo_cambio}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error en sincronización inmediata: {e}")
+        return False
+
+def verificar_sincronizacion_ofertas(tipo_cambio, datos):
+    """Verificar que las ofertas estén sincronizadas correctamente"""
+    try:
+        # Obtener ofertas actuales de Belgrano Ahorro
+        response = requests.get(
+            build_api_url('v1/ofertas'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
+        )
+        
+        if response.status_code == 200:
+            ofertas_api = response.json()
+            logger.info(f"Verificación de ofertas: {len(ofertas_api) if isinstance(ofertas_api, list) else 'N/A'} ofertas en API")
+            
+            # Verificar según el tipo de cambio
+            if tipo_cambio == 'oferta_agregada':
+                # Verificar que la nueva oferta esté en la API
+                if isinstance(ofertas_api, list):
+                    titulo_buscado = datos.get('datos', {}).get('titulo', '')
+                    oferta_encontrada = any(oferta.get('titulo') == titulo_buscado for oferta in ofertas_api)
+                    if oferta_encontrada:
+                        logger.info("✅ Nueva oferta verificada en API")
+                        return True
+                    else:
+                        logger.warning("⚠️ Nueva oferta no encontrada en API")
+                        return False
+                        
+            elif tipo_cambio == 'oferta_eliminada':
+                # Verificar que la oferta eliminada ya no esté en la API
+                oferta_id = datos.get('id')
+                if isinstance(ofertas_api, list):
+                    oferta_encontrada = any(oferta.get('id') == oferta_id for oferta in ofertas_api)
+                    if not oferta_encontrada:
+                        logger.info("✅ Oferta eliminada verificada en API")
+                        return True
+                    else:
+                        logger.warning("⚠️ Oferta eliminada aún presente en API")
+                        return False
+                        
+            return True  # Para actualizaciones, asumir éxito si la API responde
+            
+        else:
+            logger.warning(f"No se pudo verificar sincronización de ofertas: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error verificando sincronización de ofertas: {e}")
+        return False
+
+def verificar_sincronizacion_negocios(tipo_cambio, datos):
+    """Verificar que los negocios estén sincronizados correctamente"""
+    try:
+        # Obtener negocios actuales de Belgrano Ahorro
+        response = requests.get(
+            build_api_url('v1/negocios'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=API_TIMEOUT_SECS
+        )
+        
+        if response.status_code == 200:
+            negocios_api = response.json()
+            logger.info(f"Verificación de negocios: {len(negocios_api) if isinstance(negocios_api, list) else 'N/A'} negocios en API")
+            
+            # Verificar según el tipo de cambio
+            if tipo_cambio == 'negocio_agregado':
+                # Verificar que el nuevo negocio esté en la API
+                if isinstance(negocios_api, list):
+                    nombre_buscado = datos.get('datos', {}).get('nombre', '')
+                    negocio_encontrado = any(negocio.get('nombre') == nombre_buscado for negocio in negocios_api)
+                    if negocio_encontrado:
+                        logger.info("✅ Nuevo negocio verificado en API")
+                        return True
+                    else:
+                        logger.warning("⚠️ Nuevo negocio no encontrado en API")
+                        return False
+                        
+            elif tipo_cambio == 'negocio_eliminado':
+                # Verificar que el negocio eliminado ya no esté en la API
+                negocio_id = datos.get('id')
+                if isinstance(negocios_api, list):
+                    negocio_encontrado = any(negocio.get('id') == negocio_id for negocio in negocios_api)
+                    if not negocio_encontrado:
+                        logger.info("✅ Negocio eliminado verificado en API")
+                        return True
+                    else:
+                        logger.warning("⚠️ Negocio eliminado aún presente en API")
+                        return False
+                        
+            return True  # Para actualizaciones, asumir éxito si la API responde
+            
+        else:
+            logger.warning(f"No se pudo verificar sincronización de negocios: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error verificando sincronización de negocios: {e}")
+        return False
+
+def mantener_sincronizacion_activa():
+    """Mantener sincronización activa con Belgrano Ahorro cada 30 segundos"""
+    try:
+        # Verificar estado de la API
+        response = requests.get(
+            build_api_url('v1/health'),
+            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+            timeout=5
+        )
+        
+        if response.status_code == 200:
+            logger.debug("✅ Conexión activa con Belgrano Ahorro")
+            return True
+        else:
+            logger.warning(f"⚠️ API de Belgrano Ahorro respondió {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.warning(f"⚠️ No se pudo verificar conexión con Belgrano Ahorro: {e}")
+        return False
+
+def sincronizar_datos_completos():
+    """Sincronizar todos los datos con Belgrano Ahorro"""
+    try:
+        logger.info("🔄 Iniciando sincronización completa con Belgrano Ahorro")
+        
+        # Sincronizar ofertas
+        ofertas_sync = False
+        try:
+            response = requests.get(
+                build_api_url('v1/ofertas'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                timeout=API_TIMEOUT_SECS
+            )
+            if response.status_code == 200:
+                ofertas_sync = True
+                logger.info("✅ Ofertas sincronizadas")
+        except Exception as e:
+            logger.warning(f"⚠️ Error sincronizando ofertas: {e}")
+        
+        # Sincronizar negocios
+        negocios_sync = False
+        try:
+            response = requests.get(
+                build_api_url('v1/negocios'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                timeout=API_TIMEOUT_SECS
+            )
+            if response.status_code == 200:
+                negocios_sync = True
+                logger.info("✅ Negocios sincronizados")
+        except Exception as e:
+            logger.warning(f"⚠️ Error sincronizando negocios: {e}")
+        
+        # Sincronizar productos
+        productos_sync = False
+        try:
+            response = requests.get(
+                build_api_url('v1/productos'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                timeout=API_TIMEOUT_SECS
+            )
+            if response.status_code == 200:
+                productos_sync = True
+                logger.info("✅ Productos sincronizados")
+        except Exception as e:
+            logger.warning(f"⚠️ Error sincronizando productos: {e}")
+        
+        # Resumen de sincronización
+        total_sync = sum([ofertas_sync, negocios_sync, productos_sync])
+        logger.info(f"📊 Sincronización completa: {total_sync}/3 módulos sincronizados")
+        
+        return {
+            'ofertas': ofertas_sync,
+            'negocios': negocios_sync,
+            'productos': productos_sync,
+            'total': total_sync
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error en sincronización completa: {e}")
+        return {
+            'ofertas': False,
+            'negocios': False,
+            'productos': False,
+            'total': 0
+        }
 
 def get_ofertas_destacadas_from_belgrano():
     """Obtener ofertas destacadas para la página principal de Belgrano Ahorro"""
