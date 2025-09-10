@@ -948,20 +948,20 @@ def eliminar_oferta(id):
         )
         
         if response.status_code == 200:
-                flash('Oferta eliminada exitosamente de la API', 'success')
-                
-                # Notificar el cambio a Belgrano Ahorro
-                notificar_cambio_a_belgrano('oferta_eliminada', {
-                    'id': id
-                })
-                
-                return redirect(url_for('devops.ofertas'))
-            elif response.status_code == 404:
-                logger.warning("API endpoint /api/v1/ofertas no encontrado, usando fallback local")
-            else:
-                logger.warning(f"API respondió {response.status_code}: {response.text}")
-        except Exception as e:
-            logger.error(f"Error llamando API ofertas: {e}")
+            flash('Oferta eliminada exitosamente de la API', 'success')
+            
+            # Notificar el cambio a Belgrano Ahorro
+            notificar_cambio_a_belgrano('oferta_eliminada', {
+                'id': id
+            })
+            
+            return redirect(url_for('devops.ofertas'))
+        elif response.status_code == 404:
+            logger.warning("API endpoint /api/v1/ofertas no encontrado, usando fallback local")
+        else:
+            logger.warning(f"API respondió {response.status_code}: {response.text}")
+    except Exception as e:
+        logger.error(f"Error llamando API ofertas: {e}")
 
         # Fallback local: eliminar de productos.json
         try:
@@ -1161,14 +1161,14 @@ def agregar_negocio():
         
         # Intentar agregar a la API primero
         try:
-        response = requests.post(
-            build_api_url('v1/negocios'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data,
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 201:
+            response = requests.post(
+                build_api_url('v1/negocios'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 201:
                 logger.info(f"Negocio '{data['nombre']}' sincronizado exitosamente con Belgrano Ahorro")
                 
                 # Notificar el cambio a Belgrano Ahorro
@@ -1193,7 +1193,7 @@ def agregar_negocio():
             if os.path.exists('productos.json'):
                 with open('productos.json', 'r', encoding='utf-8') as f:
                     datos = json.load(f)
-        else:
+            else:
                 datos = {'productos': [], 'sucursales': {}, 'ofertas': {}, 'negocios': {}, 'categorias': {}}
             
             # Generar ID único para el negocio
@@ -1259,22 +1259,22 @@ def editar_negocio(id):
         
         # Intentar actualizar en la API primero
         try:
-        response = requests.put(
-            build_api_url(f'v1/negocios/{id}'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data,
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 200:
+            response = requests.put(
+                build_api_url(f'v1/negocios/{id}'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 200:
                 logger.info(f"Negocio ID {id} actualizado y sincronizado con Belgrano Ahorro")
-              
-              # Notificar el cambio a Belgrano Ahorro
-              notificar_cambio_a_belgrano('negocio_actualizado', {
-                  'id': id,
-                  'datos': data
-              })
-              
+                
+                # Notificar el cambio a Belgrano Ahorro
+                notificar_cambio_a_belgrano('negocio_actualizado', {
+                    'id': id,
+                    'datos': data
+                })
+                
                 flash('Negocio actualizado exitosamente y sincronizado con Belgrano Ahorro', 'success')
                 return redirect(url_for('devops.negocios'))
             elif response.status_code == 404:
@@ -1292,26 +1292,26 @@ def editar_negocio(id):
                 with open('productos.json', 'r', encoding='utf-8') as f:
                     datos_json = json.load(f)
                 
-                  # Buscar y actualizar el negocio
-                  negocios = datos_json.get('negocios', {})
-                  if str(id) in negocios:
-                      negocios[str(id)].update(data)
-                      datos_json['negocios'] = negocios
-                      
-                      # Guardar en productos.json
+                # Buscar y actualizar el negocio
+                negocios = datos_json.get('negocios', {})
+                if str(id) in negocios:
+                    negocios[str(id)].update(data)
+                    datos_json['negocios'] = negocios
+                    
+                    # Guardar en productos.json
                     with open('productos.json', 'w', encoding='utf-8') as f:
                         json.dump(datos_json, f, ensure_ascii=False, indent=2)
                     
                     flash('Negocio actualizado localmente (fallback)', 'success')
                     logger.info(f"Negocio ID {id} actualizado localmente")
-                      
-                      # Notificar el cambio local a Belgrano Ahorro
-                      notificar_cambio_a_belgrano('negocio_actualizado_local', {
-                          'id': id,
-                          'datos': data
-                      })
+                    
+                    # Notificar el cambio local a Belgrano Ahorro
+                    notificar_cambio_a_belgrano('negocio_actualizado_local', {
+                        'id': id,
+                        'datos': data
+                    })
                 else:
-                      flash('Negocio no encontrado localmente', 'error')
+                    flash('Negocio no encontrado localmente', 'error')
                 
         except Exception as e:
             logger.error(f"Error actualizando negocio localmente: {e}")
@@ -1330,7 +1330,6 @@ def eliminar_negocio(id):
     """Eliminar negocio"""
     try:
         # Intentar eliminar en la API primero
-    try:
         response = requests.delete(
             build_api_url(f'v1/negocios/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
@@ -1338,20 +1337,20 @@ def eliminar_negocio(id):
         )
         
         if response.status_code == 200:
-                flash('Negocio eliminado exitosamente de la API', 'success')
-                
-                # Notificar el cambio a Belgrano Ahorro
-                notificar_cambio_a_belgrano('negocio_eliminado', {
-                    'id': id
-                })
-                
-                return redirect(url_for('devops.negocios'))
-            elif response.status_code == 404:
-                logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
-            else:
-                logger.warning(f"API respondió {response.status_code}: {response.text}")
-        except Exception as e:
-            logger.error(f"Error llamando API negocios: {e}")
+            flash('Negocio eliminado exitosamente de la API', 'success')
+            
+            # Notificar el cambio a Belgrano Ahorro
+            notificar_cambio_a_belgrano('negocio_eliminado', {
+                'id': id
+            })
+            
+            return redirect(url_for('devops.negocios'))
+        elif response.status_code == 404:
+            logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
+        else:
+            logger.warning(f"API respondió {response.status_code}: {response.text}")
+    except Exception as e:
+        logger.error(f"Error llamando API negocios: {e}")
         
         # Fallback local: eliminar de productos.json
         try:
