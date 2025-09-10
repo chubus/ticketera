@@ -115,24 +115,6 @@ def dashboard():
         flash('Error cargando dashboard', 'error')
         return render_template('devops/dashboard.html', stats={})
 
-@devops_bp.route('/sincronizar', methods=['POST'])
-@devops_required
-def sincronizar_manual():
-    """Sincronización manual con Belgrano Ahorro"""
-    try:
-        sync_result = sincronizar_con_belgrano_ahorro()
-        if sync_result:
-            flash('Sincronización completada exitosamente', 'success')
-            logger.info(f"Sincronización manual exitosa: {sync_result}")
-        else:
-            flash('Error en sincronización', 'error')
-            logger.error("Error en sincronización manual")
-        
-        return redirect(url_for('devops.dashboard'))
-    except Exception as e:
-        logger.error(f"Error en sincronización manual: {e}")
-        flash('Error interno en sincronización', 'error')
-        return redirect(url_for('devops.dashboard'))
 
 # ==========================================
 # ENDPOINTS DE PRODUCTOS
