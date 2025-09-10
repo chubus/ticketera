@@ -19,7 +19,7 @@ devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')  # sin default fijo
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')  
 try:
-API_TIMEOUT_SECS = int(os.environ.get('API_TIMEOUT_SECS', '8'))
+    API_TIMEOUT_SECS = int(os.environ.get('API_TIMEOUT_SECS', '8'))
 except (ValueError, TypeError):
     API_TIMEOUT_SECS = 8
 
@@ -363,8 +363,8 @@ def ofertas():
         
         # Obtener ofertas
         ofertas = []
-    try:
-        ofertas = get_ofertas_from_belgrano()
+        try:
+            ofertas = get_ofertas_from_belgrano()
             logger.info(f"Ofertas obtenidas: {len(ofertas)}")
         except Exception as api_error:
             logger.warning(f"Error obteniendo ofertas de API: {api_error}")
@@ -532,26 +532,26 @@ def agregar_oferta():
 
         # Intentar agregar a la API primero
         try:
-        response = requests.post(
+            response = requests.post(
                 build_api_url('v1/ofertas'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            json=data,
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 201:
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                json=data,
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 201:
                 logger.info(f"Oferta '{data['titulo']}' agregada y sincronizada con Belgrano Ahorro")
-                
+
                 # Notificar el cambio a Belgrano Ahorro
                 notificar_cambio_a_belgrano('oferta_agregada', {
                     'datos': data
                 })
-                
-            flash('Oferta agregada exitosamente y sincronizada con Belgrano Ahorro', 'success')
+
+                flash('Oferta agregada exitosamente y sincronizada con Belgrano Ahorro', 'success')
                 return redirect(url_for('devops.ofertas'))
             elif response.status_code == 404:
                 logger.warning("API endpoint /api/v1/ofertas no encontrado, usando fallback local")
-        else:
+            else:
                 logger.warning(f"API respondió {response.status_code}: {response.text}")
                 flash(f'Error en API Belgrano Ahorro ({response.status_code}), guardando localmente', 'warning')
 
