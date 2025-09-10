@@ -1258,6 +1258,7 @@ def editar_negocio(id):
         }
         
         # Intentar actualizar en la API primero
+        api_success = False
         try:
             response = requests.put(
                 build_api_url(f'v1/negocios/{id}'),
@@ -1276,7 +1277,7 @@ def editar_negocio(id):
                 })
                 
                 flash('Negocio actualizado exitosamente y sincronizado con Belgrano Ahorro', 'success')
-                return redirect(url_for('devops.negocios'))
+                api_success = True
             elif response.status_code == 404:
                 logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
             else:
@@ -1286,36 +1287,38 @@ def editar_negocio(id):
             logger.error(f"Error llamando API negocios: {e}")
             flash('Error conectando con Belgrano Ahorro, actualizando localmente', 'warning')
         
-        # Fallback local: actualizar en productos.json
-        try:
-            if os.path.exists('productos.json'):
-                with open('productos.json', 'r', encoding='utf-8') as f:
-                    datos_json = json.load(f)
-                
-                # Buscar y actualizar el negocio
-                negocios = datos_json.get('negocios', {})
-                if str(id) in negocios:
-                    negocios[str(id)].update(data)
-                    datos_json['negocios'] = negocios
+        # Si la API no fue exitosa, usar fallback local
+        if not api_success:
+            # Fallback local: actualizar en productos.json
+            try:
+                if os.path.exists('productos.json'):
+                    with open('productos.json', 'r', encoding='utf-8') as f:
+                        datos_json = json.load(f)
                     
-                    # Guardar en productos.json
-                    with open('productos.json', 'w', encoding='utf-8') as f:
-                        json.dump(datos_json, f, ensure_ascii=False, indent=2)
+                    # Buscar y actualizar el negocio
+                    negocios = datos_json.get('negocios', {})
+                    if str(id) in negocios:
+                        negocios[str(id)].update(data)
+                        datos_json['negocios'] = negocios
+                        
+                        # Guardar en productos.json
+                        with open('productos.json', 'w', encoding='utf-8') as f:
+                            json.dump(datos_json, f, ensure_ascii=False, indent=2)
+                        
+                        flash('Negocio actualizado exitosamente (guardado localmente)', 'success')
+                        logger.info(f"Negocio ID {id} actualizado localmente")
+                        
+                        # Notificar el cambio local a Belgrano Ahorro
+                        notificar_cambio_a_belgrano('negocio_actualizado_local', {
+                            'id': id,
+                            'datos': data
+                        })
+                    else:
+                        flash('Negocio no encontrado localmente', 'error')
                     
-                    flash('Negocio actualizado localmente (fallback)', 'success')
-                    logger.info(f"Negocio ID {id} actualizado localmente")
-                    
-                    # Notificar el cambio local a Belgrano Ahorro
-                    notificar_cambio_a_belgrano('negocio_actualizado_local', {
-                        'id': id,
-                        'datos': data
-                    })
-                else:
-                    flash('Negocio no encontrado localmente', 'error')
-                
-        except Exception as e:
-            logger.error(f"Error actualizando negocio localmente: {e}")
-            flash('Error actualizando negocio localmente', 'error')
+            except Exception as e:
+                logger.error(f"Error actualizando negocio localmente: {e}")
+                flash('Error actualizando negocio localmente', 'error')
             
     except Exception as e:
         logger.error(f"Error editando negocio: {e}")
@@ -1330,57 +1333,61 @@ def eliminar_negocio(id):
     """Eliminar negocio"""
     try:
         # Intentar eliminar en la API primero
-        response = requests.delete(
-            build_api_url(f'v1/negocios/{id}'),
-            headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code == 200:
-            flash('Negocio eliminado exitosamente de la API', 'success')
-            
-            # Notificar el cambio a Belgrano Ahorro
-            notificar_cambio_a_belgrano('negocio_eliminado', {
-                'id': id
-            })
-            
-            return redirect(url_for('devops.negocios'))
-        elif response.status_code == 404:
-            logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
-        else:
-            logger.warning(f"API respondió {response.status_code}: {response.text}")
-    except Exception as e:
-        logger.error(f"Error llamando API negocios: {e}")
-        
-        # Fallback local: eliminar de productos.json
+        api_success = False
         try:
-            if os.path.exists('productos.json'):
-                with open('productos.json', 'r', encoding='utf-8') as f:
-                    datos = json.load(f)
+            response = requests.delete(
+                build_api_url(f'v1/negocios/{id}'),
+                headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code == 200:
+                flash('Negocio eliminado exitosamente de la API', 'success')
                 
-                # Eliminar el negocio
-                negocios = datos.get('negocios', {})
-                if str(id) in negocios:
-                    del negocios[str(id)]
-                    datos['negocios'] = negocios
-                    
-                    # Guardar en productos.json
-                    with open('productos.json', 'w', encoding='utf-8') as f:
-                        json.dump(datos, f, ensure_ascii=False, indent=2)
-                    
-                    flash('Negocio eliminado localmente (fallback)', 'success')
-                    logger.info(f"Negocio ID {id} eliminado localmente")
-                    
-                    # Notificar el cambio local a Belgrano Ahorro
-                    notificar_cambio_a_belgrano('negocio_eliminado_local', {
-                        'id': id
-                    })
-                else:
-                    flash('Negocio no encontrado localmente', 'error')
+                # Notificar el cambio a Belgrano Ahorro
+                notificar_cambio_a_belgrano('negocio_eliminado', {
+                    'id': id
+                })
                 
+                api_success = True
+            elif response.status_code == 404:
+                logger.warning("API endpoint /api/v1/negocios no encontrado, usando fallback local")
+            else:
+                logger.warning(f"API respondió {response.status_code}: {response.text}")
         except Exception as e:
-            logger.error(f"Error eliminando negocio localmente: {e}")
-            flash('Error eliminando negocio localmente', 'error')
+            logger.error(f"Error llamando API negocios: {e}")
+        
+        # Si la API no fue exitosa, usar fallback local
+        if not api_success:
+            # Fallback local: eliminar de productos.json
+            try:
+                if os.path.exists('productos.json'):
+                    with open('productos.json', 'r', encoding='utf-8') as f:
+                        datos = json.load(f)
+                    
+                    # Eliminar el negocio
+                    negocios = datos.get('negocios', {})
+                    if str(id) in negocios:
+                        del negocios[str(id)]
+                        datos['negocios'] = negocios
+                        
+                        # Guardar en productos.json
+                        with open('productos.json', 'w', encoding='utf-8') as f:
+                            json.dump(datos, f, ensure_ascii=False, indent=2)
+                        
+                        flash('Negocio eliminado exitosamente (eliminado localmente)', 'success')
+                        logger.info(f"Negocio ID {id} eliminado localmente")
+                        
+                        # Notificar el cambio local a Belgrano Ahorro
+                        notificar_cambio_a_belgrano('negocio_eliminado_local', {
+                            'id': id
+                        })
+                    else:
+                        flash('Negocio no encontrado localmente', 'error')
+                    
+            except Exception as e:
+                logger.error(f"Error eliminando negocio localmente: {e}")
+                flash('Error eliminando negocio localmente', 'error')
             
     except Exception as e:
         logger.error(f"Error eliminando negocio: {e}")
