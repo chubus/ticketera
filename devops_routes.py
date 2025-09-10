@@ -941,7 +941,6 @@ def eliminar_oferta(id):
     """Eliminar oferta"""
     try:
         # Intentar eliminar en la API primero
-    try:
         response = requests.delete(
                 build_api_url(f'v1/ofertas/{id}'),
             headers={'Authorization': f'Bearer {BELGRANO_AHORRO_API_KEY}'},

@@ -128,6 +128,11 @@ class BelgranoAhorroAPIClient:
 
 def create_api_client(url=None, api_key=None):
     """Crear instancia del cliente API"""
+    if url is None:
+        url = os.environ.get('BELGRANO_AHORRO_URL')
+    if api_key is None:
+        api_key = os.environ.get('BELGRANO_AHORRO_API_KEY')
+    
     if url is None or api_key is None:
         raise ValueError("url y api_key son requeridos para crear el cliente API")
     return BelgranoAhorroAPIClient(url, api_key)
@@ -135,6 +140,11 @@ def create_api_client(url=None, api_key=None):
 def test_api_connection(url=None, api_key=None):
     """Probar conexión con la API de Belgrano Ahorro"""
     try:
+        if url is None:
+            url = os.environ.get('BELGRANO_AHORRO_URL')
+        if api_key is None:
+            api_key = os.environ.get('BELGRANO_AHORRO_API_KEY')
+            
         if url is None or api_key is None:
             raise ValueError("url y api_key son requeridos para probar la conexión")
         client = BelgranoAhorroAPIClient(url, api_key)
