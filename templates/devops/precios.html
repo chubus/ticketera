@@ -55,9 +55,7 @@
                         <a class="nav-link" href="{{ url_for('devops.productos') }}">
                             <i class="fas fa-box"></i> Productos
                         </a>
-                        <a class="nav-link" href="{{ url_for('devops.sucursales') }}">
-                            <i class="fas fa-store"></i> Sucursales
-                        </a>
+                        <!-- Sucursales eliminado -->
                         <a class="nav-link" href="{{ url_for('devops.negocios') }}">
                             <i class="fas fa-building"></i> Negocios
                         </a>
@@ -99,46 +97,7 @@
                     {% endif %}
                 {% endwith %}
 
-                <!-- Bulk Actions Card -->
-                <div class="card bulk-actions mb-4">
-                    <div class="card-body">
-                        <h5><i class="fas fa-cogs"></i> Acciones Masivas</h5>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label">Aumentar/Reducir (%)</label>
-                                <input type="number" class="form-control" id="porcentajeCambio" placeholder="10">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Categoría</label>
-                                <select class="form-select" id="categoriaFiltro">
-                                    <option value="">Todas las categorías</option>
-                                    <option value="Lácteos">Lácteos</option>
-                                    <option value="Panadería">Panadería</option>
-                                    <option value="Frutas y Verduras">Frutas y Verduras</option>
-                                    <option value="Carnes">Carnes</option>
-                                    <option value="Bebidas">Bebidas</option>
-                                    <option value="Limpieza">Limpieza</option>
-                                    <option value="Higiene">Higiene</option>
-                                    <option value="Otros">Otros</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Acción</label>
-                                <select class="form-select" id="tipoAccion">
-                                    <option value="aumentar">Aumentar</option>
-                                    <option value="reducir">Reducir</option>
-                                    <option value="establecer">Establecer precio fijo</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">&nbsp;</label>
-                                <button class="btn btn-light w-100" onclick="aplicarAccionMasiva()">
-                                    <i class="fas fa-magic"></i> Aplicar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Acciones masivas eliminadas: gestión uno a uno -->
 
                 <!-- Precios Table -->
                 <div class="card">
@@ -155,7 +114,7 @@
                                         <th>Categoría</th>
                                         <th>Precio Actual</th>
                                         <th>Nuevo Precio</th>
-                                        <th>Cambio</th>
+                                        <th>Guardar</th>
                                         <th>Stock</th>
                                         <th>Estado</th>
                                     </tr>
@@ -168,15 +127,19 @@
                                         <td>{{ precio.categoria }}</td>
                                         <td>${{ "%.2f"|format(precio.precio) }}</td>
                                         <td>
-                                            <input type="number" class="form-control price-input" 
-                                                   value="{{ "%.2f"|format(precio.precio) }}" 
-                                                   step="0.01" min="0" 
-                                                   data-producto-id="{{ precio.id }}"
-                                                   data-precio-original="{{ precio.precio }}"
-                                                   onchange="calcularCambio(this)">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control price-input" 
+                                                       value="{{ "%.2f"|format(precio.precio) }}" 
+                                                       step="0.01" min="0" 
+                                                       data-producto-id="{{ precio.id }}"
+                                                       data-precio-original="{{ precio.precio }}">
+                                            </div>
                                         </td>
                                         <td>
-                                            <span id="cambio-{{ precio.id }}" class="badge bg-secondary">0%</span>
+                                            <button class="btn btn-sm btn-success" onclick="guardarPrecio({{ precio.id }})">
+                                                <i class="fas fa-save"></i>
+                                            </button>
                                         </td>
                                         <td>{{ precio.stock }}</td>
                                         <td>
@@ -247,131 +210,29 @@
             }
         }
 
-        function aplicarAccionMasiva() {
-            const porcentaje = parseFloat(document.getElementById('porcentajeCambio').value);
-            const categoria = document.getElementById('categoriaFiltro').value;
-            const tipoAccion = document.getElementById('tipoAccion').value;
-            
-            if (!porcentaje && tipoAccion !== 'establecer') {
-                alert('Por favor ingrese un porcentaje válido');
+        function guardarPrecio(productoId) {
+            const input = document.querySelector(`.price-input[data-producto-id="${productoId}"]`);
+            if (!input) return;
+            const nuevoPrecio = parseFloat(input.value);
+            if (isNaN(nuevoPrecio) || nuevoPrecio < 0) {
+                alert('Precio inválido');
                 return;
             }
-            
-            const inputs = document.querySelectorAll('.price-input');
-            inputs.forEach(input => {
-                const precioOriginal = parseFloat(input.dataset.precioOriginal);
-                let nuevoPrecio;
-                
-                if (tipoAccion === 'aumentar') {
-                    nuevoPrecio = precioOriginal * (1 + porcentaje / 100);
-                } else if (tipoAccion === 'reducir') {
-                    nuevoPrecio = precioOriginal * (1 - porcentaje / 100);
-                } else if (tipoAccion === 'establecer') {
-                    nuevoPrecio = porcentaje;
-                }
-                
-                input.value = nuevoPrecio.toFixed(2);
-                calcularCambio(input);
-            });
-        }
-
-        function aplicarCambiosMasivos() {
-            const cambios = [];
-            const inputs = document.querySelectorAll('.price-input');
-            
-            inputs.forEach(input => {
-                const precioOriginal = parseFloat(input.dataset.precioOriginal);
-                const nuevoPrecio = parseFloat(input.value);
-                
-                if (nuevoPrecio !== precioOriginal) {
-                    cambios.push({
-                        id: input.dataset.productoId,
-                        precio_original: precioOriginal,
-                        precio_nuevo: nuevoPrecio
-                    });
-                }
-            });
-            
-            if (cambios.length === 0) {
-                alert('No hay cambios para aplicar');
-                return;
-            }
-            
-            // Mostrar resumen
-            mostrarResumenCambios(cambios);
-            new bootstrap.Modal(document.getElementById('confirmarCambiosModal')).show();
-        }
-
-        function mostrarResumenCambios(cambios) {
-            const resumenDiv = document.getElementById('resumenCambios');
-            let html = '<div class="table-responsive"><table class="table table-sm">';
-            html += '<thead><tr><th>Producto</th><th>Precio Original</th><th>Nuevo Precio</th><th>Cambio</th></tr></thead><tbody>';
-            
-            cambios.forEach(cambio => {
-                const diferencia = cambio.precio_nuevo - cambio.precio_original;
-                const porcentaje = (diferencia / cambio.precio_original) * 100;
-                const clase = diferencia > 0 ? 'text-success' : 'text-danger';
-                const signo = diferencia > 0 ? '+' : '';
-                
-                html += `<tr>
-                    <td>Producto ID: ${cambio.id}</td>
-                    <td>$${cambio.precio_original.toFixed(2)}</td>
-                    <td>$${cambio.precio_nuevo.toFixed(2)}</td>
-                    <td class="${clase}">${signo}${diferencia.toFixed(2)} (${signo}${porcentaje.toFixed(1)}%)</td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table></div>';
-            resumenDiv.innerHTML = html;
-        }
-
-        function confirmarCambios() {
-            const cambios = [];
-            const inputs = document.querySelectorAll('.price-input');
-            
-            inputs.forEach(input => {
-                const precioOriginal = parseFloat(input.dataset.precioOriginal);
-                const nuevoPrecio = parseFloat(input.value);
-                
-                if (nuevoPrecio !== precioOriginal) {
-                    cambios.push({
-                        id: parseInt(input.dataset.productoId),
-                        precio: nuevoPrecio
-                    });
-                }
-            });
-            
-            // Enviar cambios al servidor
-            fetch('/devops/precios/actualizar', {
+            fetch(`/devops/precios/actualizar/${productoId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ cambios: cambios })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ precio: nuevoPrecio })
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    alert('Precios actualizados exitosamente');
+                    alert('Precio actualizado');
                     location.reload();
                 } else {
-                    alert('Error al actualizar precios: ' + data.error);
+                    alert('Error: ' + (data.error || 'No se pudo actualizar'));
                 }
             })
-            .catch(error => {
-                alert('Error al actualizar precios: ' + error);
-            });
-            
-            bootstrap.Modal.getInstance(document.getElementById('confirmarCambiosModal')).hide();
-        }
-
-        function revertirCambios() {
-            const inputs = document.querySelectorAll('.price-input');
-            inputs.forEach(input => {
-                const precioOriginal = input.dataset.precioOriginal;
-                input.value = precioOriginal;
-                calcularCambio(input);
-            });
+            .catch(err => alert('Error: ' + err));
         }
     </script>
 </body>
