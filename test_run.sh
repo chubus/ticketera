@@ -14,8 +14,8 @@ if [ ! -f "run.sh" ]; then
 fi
 
 # Verificar que el script de inicialización existe
-if [ ! -f "scripts/init_users_flota.py" ]; then
-    echo "❌ Error: scripts/init_users_flota.py no encontrado"
+if [ ! -f "belgrano_tickets/scripts/init_users_flota.py" ]; then
+    echo "❌ Error: belgrano_tickets/scripts/init_users_flota.py no encontrado"
     exit 1
 fi
 

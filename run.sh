@@ -33,20 +33,20 @@ init_database() {
     echo "🗄️ Inicializando base de datos..."
     
     # Verificar que el script de inicialización existe
-    if [ ! -f "scripts/init_users_flota.py" ]; then
-        handle_error "Script de inicialización no encontrado: scripts/init_users_flota.py"
+    if [ ! -f "belgrano_tickets/scripts/init_users_flota.py" ]; then
+        handle_error "Script de inicialización no encontrado: belgrano_tickets/scripts/init_users_flota.py"
     fi
     
     # Actualizar esquema de base de datos primero
     echo "🔧 Actualizando esquema de base de datos..."
-    if python3 actualizar_db.py; then
+    if python3 belgrano_tickets/actualizar_db.py; then
         echo "✅ Esquema de base de datos actualizado"
     else
         echo "⚠️ Error actualizando esquema, continuando..."
     fi
     
     # Ejecutar script de inicialización
-    if python3 scripts/init_users_flota.py; then
+    if python3 belgrano_tickets/scripts/init_users_flota.py; then
         echo "✅ Base de datos inicializada correctamente"
     else
         handle_error "Error inicializando la base de datos"
