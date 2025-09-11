@@ -39,7 +39,18 @@ def sincronizar_cambio_inmediato(tipo_cambio, datos):
 @devops_bp.route('/')
 def devops_home():
     """Panel principal de DevOps"""
-    return render_template('devops/admin_panel.html')
+    return jsonify({
+        'status': 'success',
+        'service': 'DevOps System',
+        'message': 'Panel de DevOps funcionando correctamente',
+        'endpoints': {
+            'negocios': '/devops/negocios',
+            'ofertas': '/devops/ofertas',
+            'health': '/devops/health',
+            'info': '/devops/info'
+        },
+        'timestamp': datetime.now().isoformat()
+    })
 
 # Ruta de gestión de ofertas
 @devops_bp.route('/ofertas')
@@ -55,7 +66,11 @@ def ofertas():
         
         if response.status_code == 200:
             ofertas_data = response.json()
-            return render_template('devops/ofertas.html', ofertas=ofertas_data)
+            return jsonify({
+                'status': 'success',
+                'data': ofertas_data,
+                'message': 'Ofertas obtenidas correctamente desde la API'
+            })
         else:
             logger.warning(f"API respondió {response.status_code}: {response.text}")
             # Fallback: cargar desde archivo local
@@ -63,30 +78,51 @@ def ofertas():
                 with open('productos.json', 'r', encoding='utf-8') as f:
                     datos = json.load(f)
                 ofertas = datos.get('ofertas', {})
-                return render_template('devops/ofertas.html', ofertas=ofertas)
+                return jsonify({
+                    'status': 'success',
+                    'data': ofertas,
+                    'message': 'Ofertas obtenidas desde archivo local (fallback)'
+                })
             else:
-                return render_template('devops/ofertas.html', ofertas={})
+                return jsonify({
+                    'status': 'success',
+                    'data': {},
+                    'message': 'No hay ofertas disponibles'
+                })
                 
     except Exception as e:
         logger.error(f"Error obteniendo ofertas: {e}")
-        return render_template('devops/ofertas.html', ofertas={})
+        return jsonify({
+            'status': 'error',
+            'message': f'Error obteniendo ofertas: {str(e)}'
+        }), 500
 
 # Ruta para agregar oferta
 @devops_bp.route('/ofertas/agregar', methods=['POST'])
 def agregar_oferta():
     """Agregar nueva oferta"""
     try:
-        # Obtener datos del formulario
-        titulo = request.form.get('titulo')
-        descripcion = request.form.get('descripcion')
-        descuento = request.form.get('descuento')
-        fecha_inicio = request.form.get('fecha_inicio')
-        fecha_fin = request.form.get('fecha_fin')
+        # Obtener datos del JSON o del formulario
+        if request.is_json:
+            data = request.get_json()
+            titulo = data.get('titulo')
+            descripcion = data.get('descripcion')
+            descuento = data.get('descuento')
+            fecha_inicio = data.get('fecha_inicio')
+            fecha_fin = data.get('fecha_fin')
+        else:
+            titulo = request.form.get('titulo')
+            descripcion = request.form.get('descripcion')
+            descuento = request.form.get('descuento')
+            fecha_inicio = request.form.get('fecha_inicio')
+            fecha_fin = request.form.get('fecha_fin')
         
         # Validar datos
         if not all([titulo, descripcion, descuento, fecha_inicio, fecha_fin]):
-            flash('Todos los campos son requeridos', 'error')
-            return redirect(url_for('devops.ofertas'))
+            return jsonify({
+                'status': 'error',
+                'message': 'Todos los campos son requeridos'
+            }), 400
         
         # Crear datos de la oferta
         oferta_data = {
@@ -109,22 +145,29 @@ def agregar_oferta():
         )
         
         if response.status_code in [200, 201]:
-            flash('Oferta agregada exitosamente', 'success')
             logger.info(f"Oferta '{titulo}' agregada a la API")
             
             # Sincronizar cambio
             sincronizar_cambio_inmediato('oferta_agregada', oferta_data)
             
-            return redirect(url_for('devops.ofertas'))
+            return jsonify({
+                'status': 'success',
+                'message': 'Oferta agregada exitosamente',
+                'data': oferta_data
+            })
         else:
             logger.warning(f"API respondió {response.status_code}: {response.text}")
-            flash('Error agregando oferta a la API', 'error')
-            return redirect(url_for('devops.ofertas'))
+            return jsonify({
+                'status': 'error',
+                'message': f'Error agregando oferta a la API: {response.text}'
+            }), 500
             
     except Exception as e:
         logger.error(f"Error agregando oferta: {e}")
-        flash('Error interno al agregar oferta', 'error')
-        return redirect(url_for('devops.ofertas'))
+        return jsonify({
+            'status': 'error',
+            'message': f'Error interno al agregar oferta: {str(e)}'
+        }), 500
 
 # Ruta para eliminar oferta
 @devops_bp.route('/ofertas/eliminar/<int:id>', methods=['POST'])
@@ -139,22 +182,28 @@ def eliminar_oferta(id):
         )
         
         if response.status_code == 200:
-            flash('Oferta eliminada exitosamente', 'success')
             logger.info(f"Oferta ID {id} eliminada de la API")
             
             # Sincronizar cambio
             sincronizar_cambio_inmediato('oferta_eliminada', {'id': id})
             
-            return redirect(url_for('devops.ofertas'))
+            return jsonify({
+                'status': 'success',
+                'message': 'Oferta eliminada exitosamente'
+            })
         else:
             logger.warning(f"API respondió {response.status_code}: {response.text}")
-            flash('Error eliminando oferta de la API', 'error')
-            return redirect(url_for('devops.ofertas'))
+            return jsonify({
+                'status': 'error',
+                'message': f'Error eliminando oferta de la API: {response.text}'
+            }), 500
             
     except Exception as e:
         logger.error(f"Error eliminando oferta: {e}")
-        flash('Error interno al eliminar oferta', 'error')
-        return redirect(url_for('devops.ofertas'))
+        return jsonify({
+            'status': 'error',
+            'message': f'Error interno al eliminar oferta: {str(e)}'
+        }), 500
 
 # Ruta de salud del sistema
 @devops_bp.route('/health')

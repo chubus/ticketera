@@ -61,8 +61,8 @@ def create_default_users():
     try:
         conn = sqlite3.connect('data/belgrano_ahorro.db')
         cursor = conn.cursor()
-        
-        # Verificar si ya existen usuarios
+            
+            # Verificar si ya existen usuarios
         cursor.execute("SELECT COUNT(*) FROM usuarios")
         count = cursor.fetchone()[0]
         
@@ -103,8 +103,8 @@ def create_default_users():
         print(f"✅ Creados {len(default_users)} usuarios por defecto")
         
         conn.close()
-        return True
-        
+                return True
+            
     except Exception as e:
         print(f"❌ Error creando usuarios por defecto: {e}")
         return False
@@ -146,11 +146,11 @@ def create_default_flota():
         print(f"✅ Creados {len(default_flota)} registros de flota")
         
         conn.close()
-        return True
-        
-    except Exception as e:
+            return True
+            
+        except Exception as e:
         print(f"❌ Error creando datos de flota: {e}")
-        return False
+            return False
 
 def main():
     """Función principal"""
@@ -178,7 +178,7 @@ def main():
     if not create_default_flota():
         print("❌ Error creando datos de flota")
         sys.exit(1)
-    
+
     print("=" * 40)
     print("✅ Inicialización completada exitosamente")
     print(f"🕐 Timestamp: {datetime.now().isoformat()}")
