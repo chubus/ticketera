@@ -1138,6 +1138,12 @@ def test_ahorro_api():
             'timestamp': datetime.now().isoformat()
         }), 500
 
+# Ruta principal de la aplicación
+@app.route('/')
+def index():
+    """Página principal de la aplicación"""
+    return render_template('admin_panel.html')
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

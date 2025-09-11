@@ -17,7 +17,7 @@ BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ah
 API_TIMEOUT_SECS = 10
 
 # Crear blueprint
-devops_bp = Blueprint('devops', __name__)
+devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
 
 # Función para construir URLs de API
 def build_api_url(endpoint):
