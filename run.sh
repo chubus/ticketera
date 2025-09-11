@@ -33,20 +33,42 @@ init_database() {
     echo "🗄️ Inicializando base de datos..."
     
     # Verificar que el script de inicialización existe
-    if [ ! -f "belgrano_tickets/scripts/init_users_flota.py" ]; then
-        handle_error "Script de inicialización no encontrado: belgrano_tickets/scripts/init_users_flota.py"
+    SCRIPT_PATH=""
+    if [ -f "belgrano_tickets/scripts/init_users_flota.py" ]; then
+        SCRIPT_PATH="belgrano_tickets/scripts/init_users_flota.py"
+    elif [ -f "scripts/init_users_flota.py" ]; then
+        SCRIPT_PATH="scripts/init_users_flota.py"
+    elif [ -f "./init_users_flota.py" ]; then
+        SCRIPT_PATH="./init_users_flota.py"
+    else
+        handle_error "Script de inicialización no encontrado en ninguna ubicación"
     fi
+    
+    echo "📁 Script encontrado en: $SCRIPT_PATH"
     
     # Actualizar esquema de base de datos primero
     echo "🔧 Actualizando esquema de base de datos..."
-    if python3 belgrano_tickets/actualizar_db.py; then
-        echo "✅ Esquema de base de datos actualizado"
+    ACTUALIZAR_DB_PATH=""
+    if [ -f "belgrano_tickets/actualizar_db.py" ]; then
+        ACTUALIZAR_DB_PATH="belgrano_tickets/actualizar_db.py"
+    elif [ -f "actualizar_db.py" ]; then
+        ACTUALIZAR_DB_PATH="actualizar_db.py"
     else
-        echo "⚠️ Error actualizando esquema, continuando..."
+        echo "⚠️ Script actualizar_db.py no encontrado, saltando..."
+        ACTUALIZAR_DB_PATH=""
+    fi
+    
+    if [ -n "$ACTUALIZAR_DB_PATH" ]; then
+        echo "📁 Actualizar DB encontrado en: $ACTUALIZAR_DB_PATH"
+        if python3 "$ACTUALIZAR_DB_PATH"; then
+            echo "✅ Esquema de base de datos actualizado"
+        else
+            echo "⚠️ Error actualizando esquema, continuando..."
+        fi
     fi
     
     # Ejecutar script de inicialización
-    if python3 belgrano_tickets/scripts/init_users_flota.py; then
+    if python3 "$SCRIPT_PATH"; then
         echo "✅ Base de datos inicializada correctamente"
     else
         handle_error "Error inicializando la base de datos"
