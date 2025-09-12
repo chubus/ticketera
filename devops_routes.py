@@ -240,12 +240,12 @@ def gestion_ofertas():
         #     })
         
         # Temporalmente devolver datos mock
-        return jsonify({
-            'status': 'success',
+            return jsonify({
+                'status': 'success',
             'data': {'ofertas': [], 'message': 'Servicio temporalmente en modo mock'},
             'source': 'mock',
             'message': 'API de ofertas temporalmente deshabilitada'
-        })
+            })
                 
     except Exception as e:
         logger.error(f"Error obteniendo ofertas: {e}")
@@ -285,12 +285,12 @@ def gestion_negocios():
         #     })
         
         # Temporalmente devolver datos mock
-        return jsonify({
-            'status': 'success',
+            return jsonify({
+                'status': 'success',
             'data': {'negocios': [], 'message': 'Servicio temporalmente en modo mock'},
             'source': 'mock',
             'message': 'API de negocios temporalmente deshabilitada'
-        })
+            })
                 
     except Exception as e:
         logger.error(f"Error obteniendo negocios: {e}")
