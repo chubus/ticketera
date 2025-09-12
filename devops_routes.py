@@ -107,15 +107,16 @@ def devops_health():
         
         # Verificar conexión con API externa
         try:
-            response = requests.get(
-                build_api_url('healthz'),
-                headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-                timeout=5
-            )
-            if response.status_code == 200:
-                health_status['checks']['api_connection'] = 'healthy'
-            else:
-                health_status['checks']['api_connection'] = 'warning'
+            # response = requests.get(
+            #     build_api_url('healthz'),
+            #     headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+            #     timeout=5
+            # )
+            # if response.status_code == 200:
+            #     health_status['checks']['api_connection'] = 'healthy'
+            # else:
+            #     health_status['checks']['api_connection'] = 'warning'
+            health_status['checks']['api_connection'] = 'disabled'  # Temporalmente deshabilitado
         except Exception as e:
             health_status['checks']['api_connection'] = 'error'
             health_status['api_error'] = str(e)
@@ -214,29 +215,37 @@ def devops_info():
 def gestion_ofertas():
     """Gestión completa de ofertas"""
     try:
-        # Intentar obtener ofertas desde la API
-        response = requests.get(
-            build_api_url('v1/ofertas'),
-            headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-            timeout=API_TIMEOUT_SECS
-        )
+        # # Intentar obtener ofertas desde la API
+        # response = requests.get(
+        #     build_api_url('v1/ofertas'),
+        #     headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+        #     timeout=API_TIMEOUT_SECS
+        # )
+        # 
+        # if response.status_code == 200:
+        #     ofertas_data = response.json()
+        #     return jsonify({
+        #         'status': 'success',
+        #         'data': ofertas_data,
+        #         'source': 'api',
+        #         'message': 'Ofertas obtenidas correctamente desde la API'
+        #     })
+        # else:
+        #     logger.warning(f"API respondió {response.status_code}: {response.text}")
+        #     return jsonify({
+        #         'status': 'warning',
+        #         'message': f'API no disponible ({response.status_code})',
+        #         'data': [],
+        #         'source': 'fallback'
+        #     })
         
-        if response.status_code == 200:
-            ofertas_data = response.json()
-            return jsonify({
-                'status': 'success',
-                'data': ofertas_data,
-                'source': 'api',
-                'message': 'Ofertas obtenidas correctamente desde la API'
-            })
-        else:
-            logger.warning(f"API respondió {response.status_code}: {response.text}")
-            return jsonify({
-                'status': 'warning',
-                'message': f'API no disponible ({response.status_code})',
-                'data': [],
-                'source': 'fallback'
-            })
+        # Temporalmente devolver datos mock
+        return jsonify({
+            'status': 'success',
+            'data': {'ofertas': [], 'message': 'Servicio temporalmente en modo mock'},
+            'source': 'mock',
+            'message': 'API de ofertas temporalmente deshabilitada'
+        })
                 
     except Exception as e:
         logger.error(f"Error obteniendo ofertas: {e}")
@@ -251,29 +260,37 @@ def gestion_ofertas():
 def gestion_negocios():
     """Gestión completa de negocios"""
     try:
-        # Intentar obtener negocios desde la API
-        response = requests.get(
-            build_api_url('v1/negocios'),
-            headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-            timeout=API_TIMEOUT_SECS
-        )
+        # # Intentar obtener negocios desde la API
+        # response = requests.get(
+        #     build_api_url('v1/negocios'),
+        #     headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+        #     timeout=API_TIMEOUT_SECS
+        # )
+        # 
+        # if response.status_code == 200:
+        #     negocios_data = response.json()
+        #     return jsonify({
+        #         'status': 'success',
+        #         'data': negocios_data,
+        #         'source': 'api',
+        #         'message': 'Negocios obtenidos correctamente desde la API'
+        #     })
+        # else:
+        #     logger.warning(f"API respondió {response.status_code}: {response.text}")
+        #     return jsonify({
+        #         'status': 'warning',
+        #         'message': f'API no disponible ({response.status_code})',
+        #         'data': [],
+        #         'source': 'fallback'
+        #     })
         
-        if response.status_code == 200:
-            negocios_data = response.json()
-            return jsonify({
-                'status': 'success',
-                'data': negocios_data,
-                'source': 'api',
-                'message': 'Negocios obtenidos correctamente desde la API'
-            })
-        else:
-            logger.warning(f"API respondió {response.status_code}: {response.text}")
-            return jsonify({
-                'status': 'warning',
-                'message': f'API no disponible ({response.status_code})',
-                'data': [],
-                'source': 'fallback'
-            })
+        # Temporalmente devolver datos mock
+        return jsonify({
+            'status': 'success',
+            'data': {'negocios': [], 'message': 'Servicio temporalmente en modo mock'},
+            'source': 'mock',
+            'message': 'API de negocios temporalmente deshabilitada'
+        })
                 
     except Exception as e:
         logger.error(f"Error obteniendo negocios: {e}")
@@ -301,31 +318,33 @@ def sincronizacion_manual():
         
         # Sincronizar ofertas
         try:
-            response = requests.get(
-                build_api_url('v1/ofertas'),
-                headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-                timeout=API_TIMEOUT_SECS
-            )
-            sync_results['ofertas'] = {
-                'status': 'success' if response.status_code == 200 else 'error',
-                'status_code': response.status_code,
-                'count': len(response.json()) if response.status_code == 200 else 0
-            }
+            # response = requests.get(
+            #     build_api_url('v1/ofertas'),
+            #     headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+            #     timeout=API_TIMEOUT_SECS
+            # )
+            # sync_results['ofertas'] = {
+            #     'status': 'success' if response.status_code == 200 else 'error',
+            #     'status_code': response.status_code,
+            #     'count': len(response.json()) if response.status_code == 200 else 0
+            # }
+            sync_results['ofertas'] = {'status': 'disabled', 'message': 'API temporalmente deshabilitada'}
         except Exception as e:
             sync_results['ofertas'] = {'status': 'error', 'error': str(e)}
         
         # Sincronizar negocios
         try:
-            response = requests.get(
-                build_api_url('v1/negocios'),
-                headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-                timeout=API_TIMEOUT_SECS
-            )
-            sync_results['negocios'] = {
-                'status': 'success' if response.status_code == 200 else 'error',
-                'status_code': response.status_code,
-                'count': len(response.json()) if response.status_code == 200 else 0
-            }
+            # response = requests.get(
+            #     build_api_url('v1/negocios'),
+            #     headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+            #     timeout=API_TIMEOUT_SECS
+            # )
+            # sync_results['negocios'] = {
+            #     'status': 'success' if response.status_code == 200 else 'error',
+            #     'status_code': response.status_code,
+            #     'count': len(response.json()) if response.status_code == 200 else 0
+            # }
+            sync_results['negocios'] = {'status': 'disabled', 'message': 'API temporalmente deshabilitada'}
         except Exception as e:
             sync_results['negocios'] = {'status': 'error', 'error': str(e)}
         
