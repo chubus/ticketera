@@ -1152,13 +1152,8 @@ def index():
     
     return render_template('admin_panel.html')
 
-# Registrar blueprint de DevOps
-try:
-    from devops_routes import devops_bp
-    app.register_blueprint(devops_bp)
-    print("✅ Blueprint de DevOps registrado correctamente")
-except Exception as e:
-    print(f"❌ Error registrando blueprint de DevOps: {e}")
+# Registrar blueprint de DevOps (eliminando duplicado)
+# Este bloque se eliminó porque ya se registra arriba en la línea 58
 
 if __name__ == "__main__":
     with app.app_context():
