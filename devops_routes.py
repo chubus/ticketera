@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Configuración de API
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')  
 API_TIMEOUT_SECS = 10
 
 # Crear blueprint
@@ -31,7 +31,7 @@ def sincronizar_cambio_inmediato(tipo_cambio, datos):
         logger.info(f"Sincronizando cambio: {tipo_cambio}")
         # Aquí se implementaría la lógica de sincronización
         return True
-    except Exception as e:
+        except Exception as e:
         logger.error(f"Error en sincronización: {e}")
         return False
 
@@ -59,11 +59,11 @@ def ofertas():
     try:
         # Intentar obtener ofertas desde la API
         response = requests.get(
-            build_api_url('v1/ofertas'),
-            headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-            timeout=API_TIMEOUT_SECS
-        )
-        
+                build_api_url('v1/ofertas'),
+                headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+                timeout=API_TIMEOUT_SECS
+            )
+            
         if response.status_code == 200:
             ofertas_data = response.json()
             return jsonify({
@@ -71,20 +71,20 @@ def ofertas():
                 'data': ofertas_data,
                 'message': 'Ofertas obtenidas correctamente desde la API'
             })
-        else:
-            logger.warning(f"API respondió {response.status_code}: {response.text}")
+            else:
+                logger.warning(f"API respondió {response.status_code}: {response.text}")
             # Fallback: cargar desde archivo local
             if os.path.exists('productos.json'):
                 with open('productos.json', 'r', encoding='utf-8') as f:
                     datos = json.load(f)
                 ofertas = datos.get('ofertas', {})
-                return jsonify({
+        return jsonify({
                     'status': 'success',
                     'data': ofertas,
                     'message': 'Ofertas obtenidas desde archivo local (fallback)'
                 })
             else:
-                return jsonify({
+        return jsonify({
                     'status': 'success',
                     'data': {},
                     'message': 'No hay ofertas disponibles'
@@ -104,7 +104,7 @@ def agregar_oferta():
     try:
         # Obtener datos del JSON o del formulario
         if request.is_json:
-            data = request.get_json()
+        data = request.get_json()
             titulo = data.get('titulo')
             descripcion = data.get('descripcion')
             descuento = data.get('descuento')
@@ -119,7 +119,7 @@ def agregar_oferta():
         
         # Validar datos
         if not all([titulo, descripcion, descuento, fecha_inicio, fecha_fin]):
-            return jsonify({
+        return jsonify({
                 'status': 'error',
                 'message': 'Todos los campos son requeridos'
             }), 400
@@ -137,30 +137,30 @@ def agregar_oferta():
         }
         
         # Intentar enviar a la API
-        response = requests.post(
+            response = requests.post(
             build_api_url('v1/ofertas'),
             json=oferta_data,
-            headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
-            timeout=API_TIMEOUT_SECS
-        )
-        
-        if response.status_code in [200, 201]:
+                headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
+                timeout=API_TIMEOUT_SECS
+            )
+            
+            if response.status_code in [200, 201]:
             logger.info(f"Oferta '{titulo}' agregada a la API")
             
             # Sincronizar cambio
             sincronizar_cambio_inmediato('oferta_agregada', oferta_data)
             
-            return jsonify({
+        return jsonify({
                 'status': 'success',
                 'message': 'Oferta agregada exitosamente',
                 'data': oferta_data
             })
         else:
             logger.warning(f"API respondió {response.status_code}: {response.text}")
-            return jsonify({
+        return jsonify({
                 'status': 'error',
                 'message': f'Error agregando oferta a la API: {response.text}'
-            }), 500
+        }), 500
             
     except Exception as e:
         logger.error(f"Error agregando oferta: {e}")
@@ -176,7 +176,7 @@ def eliminar_oferta(id):
     try:
         # Intentar eliminar desde la API
         response = requests.delete(
-            build_api_url(f'v1/ofertas/{id}'),
+                build_api_url(f'v1/ofertas/{id}'),
             headers={'X-API-Key': BELGRANO_AHORRO_API_KEY},
             timeout=API_TIMEOUT_SECS
         )
@@ -191,12 +191,12 @@ def eliminar_oferta(id):
                 'status': 'success',
                 'message': 'Oferta eliminada exitosamente'
             })
-        else:
-            logger.warning(f"API respondió {response.status_code}: {response.text}")
-            return jsonify({
+            else:
+                logger.warning(f"API respondió {response.status_code}: {response.text}")
+        return jsonify({
                 'status': 'error',
                 'message': f'Error eliminando oferta de la API: {response.text}'
-            }), 500
+        }), 500
             
     except Exception as e:
         logger.error(f"Error eliminando oferta: {e}")
@@ -209,7 +209,7 @@ def eliminar_oferta(id):
 @devops_bp.route('/health')
 def health():
     """Health check del sistema DevOps"""
-    return jsonify({
+        return jsonify({
         'status': 'healthy',
         'service': 'devops',
         'timestamp': datetime.now().isoformat(),

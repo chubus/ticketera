@@ -119,8 +119,9 @@ with app.app_context():
             db.session.rollback()
             return False
     
-    # Ejecutar inicialización automática
-    inicializar_usuarios_automaticamente()
+    # La inicialización se ejecutará cuando se necesite
+    pass
+
 login_manager = LoginManager(app)
 
 # Configuración robusta de SocketIO para evitar invalid session
@@ -1142,10 +1143,19 @@ def test_ahorro_api():
 @app.route('/')
 def index():
     """Página principal de la aplicación"""
+    # Inicializar usuarios si es necesario
+    try:
+        with app.app_context():
+            inicializar_usuarios_automaticamente()
+    except Exception as e:
+        logger.warning(f"Error inicializando usuarios: {e}")
+    
     return render_template('admin_panel.html')
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        # Inicializar usuarios automáticamente
+        inicializar_usuarios_automaticamente()
     print("Iniciando aplicación de tickets en puerto 5001...")
     socketio.run(app, debug=True, host='0.0.0.0', port=5001)

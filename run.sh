@@ -99,23 +99,14 @@ check_environment() {
 start_server() {
     echo "🌐 Arrancando servidor Gunicorn..."
     echo "   Puerto: $PORT"
-    echo "   Worker class: gevent"
+    echo "   Workers: 2"
     echo "   Bind: 0.0.0.0:$PORT"
     echo "================================"
     
-    # Comando Gunicorn con gevent para Socket.IO
+    # Comando Gunicorn con configuración
     exec gunicorn \
-        --worker-class gevent \
-        --bind 0.0.0.0:$PORT \
-        --workers 2 \
-        --timeout 120 \
-        --keep-alive 5 \
-        --max-requests 1000 \
-        --max-requests-jitter 100 \
-        --access-logfile - \
-        --error-logfile - \
-        --log-level info \
-        wsgi:app
+        --config gunicorn.conf.py \
+        wsgi:application
 }
 
 # Función principal
