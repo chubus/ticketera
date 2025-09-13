@@ -19,9 +19,31 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuración de API
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 API_TIMEOUT_SECS = 10
+
+# Validar variables de entorno críticas
+if not BELGRANO_AHORRO_URL:
+    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+    logger.warning(f"BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+
+if not BELGRANO_AHORRO_API_KEY:
+    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+    logger.warning(f"BELGRANO_AHORRO_API_KEY: {BELGRANO_AHORRO_API_KEY}")
+
+# Importar cliente API
+try:
+    from api_client import create_api_client, api_client as global_api_client
+    if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+        devops_api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+        logger.info("Cliente API de Belgrano Ahorro inicializado para DevOps")
+    else:
+        devops_api_client = None
+        logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
+except ImportError as e:
+    logger.error(f"No se pudo inicializar el cliente API: {e}")
+    devops_api_client = None
 
 # Crear blueprint con prefijo
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
@@ -29,6 +51,9 @@ devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
 # Función para construir URLs de API
 def build_api_url(endpoint):
     """Construir URL completa de API"""
+    if not BELGRANO_AHORRO_URL:
+        logger.warning("BELGRANO_AHORRO_URL no está configurada")
+        return None
     return urljoin(BELGRANO_AHORRO_URL, f'/api/{endpoint}')
 
 # Función para sincronizar cambios
@@ -36,8 +61,20 @@ def sincronizar_cambio_inmediato(tipo_cambio, datos):
     """Sincronizar cambio inmediatamente con la API"""
     try:
         logger.info(f"Sincronizando cambio: {tipo_cambio}")
-        # Implementación de sincronización
-        return True
+        
+        if not devops_api_client:
+            logger.warning("Cliente API no disponible para sincronización")
+            return False
+            
+        # Usar el cliente API para sincronizar
+        resultado = devops_api_client.sync_data(tipo_cambio, datos)
+        if resultado:
+            logger.info(f"Sincronización exitosa: {tipo_cambio}")
+            return True
+        else:
+            logger.error(f"Error en sincronización de {tipo_cambio}")
+            return False
+            
     except Exception as e:
         logger.error(f"Error en sincronización: {e}")
         return False

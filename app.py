@@ -32,6 +32,15 @@ from models import db, User, Ticket
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
+# Validar variables de entorno críticas
+if not BELGRANO_AHORRO_URL:
+    print("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+    print(f"BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+
+if not BELGRANO_AHORRO_API_KEY:
+    print("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+    print(f"BELGRANO_AHORRO_API_KEY: {BELGRANO_AHORRO_API_KEY}")
+
 print(f"🔗 Configuración API:")
 print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
 if BELGRANO_AHORRO_API_KEY:

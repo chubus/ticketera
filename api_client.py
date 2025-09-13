@@ -143,6 +143,15 @@ def test_api_connection(base_url, api_key):
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
+# Validar variables de entorno críticas
+if not BELGRANO_AHORRO_URL:
+    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+    logger.warning(f"BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+
+if not BELGRANO_AHORRO_API_KEY:
+    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+    logger.warning(f"BELGRANO_AHORRO_API_KEY: {'*' * len(BELGRANO_AHORRO_API_KEY) if BELGRANO_AHORRO_API_KEY else None}")
+
 # Cliente global (se inicializa si las variables están disponibles)
 api_client = None
 if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
