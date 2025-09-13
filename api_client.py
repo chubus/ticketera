@@ -13,162 +13,140 @@ import os
 logger = logging.getLogger(__name__)
 
 class BelgranoAhorroAPIClient:
-    """Cliente para consumir la API de Belgrano Ahorro"""
+    """Cliente para comunicarse con la API de Belgrano Ahorro"""
     
     def __init__(self, base_url, api_key):
-        if not base_url or not api_key:
-            raise ValueError("base_url y api_key son requeridos")
-        self.base_url = base_url
-        self.api_key = api_key
-        self.timeout = 30
-        self.session = requests.Session()
+        """
+        Inicializar cliente API
         
+        Args:
+            base_url (str): URL base de la API de Belgrano Ahorro
+            api_key (str): Clave de API para autenticación
+        """
+        self.base_url = base_url.rstrip('/')
+        self.api_key = api_key
+        self.session = requests.Session()
         self.session.headers.update({
             'Content-Type': 'application/json',
-            'X-API-Key': self.api_key,
-            'User-Agent': 'BelgranoTickets/1.0.0'
+            'Authorization': f'Bearer {api_key}',
+            'X-API-Key': api_key
         })
         
         logger.info(f"Cliente API inicializado para: {self.base_url}")
     
-    def _make_request(self, method, endpoint, data=None, params=None):
-        url = f"{self.base_url}/api/v1{endpoint}"
+    def _make_request(self, method, endpoint, **kwargs):
+        """
+        Realizar petición HTTP
+        
+        Args:
+            method (str): Método HTTP (GET, POST, PUT, DELETE)
+            endpoint (str): Endpoint de la API
+            **kwargs: Argumentos adicionales para requests
+            
+        Returns:
+            dict: Respuesta de la API o None si hay error
+        """
+        url = f"{self.base_url}/api/{endpoint.lstrip('/')}"
         
         try:
-            logger.debug(f"Realizando {method} a {url}")
-            
-            response = self.session.request(
-                method=method,
-                url=url,
-                json=data,
-                params=params,
-                timeout=self.timeout
-            )
-            
+            response = self.session.request(method, url, timeout=30, **kwargs)
             response.raise_for_status()
             
             if response.content:
                 return response.json()
             else:
-                return {'status': 'success'}
+                return {"success": True}
                 
-        except requests.exceptions.Timeout:
-            logger.error(f"Timeout en petición a {url}")
-            raise Exception(f"Timeout en petición a {endpoint}")
-            
-        except requests.exceptions.ConnectionError:
-            logger.error(f"Error de conexión a {url}")
-            raise Exception(f"No se puede conectar a {self.base_url}")
-            
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"Error HTTP {e.response.status_code}: {e.response.text}")
-            try:
-                error_data = e.response.json()
-                raise Exception(error_data.get('error', f'Error HTTP {e.response.status_code}'))
-            except:
-                raise Exception(f'Error HTTP {e.response.status_code}')
-                
-        except Exception as e:
-            logger.error(f"Error inesperado en petición a {url}: {e}")
-            raise
-    
-    def health_check(self):
-        """Verificar estado de la API de Belgrano Ahorro"""
-        try:
-            return self._make_request('GET', '/health')
-        except Exception as e:
-            logger.error(f"Error en health check: {e}")
-            return {
-                'status': 'unhealthy',
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            }
-    
-    def get_productos(self, categoria=None):
-        """Obtener productos de Belgrano Ahorro"""
-        try:
-            if categoria:
-                return self._make_request('GET', f'/productos/categoria/{categoria}')
-            else:
-                return self._make_request('GET', '/productos')
-        except Exception as e:
-            logger.error(f"Error obteniendo productos: {e}")
-            return []
-    
-    def get_pedido(self, numero_pedido):
-        """Obtener un pedido específico"""
-        try:
-            response = self._make_request('GET', f'/pedidos/{numero_pedido}')
-            return response.get('pedido')
-        except Exception as e:
-            logger.error(f"Error obteniendo pedido {numero_pedido}: {e}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error en petición {method} {url}: {e}")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"Error decodificando JSON: {e}")
             return None
     
-    def actualizar_estado_pedido(self, numero_pedido, nuevo_estado):
-        """Actualizar estado de un pedido en Belgrano Ahorro"""
-        try:
-            data = {'estado': nuevo_estado}
-            response = self._make_request('PUT', f'/pedidos/{numero_pedido}/estado', data=data)
-            logger.info(f"Estado del pedido {numero_pedido} actualizado a {nuevo_estado}")
-            return True
-        except Exception as e:
-            logger.error(f"Error actualizando estado del pedido {numero_pedido}: {e}")
-            return False
+    def get_productos(self):
+        """Obtener lista de productos"""
+        return self._make_request('GET', 'productos')
     
-    def sync_tickets_to_ahorro(self, tickets):
-        """Sincronizar tickets hacia Belgrano Ahorro"""
+    def get_producto(self, producto_id):
+        """Obtener producto específico"""
+        return self._make_request('GET', f'productos/{producto_id}')
+    
+    def create_ticket(self, ticket_data):
+        """Crear nuevo ticket"""
+        return self._make_request('POST', 'tickets', json=ticket_data)
+    
+    def update_ticket(self, ticket_id, ticket_data):
+        """Actualizar ticket existente"""
+        return self._make_request('PUT', f'tickets/{ticket_id}', json=ticket_data)
+    
+    def get_tickets(self):
+        """Obtener lista de tickets"""
+        return self._make_request('GET', 'tickets')
+    
+    def get_ticket(self, ticket_id):
+        """Obtener ticket específico"""
+        return self._make_request('GET', f'tickets/{ticket_id}')
+    
+    def sync_data(self, data_type, data):
+        """Sincronizar datos con Belgrano Ahorro"""
+        return self._make_request('POST', f'sync/{data_type}', json=data)
+    
+    def test_connection(self):
+        """Probar conexión con la API"""
         try:
-            data = {'tickets': tickets}
-            response = self._make_request('POST', '/sync/tickets', data=data)
-            logger.info(f"{len(tickets)} tickets sincronizados hacia Belgrano Ahorro")
-            return True
+            response = self._make_request('GET', 'health')
+            if response:
+                logger.info("Conexión con API exitosa")
+                return True
+            else:
+                logger.error("Fallo en test de conexión")
+                return False
         except Exception as e:
-            logger.error(f"Error sincronizando tickets: {e}")
+            logger.error(f"Error probando conexión: {e}")
             return False
 
-def create_api_client(url=None, api_key=None):
-    """Crear instancia del cliente API"""
-    if url is None:
-        url = os.environ.get('BELGRANO_AHORRO_URL')
-    if api_key is None:
-        api_key = os.environ.get('BELGRANO_AHORRO_API_KEY')
+def create_api_client(base_url, api_key):
+    """
+    Crear instancia del cliente API
     
-    if url is None or api_key is None:
-        raise ValueError("url y api_key son requeridos para crear el cliente API")
-    return BelgranoAhorroAPIClient(url, api_key)
-
-def test_api_connection(url=None, api_key=None):
-    """Probar conexión con la API de Belgrano Ahorro"""
-    try:
-        if url is None:
-            url = os.environ.get('BELGRANO_AHORRO_URL')
-        if api_key is None:
-            api_key = os.environ.get('BELGRANO_AHORRO_API_KEY')
-            
-        if url is None or api_key is None:
-            raise ValueError("url y api_key son requeridos para probar la conexión")
-        client = BelgranoAhorroAPIClient(url, api_key)
-        health = client.health_check()
+    Args:
+        base_url (str): URL base de la API
+        api_key (str): Clave de API
         
-        if health.get('status') == 'healthy':
-            logger.info("✅ Conexión con API de Belgrano Ahorro exitosa")
-            return {
-                'status': 'success',
-                'message': 'Conexión exitosa',
-                'health': health
-            }
-        else:
-            logger.warning("⚠️ API de Belgrano Ahorro no está saludable")
-            return {
-                'status': 'warning',
-                'message': 'API no está saludable',
-                'health': health
-            }
-            
-    except Exception as e:
-        logger.error(f"❌ Error conectando con API de Belgrano Ahorro: {e}")
-        return {
-            'status': 'error',
-            'message': f'Error de conexión: {e}',
-            'error': str(e)
-        }
+    Returns:
+        BelgranoAhorroAPIClient: Instancia del cliente API
+    """
+    if not base_url or not api_key:
+        logger.warning("URL base o API key no proporcionados")
+        return None
+    
+    return BelgranoAhorroAPIClient(base_url, api_key)
+
+def test_api_connection(base_url, api_key):
+    """
+    Probar conexión con la API
+    
+    Args:
+        base_url (str): URL base de la API
+        api_key (str): Clave de API
+        
+    Returns:
+        bool: True si la conexión es exitosa
+    """
+    client = create_api_client(base_url, api_key)
+    if client:
+        return client.test_connection()
+    return False
+
+# Configuración por defecto usando variables de entorno
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
+
+# Cliente global (se inicializa si las variables están disponibles)
+api_client = None
+if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+    api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+    logger.info("Cliente API global inicializado")
+else:
+    logger.warning("Variables de entorno no configuradas para cliente API global")

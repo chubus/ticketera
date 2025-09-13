@@ -29,25 +29,27 @@ from models import db, User, Ticket
 # CONFIGURACIÓN DE COMUNICACIÓN API
 # ==========================================
 # Variables de entorno para comunicación entre servicios
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'http://localhost:5000')
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
-
-# URLs de producción (Render.com)
-if os.environ.get('RENDER_ENVIRONMENT') == 'production':
-    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
-    BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
 print(f"🔗 Configuración API:")
 print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
-print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
+if BELGRANO_AHORRO_API_KEY:
+    print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
+else:
+    print("   API_KEY: No configurada")
 
 # ==========================================
 
 # Importar cliente API
 try:
     from api_client import create_api_client, test_api_connection
-    api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
-    print("Cliente API de Belgrano Ahorro inicializado")
+    if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+        api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+        print("Cliente API de Belgrano Ahorro inicializado")
+    else:
+        print("⚠️ Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
+        api_client = None
 except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
