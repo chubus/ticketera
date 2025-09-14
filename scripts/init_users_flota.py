@@ -85,7 +85,7 @@ def initialize_database():
         print(f"❌ Error inicializando base de datos: {error}")
         import traceback
         traceback.print_exc()
-        return False
+            return False
 
 def main():
     """Función principal"""
@@ -96,7 +96,7 @@ def main():
         success = initialize_database()
         
         if success:
-            print("✅ Inicialización completada exitosamente")
+        print("✅ Inicialización completada exitosamente")
             return 0
         else:
             print("❌ Error en la inicialización")
