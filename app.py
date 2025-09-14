@@ -33,16 +33,21 @@ BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
 # Validar variables de entorno críticas
+env_status = os.environ.get('FLASK_ENV', 'development')
 if not BELGRANO_AHORRO_URL:
-    print("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
-    print(f"BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+    if env_status != 'production':
+        print("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+    else:
+        print("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY:
-    print("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
-    print(f"BELGRANO_AHORRO_API_KEY: {BELGRANO_AHORRO_API_KEY}")
+    if env_status != 'production':
+        print("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+    else:
+        print("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
 print(f"🔗 Configuración API:")
-print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL or 'No configurada'}")
 if BELGRANO_AHORRO_API_KEY:
     print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
 else:

@@ -24,13 +24,18 @@ BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 API_TIMEOUT_SECS = 10
 
 # Validar variables de entorno críticas
+env_status = os.environ.get('FLASK_ENV', 'development')
 if not BELGRANO_AHORRO_URL:
-    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
-    logger.warning(f"BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+    if env_status != 'production':
+        logger.info("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+    else:
+        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY:
-    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
-    logger.warning(f"BELGRANO_AHORRO_API_KEY: {BELGRANO_AHORRO_API_KEY}")
+    if env_status != 'production':
+        logger.info("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+    else:
+        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
 # Importar cliente API
 try:
@@ -40,7 +45,10 @@ try:
         logger.info("Cliente API de Belgrano Ahorro inicializado para DevOps")
     else:
         devops_api_client = None
-        logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
+        if env_status == 'production':
+            logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
+        else:
+            logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
 except ImportError as e:
     logger.error(f"No se pudo inicializar el cliente API: {e}")
     devops_api_client = None

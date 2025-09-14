@@ -143,19 +143,26 @@ def test_api_connection(base_url, api_key):
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
-# Validar variables de entorno críticas
+# Validar variables de entorno críticas (solo en desarrollo)
 if not BELGRANO_AHORRO_URL:
-    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
-    logger.warning(f"BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
+    if os.environ.get('FLASK_ENV') != 'production':
+        logger.info("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+    else:
+        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY:
-    logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
-    logger.warning(f"BELGRANO_AHORRO_API_KEY: {'*' * len(BELGRANO_AHORRO_API_KEY) if BELGRANO_AHORRO_API_KEY else None}")
+    if os.environ.get('FLASK_ENV') != 'production':
+        logger.info("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+    else:
+        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
 # Cliente global (se inicializa si las variables están disponibles)
 api_client = None
 if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
     api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
-    logger.info("Cliente API global inicializado")
+    logger.info("Cliente API global inicializado correctamente")
 else:
-    logger.warning("Variables de entorno no configuradas para cliente API global")
+    if os.environ.get('FLASK_ENV') == 'production':
+        logger.warning("Variables de entorno no configuradas para cliente API global")
+    else:
+        logger.info("Cliente API no inicializado (variables de entorno no configuradas)")
