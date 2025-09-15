@@ -7,6 +7,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import json
 import logging
+import hmac
+import binascii
+import hashlib
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +17,13 @@ logger = logging.getLogger(__name__)
 
 # Inicialización Flask y extensiones
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'belgrano_tickets_secret_2025'
+# Secret key y cookies configurables por entorno
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'belgrano_tickets_secret_2025')
+app.config.update(
+    SESSION_COOKIE_SAMESITE=os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax'),
+    SESSION_COOKIE_SECURE=os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true',
+    REMEMBER_COOKIE_SECURE=os.environ.get('REMEMBER_COOKIE_SECURE', 'true').lower() == 'true',
+)
 
 # Configuración de base de datos - USAR RUTA ABSOLUTA
 import os
