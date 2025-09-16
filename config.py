@@ -13,8 +13,9 @@ class Config:
     """Configuración base"""
     
     # Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'belgrano_tickets_secret_2025')
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
+    # Evitar secretos hardcodeados: en dev generamos uno aleatorio si no existe; en prod exigimos SECRET_KEY
+    SECRET_KEY = os.environ.get('SECRET_KEY') or (os.urandom(32).hex() if FLASK_ENV != 'production' else None)
     
     # Base de datos
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///tickets.db')
@@ -23,6 +24,28 @@ class Config:
     # API de Belgrano Ahorro
     BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
     BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
+    
+    # Ticketera: soportar nombres nuevos y legados de variables de entorno
+    TICKETS_API_URL = (
+        os.environ.get('TICKETS_API_URL')
+        or os.environ.get('TICKETERA_URL')
+        or os.environ.get('TICKETING_URL')
+    )
+    TICKETS_API_KEY = (
+        os.environ.get('TICKETS_API_KEY')
+        or os.environ.get('TICKETERA_API_KEY')
+        or os.environ.get('TICKETING_API_KEY')
+    )
+    TICKETS_API_USERNAME = (
+        os.environ.get('TICKETS_API_USERNAME')
+        or os.environ.get('TICKETERA_USER')
+        or os.environ.get('TICKETING_USER')
+    )
+    TICKETS_API_PASSWORD = (
+        os.environ.get('TICKETS_API_PASSWORD')
+        or os.environ.get('TICKETERA_PASSWORD')
+        or os.environ.get('TICKETING_PASSWORD')
+    )
     
     # Configuración de red
     API_TIMEOUT_SECS = int(os.environ.get('BELGRANO_AHORRO_TIMEOUT', '30'))
@@ -37,11 +60,19 @@ class Config:
         
         # En producción, estas variables son obligatorias
         if cls.FLASK_ENV == 'production':
+            if not cls.SECRET_KEY:
+                issues.append("SECRET_KEY no configurada en producción")
+            if not cls.SQLALCHEMY_DATABASE_URI or cls.SQLALCHEMY_DATABASE_URI.startswith('sqlite:'):
+                issues.append("DATABASE_URL inválida o usando sqlite en producción")
             if not cls.BELGRANO_AHORRO_URL:
                 issues.append("BELGRANO_AHORRO_URL no configurada en producción")
-            
             if not cls.BELGRANO_AHORRO_API_KEY:
                 issues.append("BELGRANO_AHORRO_API_KEY no configurada en producción")
+            # Ticketera: requerir URL y método de autenticación (API Key o user/pass)
+            if not cls.TICKETS_API_URL:
+                issues.append("TICKETS_API_URL/TICKETERA_URL no configurada en producción")
+            if not (cls.TICKETS_API_KEY or (cls.TICKETS_API_USERNAME and cls.TICKETS_API_PASSWORD)):
+                issues.append("Credenciales de ticketera no configuradas (API Key o usuario/contraseña)")
         
         return issues
     
@@ -54,6 +85,8 @@ class Config:
         logger.info(f"   Base de datos: {'Configurada' if cls.SQLALCHEMY_DATABASE_URI else 'No configurada'}")
         logger.info(f"   Belgrano Ahorro URL: {'Configurada' if cls.BELGRANO_AHORRO_URL else 'No configurada'}")
         logger.info(f"   API Key: {'Configurada' if cls.BELGRANO_AHORRO_API_KEY else 'No configurada'}")
+        logger.info(f"   Ticketera URL: {'Configurada' if cls.TICKETS_API_URL else 'No configurada'}")
+        logger.info(f"   Ticketera auth: {'API Key' if cls.TICKETS_API_KEY else ('Usuario/Password' if (cls.TICKETS_API_USERNAME and cls.TICKETS_API_PASSWORD) else 'No configurada')}")
         
         # Validar y mostrar issues
         issues = cls.validate_config()
