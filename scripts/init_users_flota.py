@@ -95,7 +95,37 @@ def main():
     try:
         success = initialize_database()
         
+<<<<<<< HEAD
         if success:
+=======
+<<<<<<< HEAD
+        # Si estamos en un subdirectorio, cambiar al directorio padre
+        if os.path.basename(script_dir) == 'scripts':
+            os.chdir(project_dir)
+        
+        print(f"📁 Directorio de trabajo: {os.getcwd()}")
+        print(f"📁 Script ubicado en: {script_dir}")
+        
+        # Inicializar base de datos
+        if not init_database():
+            print("❌ Error inicializando base de datos")
+        sys.exit(1)
+
+        # Crear usuarios por defecto
+        if not create_default_users():
+            print("❌ Error creando usuarios por defecto")
+        sys.exit(1)
+
+        # Crear datos de flota por defecto
+        if not create_default_flota():
+            print("❌ Error creando datos de flota")
+        sys.exit(1)
+
+        print("=" * 40)
+=======
+        if success:
+>>>>>>> b604eec0ed3465b1f7cfd3b2f39bea70a8f6f706
+>>>>>>> 5e1dd54 (backups todo rehecho)
         print("✅ Inicialización completada exitosamente")
             return 0
         else:
