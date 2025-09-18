@@ -26,8 +26,8 @@ try:
     BELGRANO_AHORRO_API_KEY = api_config['belgrano_ahorro_api_key']
 except ImportError:
     # Fallback a variables de entorno directas
-    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
-    BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
 API_TIMEOUT_SECS = 10
 
