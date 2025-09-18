@@ -79,13 +79,24 @@ except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
 
-# Importar blueprint de DevOps
+# Importar blueprint de DevOps con ruta robusta
 try:
+    # Intento directo si el cwd es la raíz del proyecto
     from devops_routes import devops_bp
     app.register_blueprint(devops_bp)
-    print("Blueprint de DevOps registrado")
+    print("Blueprint de DevOps registrado (import directo)")
 except ImportError as e:
-    print(f"No se pudo registrar el blueprint de DevOps: {e}")
+    try:
+        # Añadir la raíz del proyecto al sys.path y reintentar
+        import sys
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        from devops_routes import devops_bp as devops_bp_root
+        app.register_blueprint(devops_bp_root)
+        print("Blueprint de DevOps registrado (import con sys.path raíz)")
+    except Exception as e2:
+        print(f"No se pudo registrar el blueprint de DevOps: {e2}")
 
 # Inicializar db con la app
 db.init_app(app)
@@ -1091,22 +1102,22 @@ def sync_tickets_to_ahorro():
         
         for ticket in tickets:
             tickets_data.append({
-                'numero_pedido': ticket.numero_pedido,
+                'numero_pedido': ticket.numero,
                 'ticket_id': ticket.id,
                 'estado': ticket.estado,
-                'repartidor': ticket.repartidor,
+                'repartidor': ticket.repartidor_nombre,
                 'fecha_creacion': ticket.fecha_creacion.isoformat() if ticket.fecha_creacion else None,
-                'fecha_actualizacion': ticket.fecha_actualizacion.isoformat() if ticket.fecha_actualizacion else None,
+                'fecha_actualizacion': ticket.fecha_asignacion.isoformat() if ticket.fecha_asignacion else None,
                 'datos_completos': {
                     'id': ticket.id,
-                    'numero_pedido': ticket.numero_pedido,
-                    'cliente': ticket.cliente,
+                    'numero_pedido': ticket.numero,
+                    'cliente': ticket.cliente_nombre,
                     'productos': ticket.productos,
                     'total': ticket.total,
                     'estado': ticket.estado,
-                    'repartidor': ticket.repartidor,
+                    'repartidor': ticket.repartidor_nombre,
                     'fecha_creacion': ticket.fecha_creacion.isoformat() if ticket.fecha_creacion else None,
-                    'fecha_actualizacion': ticket.fecha_actualizacion.isoformat() if ticket.fecha_actualizacion else None
+                    'fecha_actualizacion': ticket.fecha_asignacion.isoformat() if ticket.fecha_asignacion else None
                 }
             })
         
