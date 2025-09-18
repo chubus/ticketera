@@ -25,11 +25,13 @@ app.config.update(
     REMEMBER_COOKIE_SECURE=os.environ.get('REMEMBER_COOKIE_SECURE', 'true').lower() == 'true',
 )
 
-# Configuración de base de datos - USAR RUTA ABSOLUTA
+# Configuración de base de datos - usar variable de entorno si existe, si no, ruta absoluta
 import os
-db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'belgrano_tickets.db')
+env_db_path = os.environ.get('TICKETS_DB_PATH')
+db_path = env_db_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'belgrano_tickets.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 from models import db, User, Ticket
@@ -144,8 +146,11 @@ with app.app_context():
             db.session.rollback()
             return False
     
-    # La inicialización se ejecutará cuando se necesite
-    pass
+    # Asegurar usuarios core SIEMPRE al iniciar
+    try:
+        inicializar_usuarios_automaticamente()
+    except Exception as e:
+        logger.warning(f"No se pudo asegurar usuarios core al iniciar: {e}")
 
 login_manager = LoginManager(app)
 
