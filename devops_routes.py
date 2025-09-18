@@ -19,8 +19,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuración de API
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
+try:
+    from config_env import get_api_config
+    api_config = get_api_config()
+    BELGRANO_AHORRO_URL = api_config['belgrano_ahorro_url']
+    BELGRANO_AHORRO_API_KEY = api_config['belgrano_ahorro_api_key']
+except ImportError:
+    # Fallback a variables de entorno directas
+    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
+    BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
+
 API_TIMEOUT_SECS = 10
 
 # Validar variables de entorno críticas
