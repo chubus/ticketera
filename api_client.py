@@ -194,7 +194,6 @@ if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
     logger.info("Cliente API global inicializado correctamente")
 else:
     if os.environ.get('FLASK_ENV') == 'production':
-        logger.warning("Variables de entorno no configuradas para cliente API global")
+        logger.warning("Variables de entorno no configuradas para cliente API global")                                                                          
     else:
         logger.info("Cliente API no inicializado (variables de entorno no configuradas)")
->>>>>>> 337e39a847c8e5edc0cb63dfdc74ee78a6e580df
