@@ -85,7 +85,7 @@ try:
     from devops_routes import devops_bp
     app.register_blueprint(devops_bp)
     print("Blueprint de DevOps registrado (import directo)")
-except ImportError as e:
+except Exception as e:
     try:
         # Añadir la raíz del proyecto al sys.path y reintentar
         import sys
@@ -96,7 +96,22 @@ except ImportError as e:
         app.register_blueprint(devops_bp_root)
         print("Blueprint de DevOps registrado (import con sys.path raíz)")
     except Exception as e2:
-        print(f"No se pudo registrar el blueprint de DevOps: {e2}")
+        # Fallback: cargar por ruta absoluta con importlib
+        try:
+            import importlib.util
+            devops_path = os.path.join(project_root, 'devops_routes.py')
+            spec = importlib.util.spec_from_file_location('devops_routes', devops_path)
+            module = importlib.util.module_from_spec(spec)
+            assert spec and spec.loader
+            spec.loader.exec_module(module)
+            devops_bp_dynamic = getattr(module, 'devops_bp', None)
+            if devops_bp_dynamic is not None:
+                app.register_blueprint(devops_bp_dynamic)
+                print("Blueprint de DevOps registrado (importlib por ruta)")
+            else:
+                print("No se encontró devops_bp en devops_routes.py (importlib)")
+        except Exception as e3:
+            print(f"No se pudo registrar el blueprint de DevOps: {e3}")
 
 # Inicializar db con la app
 db.init_app(app)
