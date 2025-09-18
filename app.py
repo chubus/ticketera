@@ -163,6 +163,13 @@ with app.app_context():
     except Exception as e:
         logger.warning(f"No se pudo asegurar usuarios core al iniciar: {e}")
 
+    # Diagnóstico: listar rutas DevOps registradas
+    try:
+        devops_rules = [str(r.rule) for r in app.url_map.iter_rules() if str(r.rule).startswith('/devops')]
+        print(f"🧭 belgrano_tickets.app rutas DevOps: {devops_rules}")
+    except Exception as _e_list_devops:
+        print(f"⚠️ No se pudieron listar rutas DevOps en belgrano_tickets.app: {_e_list_devops}")
+
 login_manager = LoginManager(app)
 
 # Configuración robusta de SocketIO para evitar invalid session
