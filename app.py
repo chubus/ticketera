@@ -170,6 +170,24 @@ with app.app_context():
     except Exception as _e_list_devops:
         print(f"⚠️ No se pudieron listar rutas DevOps en belgrano_tickets.app: {_e_list_devops}")
 
+    # Fallback: si no hay rutas /devops, registrar endpoints mínimos
+    try:
+        has_devops = any(str(r.rule).startswith('/devops') for r in app.url_map.iter_rules())
+        if not has_devops:
+            @app.route('/devops/')
+            def _devops_fallback_home():
+                return jsonify({'status': 'success', 'message': 'DevOps activo (fallback)'}), 200
+
+            @app.route('/devops/login')
+            def _devops_fallback_login():
+                try:
+                    return redirect(url_for('login'))
+                except Exception:
+                    return jsonify({'status': 'success', 'login_url': '/login'}), 200
+            print("✅ Fallback DevOps registrado en belgrano_tickets.app")
+    except Exception as _e_devops_fb:
+        print(f"⚠️ Error registrando fallback DevOps: {_e_devops_fb}")
+
 login_manager = LoginManager(app)
 
 # Configuración robusta de SocketIO para evitar invalid session
