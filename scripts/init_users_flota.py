@@ -175,8 +175,8 @@ def main():
         # Inicializar base de datos
         if not init_database():
             print("❌ Error inicializando base de datos")
-            sys.exit(1)
-        
+        sys.exit(1)
+
         # Crear usuarios por defecto
         if not create_default_users():
             print("❌ Error creando usuarios por defecto")

@@ -172,3 +172,10 @@ def test_api_connection(url=None, api_key=None):
             'message': f'Error de conexión: {e}',
             'error': str(e)
         }
+
+# Crear instancia global del cliente API
+try:
+    api_client = create_api_client()
+except Exception as e:
+    logger.warning(f"No se pudo crear cliente API: {e}")
+    api_client = None
