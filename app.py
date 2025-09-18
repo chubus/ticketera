@@ -7,6 +7,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import json
 import logging
+import hmac
+import binascii
+import hashlib
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +17,13 @@ logger = logging.getLogger(__name__)
 
 # Inicialización Flask y extensiones
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'belgrano_tickets_secret_2025'
+# Secret key y cookies configurables por entorno
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'belgrano_tickets_secret_2025')
+app.config.update(
+    SESSION_COOKIE_SAMESITE=os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax'),
+    SESSION_COOKIE_SECURE=os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true',
+    REMEMBER_COOKIE_SECURE=os.environ.get('REMEMBER_COOKIE_SECURE', 'true').lower() == 'true',
+)
 
 # Configuración de base de datos - USAR RUTA ABSOLUTA
 import os
@@ -29,25 +38,41 @@ from models import db, User, Ticket
 # CONFIGURACIÓN DE COMUNICACIÓN API
 # ==========================================
 # Variables de entorno para comunicación entre servicios
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'http://localhost:5000')
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 
-# URLs de producción (Render.com)
-if os.environ.get('RENDER_ENVIRONMENT') == 'production':
-    BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
-    BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
+# Validar variables de entorno críticas
+env_status = os.environ.get('FLASK_ENV', 'development')
+if not BELGRANO_AHORRO_URL:
+    if env_status != 'production':
+        print("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+    else:
+        print("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+
+if not BELGRANO_AHORRO_API_KEY:
+    if env_status != 'production':
+        print("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+    else:
+        print("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
 print(f"🔗 Configuración API:")
-print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL}")
-print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
+print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL or 'No configurada'}")
+if BELGRANO_AHORRO_API_KEY:
+    print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
+else:
+    print("   API_KEY: No configurada")
 
 # ==========================================
 
 # Importar cliente API
 try:
     from api_client import create_api_client, test_api_connection
-    api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
-    print("Cliente API de Belgrano Ahorro inicializado")
+    if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+        api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+        print("Cliente API de Belgrano Ahorro inicializado")
+    else:
+        print("⚠️ Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
+        api_client = None
 except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
@@ -1152,13 +1177,8 @@ def index():
     
     return render_template('admin_panel.html')
 
-# Registrar blueprint de DevOps
-try:
-    from devops_routes import devops_bp
-    app.register_blueprint(devops_bp)
-    print("✅ Blueprint de DevOps registrado correctamente")
-except Exception as e:
-    print(f"❌ Error registrando blueprint de DevOps: {e}")
+# Registrar blueprint de DevOps (eliminando duplicado)
+# Este bloque se eliminó porque ya se registra arriba en la línea 58
 
 if __name__ == "__main__":
     with app.app_context():
