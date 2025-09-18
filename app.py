@@ -21,8 +21,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'belgrano_tickets_secret_2025')
 app.config.update(
     SESSION_COOKIE_SAMESITE=os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax'),
-    SESSION_COOKIE_SECURE=os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true',
-    REMEMBER_COOKIE_SECURE=os.environ.get('REMEMBER_COOKIE_SECURE', 'true').lower() == 'true',
+    SESSION_COOKIE_SECURE=os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true',
+    REMEMBER_COOKIE_SECURE=os.environ.get('REMEMBER_COOKIE_SECURE', 'false').lower() == 'true',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_DOMAIN=None
 )
 
 # Configuración de base de datos - usar variable de entorno si existe, si no, ruta absoluta
@@ -34,7 +36,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
-from models import db, User, Ticket
+try:
+    from models import db, User, Ticket
+except ImportError:
+    # Fallback para importación desde belgrano_tickets
+    from belgrano_tickets.models import db, User, Ticket
 
 # ==========================================
 # CONFIGURACIÓN DE COMUNICACIÓN API
@@ -210,11 +216,13 @@ socketio = SocketIO(
     app, 
     async_mode='threading',
     cors_allowed_origins="*",
-    ping_timeout=60,
-    ping_interval=25,
-    max_http_buffer_size=1e8,
-    logger=True,
-    engineio_logger=True
+    ping_timeout=120,
+    ping_interval=30,
+    max_http_buffer_size=1e6,
+    logger=False,
+    engineio_logger=False,
+    allow_upgrades=True,
+    transports=['polling', 'websocket']
 )
 
 # Filtro personalizado para JSON
