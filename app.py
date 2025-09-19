@@ -295,13 +295,6 @@ with app.app_context():
                         </div>
                         
                         <div class="grid">
-                            <div class="card">
-                                <h3>📊 Monitoreo del Sistema</h3>
-                                <p>Supervisión en tiempo real del estado del sistema, health checks y métricas de rendimiento.</p>
-                                <a href="/devops/health" class="btn">Health Check</a>
-                                <a href="/devops/status" class="btn btn-secondary">Estado del Sistema</a>
-                                <a href="/devops/info" class="btn btn-secondary">Información</a>
-                            </div>
                             
                             <div class="card">
                                 <h3>📋 Gestión de Contenido</h3>
@@ -319,11 +312,12 @@ with app.app_context():
                             </div>
                             
                             <div class="card">
-                                <h3>🔧 Herramientas de Desarrollo</h3>
-                                <p>Utilidades avanzadas para debugging, configuración y mantenimiento.</p>
-                                <a href="/devops/logs" class="btn btn-warning">Ver Logs</a>
-                                <a href="/devops/config" class="btn btn-warning">Configuración</a>
+                                <h3>🏪 Gestión por Negocio</h3>
+                                <p>Gestión completa de precios y ofertas por negocio específico.</p>
+                                <a href="/devops/negocios" class="btn btn-success">Ver Negocios</a>
+                                <a href="/devops/estadisticas" class="btn btn-warning">Estadísticas Generales</a>
                             </div>
+                            
                             
                             <div class="card">
                                 <h3>🔄 Sincronización y Datos</h3>
@@ -348,9 +342,12 @@ with app.app_context():
                                     <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{id}/precio - Actualizar precio</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/estadisticas - Estadísticas del sistema</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/pagina-principal/destacados - Productos destacados</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{id}/precios - Precios por negocio</li>
+                                    <li><span class="endpoint-method method-put">PUT</span>/devops/negocios/{id}/precios/{producto_id} - Actualizar precio</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{id}/estadisticas - Estadísticas del negocio</li>
+                                    <li><span class="endpoint-method method-post">POST</span>/devops/negocios/{id}/ofertas - Crear oferta del negocio</li>
                                     <li><span class="endpoint-method method-post">POST</span>/devops/sync - Sincronización manual</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/logs - Logs del sistema</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/config - Configuración</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/test - Probar conexiones</li>
                                 </ul>
                             </div>
                             
@@ -503,30 +500,90 @@ with app.app_context():
                 from flask import session, jsonify
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Gestión de ofertas',
-                    'ofertas': [
-                        {'id': 1, 'nombre': 'Oferta Demo 1', 'activa': True},
-                        {'id': 2, 'nombre': 'Oferta Demo 2', 'activa': False}
-                    ],
-                    'mode': 'fallback'
-                })
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    manager = DevOpsBelgranoManager()
+                    ofertas = manager.get_ofertas()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': {
+                            'ofertas': ofertas,
+                            'total': len(ofertas),
+                            'timestamp': datetime.now().isoformat()
+                        },
+                        'source': 'database',
+                        'message': f'Ofertas obtenidas correctamente ({len(ofertas)} encontradas)'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo ofertas: {str(e)}',
+                        'data': [],
+                        'source': 'error'
+                    }), 500
             
             @app.route('/devops/negocios')
             def _devops_fallback_negocios():
                 from flask import session, jsonify
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Gestión de negocios',
-                    'negocios': [
-                        {'id': 1, 'nombre': 'Negocio Demo 1', 'activo': True},
-                        {'id': 2, 'nombre': 'Negocio Demo 2', 'activo': True}
-                    ],
-                    'mode': 'fallback'
-                })
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    manager = DevOpsBelgranoManager()
+                    comerciantes = manager.get_comerciantes()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': {
+                            'negocios': comerciantes,
+                            'total': len(comerciantes),
+                            'timestamp': datetime.now().isoformat()
+                        },
+                        'source': 'database',
+                        'message': f'Negocios obtenidos correctamente ({len(comerciantes)} encontrados)'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo negocios: {str(e)}',
+                        'data': [],
+                        'source': 'error'
+                    }), 500
+            
+            @app.route('/devops/productos')
+            def _devops_fallback_productos():
+                from flask import session, jsonify
+                if not session.get('devops_authenticated'):
+                    return jsonify({'error': 'No autorizado'}), 401
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    manager = DevOpsBelgranoManager()
+                    productos = manager.get_productos()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': {
+                            'productos': productos,
+                            'total': len(productos),
+                            'timestamp': datetime.now().isoformat()
+                        },
+                        'source': 'database',
+                        'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo productos: {str(e)}',
+                        'data': [],
+                        'source': 'error'
+                    }), 500
             
             @app.route('/devops/logs')
             def _devops_fallback_logs():
