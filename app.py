@@ -222,8 +222,8 @@ socketio = SocketIO(
     app, 
     async_mode='threading',
     cors_allowed_origins="*",
-    ping_timeout=30,  # Optimizado para evitar timeouts
-    ping_interval=20,  # Optimizado para mantener conexiones activas
+    ping_timeout=60,  # Aumentado para mayor estabilidad
+    ping_interval=25,  # Aumentado para reducir invalid sessions
     max_http_buffer_size=1e6,
     logger=False,
     engineio_logger=False,
@@ -232,14 +232,16 @@ socketio = SocketIO(
     # Configuraciones adicionales para estabilidad
     always_connect=True,
     reconnection=True,
-    reconnection_attempts=5,
-    reconnection_delay=1000,
+    reconnection_attempts=10,  # Aumentado
+    reconnection_delay=2000,  # Aumentado
     # Configuración de sesiones
     manage_session=True,
     # Configuración de CORS más específica
     cors_credentials=True,
     # Configuración de versión compatible
-    engineio_logger_level='WARNING'
+    engineio_logger_level='ERROR',  # Reducir logs de versión no soportada
+    # Configuración para manejar sesiones inválidas
+    client_timeout=60
 )
 
 # Filtro personalizado para JSON
@@ -256,6 +258,8 @@ def handle_connect():
     """Manejar conexión de Socket.IO"""
     try:
         print(f"Cliente conectado: {request.sid}")
+        # Enviar confirmación de conexión
+        socketio.emit('connected', {'status': 'success', 'sid': request.sid})
         return True
     except Exception as e:
         print(f"Error en conexión Socket.IO: {e}")
@@ -273,6 +277,11 @@ def handle_disconnect():
 def default_error_handler(e):
     """Manejar errores de Socket.IO"""
     print(f"Error de Socket.IO: {e}")
+    # Intentar reconectar automáticamente
+    try:
+        socketio.emit('error', {'message': 'Error de conexión', 'reconnect': True})
+    except:
+        pass
     return False
 
 @socketio.on('ping')
@@ -282,6 +291,17 @@ def handle_ping():
         return 'pong'
     except Exception as e:
         print(f"Error en ping Socket.IO: {e}")
+        return False
+
+@socketio.on('reconnect')
+def handle_reconnect():
+    """Manejar reconexión de Socket.IO"""
+    try:
+        print(f"Cliente reconectado: {request.sid}")
+        socketio.emit('reconnected', {'status': 'success', 'sid': request.sid})
+        return True
+    except Exception as e:
+        print(f"Error en reconexión Socket.IO: {e}")
         return False
 
 @login_manager.user_loader
