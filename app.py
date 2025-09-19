@@ -337,15 +337,15 @@ with app.app_context():
                                     <li><span class="endpoint-method method-get">GET</span>/devops/negocios - Gestión de negocios</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/productos - Gestión de productos</li>
                                     <li><span class="endpoint-method method-post">POST</span>/devops/productos - Crear producto</li>
-                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{id} - Actualizar producto</li>
-                                    <li><span class="endpoint-method method-delete">DELETE</span>/devops/productos/{id} - Eliminar producto</li>
-                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{id}/precio - Actualizar precio</li>
+                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{{id}} - Actualizar producto</li>
+                                    <li><span class="endpoint-method method-delete">DELETE</span>/devops/productos/{{id}} - Eliminar producto</li>
+                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{{id}}/precio - Actualizar precio</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/estadisticas - Estadísticas del sistema</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/pagina-principal/destacados - Productos destacados</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{id}/precios - Precios por negocio</li>
-                                    <li><span class="endpoint-method method-put">PUT</span>/devops/negocios/{id}/precios/{producto_id} - Actualizar precio</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{id}/estadisticas - Estadísticas del negocio</li>
-                                    <li><span class="endpoint-method method-post">POST</span>/devops/negocios/{id}/ofertas - Crear oferta del negocio</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{{id}}/precios - Precios por negocio</li>
+                                    <li><span class="endpoint-method method-put">PUT</span>/devops/negocios/{{id}}/precios/{{producto_id}} - Actualizar precio</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{{id}}/estadisticas - Estadísticas del negocio</li>
+                                    <li><span class="endpoint-method method-post">POST</span>/devops/negocios/{{id}}/ofertas - Crear oferta del negocio</li>
                                     <li><span class="endpoint-method method-post">POST</span>/devops/sync - Sincronización manual</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/test - Probar conexiones</li>
                                 </ul>
