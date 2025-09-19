@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, redirect, url_for, request, flash, abort, jsonify
+from flask import Flask, render_template, redirect, url_for, request, flash, abort, jsonify, session
 from flask_login import LoginManager, UserMixin, current_user, login_user, logout_user, login_required
 from flask_socketio import SocketIO
 from functools import wraps
@@ -24,7 +24,13 @@ app.config.update(
     SESSION_COOKIE_SECURE=os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true',
     REMEMBER_COOKIE_SECURE=os.environ.get('REMEMBER_COOKIE_SECURE', 'false').lower() == 'true',
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_DOMAIN=None
+    SESSION_COOKIE_DOMAIN=None,
+    # Configuración adicional para Socket.IO
+    SESSION_COOKIE_NAME='belgrano_tickets_session',
+    PERMANENT_SESSION_LIFETIME=3600,  # 1 hora
+    # Configuración de Socket.IO
+    SOCKETIO_ASYNC_MODE='threading',
+    SOCKETIO_CORS_ALLOWED_ORIGINS="*"
 )
 
 # Configuración de base de datos - usar variable de entorno si existe, si no, ruta absoluta
@@ -216,13 +222,24 @@ socketio = SocketIO(
     app, 
     async_mode='threading',
     cors_allowed_origins="*",
-    ping_timeout=120,
-    ping_interval=30,
+    ping_timeout=30,  # Optimizado para evitar timeouts
+    ping_interval=20,  # Optimizado para mantener conexiones activas
     max_http_buffer_size=1e6,
     logger=False,
     engineio_logger=False,
     allow_upgrades=True,
-    transports=['polling', 'websocket']
+    transports=['polling', 'websocket'],
+    # Configuraciones adicionales para estabilidad
+    always_connect=True,
+    reconnection=True,
+    reconnection_attempts=5,
+    reconnection_delay=1000,
+    # Configuración de sesiones
+    manage_session=True,
+    # Configuración de CORS más específica
+    cors_credentials=True,
+    # Configuración de versión compatible
+    engineio_logger_level='WARNING'
 )
 
 # Filtro personalizado para JSON
@@ -232,6 +249,40 @@ def from_json_filter(value):
         return json.loads(value) if value else []
     except (json.JSONDecodeError, TypeError):
         return []
+
+# Eventos de Socket.IO para manejo de errores
+@socketio.on('connect')
+def handle_connect():
+    """Manejar conexión de Socket.IO"""
+    try:
+        print(f"Cliente conectado: {request.sid}")
+        return True
+    except Exception as e:
+        print(f"Error en conexión Socket.IO: {e}")
+        return False
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Manejar desconexión de Socket.IO"""
+    try:
+        print(f"Cliente desconectado: {request.sid}")
+    except Exception as e:
+        print(f"Error en desconexión Socket.IO: {e}")
+
+@socketio.on_error_default
+def default_error_handler(e):
+    """Manejar errores de Socket.IO"""
+    print(f"Error de Socket.IO: {e}")
+    return False
+
+@socketio.on('ping')
+def handle_ping():
+    """Manejar ping para mantener conexión activa"""
+    try:
+        return 'pong'
+    except Exception as e:
+        print(f"Error en ping Socket.IO: {e}")
+        return False
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -285,7 +336,9 @@ def login():
             # Verificar contraseña
             if check_password_hash(user.password, password):
                 print("Contraseña correcta - Login exitoso")
-                login_user(user)
+                login_user(user, remember=True)
+                # Hacer la sesión permanente
+                session.permanent = True
                 flash(f'Bienvenido, {user.nombre}!', 'success')
                 return redirect(url_for('panel'))
             else:
