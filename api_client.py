@@ -171,18 +171,22 @@ def test_api_connection(base_url, api_key):
     return False
 
 # Configuración por defecto usando variables de entorno
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
-BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
+BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
 
-# Validar variables de entorno críticas (solo en desarrollo)
-if not BELGRANO_AHORRO_URL:
-    if os.environ.get('FLASK_ENV') != 'production':
+# Detectar entorno
+FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
+IS_PRODUCTION = FLASK_ENV == 'production'
+
+# Validar variables de entorno críticas
+if not BELGRANO_AHORRO_URL or BELGRANO_AHORRO_URL == 'https://belgranoahorro-hp30.onrender.com':
+    if not IS_PRODUCTION:
         logger.info("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
     else:
         logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
-if not BELGRANO_AHORRO_API_KEY:
-    if os.environ.get('FLASK_ENV') != 'production':
+if not BELGRANO_AHORRO_API_KEY or BELGRANO_AHORRO_API_KEY == 'belgrano_ahorro_api_key_2025':
+    if not IS_PRODUCTION:
         logger.info("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
     else:
         logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
@@ -190,10 +194,14 @@ if not BELGRANO_AHORRO_API_KEY:
 # Cliente global (se inicializa si las variables están disponibles)
 api_client = None
 if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
-    api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
-    logger.info("Cliente API global inicializado correctamente")
+    try:
+        api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+        logger.info("Cliente API global inicializado correctamente")
+    except Exception as e:
+        logger.warning(f"Error inicializando cliente API: {e}")
+        api_client = None
 else:
-    if os.environ.get('FLASK_ENV') == 'production':
-        logger.warning("Variables de entorno no configuradas para cliente API global")                                                                          
+    if IS_PRODUCTION:
+        logger.warning("Variables de entorno no configuradas para cliente API global")
     else:
         logger.info("Cliente API no inicializado (variables de entorno no configuradas)")
