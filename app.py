@@ -43,7 +43,7 @@ print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
-    from models import db, User, Ticket
+from models import db, User, Ticket
 except ImportError:
     # Fallback para importación desde belgrano_tickets
     from belgrano_tickets.models import db, User, Ticket
@@ -295,29 +295,27 @@ with app.app_context():
                         </div>
                         
                         <div class="grid">
+                            <div class="card">
+                                <h3>📊 Monitoreo del Sistema</h3>
+                                <p>Supervisión en tiempo real del estado del sistema, health checks y métricas de rendimiento.</p>
+                                <a href="/devops/health" class="btn">Health Check</a>
+                                <a href="/devops/status" class="btn btn-secondary">Estado del Sistema</a>
+                                <a href="/devops/info" class="btn btn-secondary">Información</a>
+                            </div>
                             
                             <div class="card">
                                 <h3>📋 Gestión de Contenido</h3>
                                 <p>Administración completa de ofertas, negocios y contenido del sistema.</p>
                                 <a href="/devops/ofertas" class="btn btn-success">Gestionar Ofertas</a>
                                 <a href="/devops/negocios" class="btn btn-success">Gestionar Negocios</a>
-                                <a href="/devops/productos" class="btn btn-success">Gestionar Productos</a>
                             </div>
                             
                             <div class="card">
-                                <h3>💰 Gestión de Precios</h3>
-                                <p>Administración de precios y ofertas de productos.</p>
-                                <a href="/devops/estadisticas" class="btn btn-warning">Ver Estadísticas</a>
-                                <a href="/devops/pagina-principal/destacados" class="btn btn-warning">Productos Destacados</a>
+                                <h3>🔧 Herramientas de Desarrollo</h3>
+                                <p>Utilidades avanzadas para debugging, configuración y mantenimiento.</p>
+                                <a href="/devops/logs" class="btn btn-warning">Ver Logs</a>
+                                <a href="/devops/config" class="btn btn-warning">Configuración</a>
                             </div>
-                            
-                            <div class="card">
-                                <h3>🏪 Gestión por Negocio</h3>
-                                <p>Gestión completa de precios y ofertas por negocio específico.</p>
-                                <a href="/devops/negocios" class="btn btn-success">Ver Negocios</a>
-                                <a href="/devops/estadisticas" class="btn btn-warning">Estadísticas Generales</a>
-                            </div>
-                            
                             
                             <div class="card">
                                 <h3>🔄 Sincronización y Datos</h3>
@@ -335,19 +333,9 @@ with app.app_context():
                                     <li><span class="endpoint-method method-get">GET</span>/devops/info - Información del servicio</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/ofertas - Gestión de ofertas</li>
                                     <li><span class="endpoint-method method-get">GET</span>/devops/negocios - Gestión de negocios</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/productos - Gestión de productos</li>
-                                    <li><span class="endpoint-method method-post">POST</span>/devops/productos - Crear producto</li>
-                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{{id}} - Actualizar producto</li>
-                                    <li><span class="endpoint-method method-delete">DELETE</span>/devops/productos/{{id}} - Eliminar producto</li>
-                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{{id}}/precio - Actualizar precio</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/estadisticas - Estadísticas del sistema</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/pagina-principal/destacados - Productos destacados</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{{id}}/precios - Precios por negocio</li>
-                                    <li><span class="endpoint-method method-put">PUT</span>/devops/negocios/{{id}}/precios/{{producto_id}} - Actualizar precio</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios/{{id}}/estadisticas - Estadísticas del negocio</li>
-                                    <li><span class="endpoint-method method-post">POST</span>/devops/negocios/{{id}}/ofertas - Crear oferta del negocio</li>
                                     <li><span class="endpoint-method method-post">POST</span>/devops/sync - Sincronización manual</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/test - Probar conexiones</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/logs - Logs del sistema</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/config - Configuración</li>
                                 </ul>
                             </div>
                             
@@ -535,7 +523,7 @@ with app.app_context():
                 try:
                     from devops_belgrano_manager import DevOpsBelgranoManager
                     manager = DevOpsBelgranoManager()
-                    comerciantes = manager.get_comerciantes()
+                    comerciantes = manager.get_negocios()
                     
                     return jsonify({
                         'status': 'success',
@@ -551,36 +539,6 @@ with app.app_context():
                     return jsonify({
                         'status': 'error',
                         'message': f'Error obteniendo negocios: {str(e)}',
-                        'data': [],
-                        'source': 'error'
-                    }), 500
-            
-            @app.route('/devops/productos')
-            def _devops_fallback_productos():
-                from flask import session, jsonify
-                if not session.get('devops_authenticated'):
-                    return jsonify({'error': 'No autorizado'}), 401
-                
-                # Usar datos reales de la base de datos
-                try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
-                    manager = DevOpsBelgranoManager()
-                    productos = manager.get_productos()
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': {
-                            'productos': productos,
-                            'total': len(productos),
-                            'timestamp': datetime.now().isoformat()
-                        },
-                        'source': 'database',
-                        'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo productos: {str(e)}',
                         'data': [],
                         'source': 'error'
                     }), 500
@@ -669,7 +627,7 @@ login_manager = LoginManager(app)
 
 # Configuración robusta de SocketIO para evitar invalid session
 socketio = SocketIO(
-    app,
+    app, 
     async_mode='threading',
     cors_allowed_origins="*",
     ping_timeout=30,  # Reducido para evitar timeouts
