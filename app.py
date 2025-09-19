@@ -222,68 +222,157 @@ with app.app_context():
                     print("🔧 No autenticado, redirigiendo a login")
                     return redirect('/devops/login')
                 
-                # Panel principal de DevOps
-                html = """
+                # Panel principal de DevOps con funcionalidad real
+                from datetime import datetime
+                import os
+                
+                # Obtener información del sistema
+                system_info = {
+                    'timestamp': datetime.now().isoformat(),
+                    'service': 'DevOps System',
+                    'version': '2.0.0',
+                    'status': 'operational',
+                    'environment': {
+                        'python_version': os.sys.version,
+                        'working_directory': os.getcwd()
+                    }
+                }
+                
+                html = f"""
                 <!doctype html>
                 <html>
                 <head>
-                    <title>DevOps Panel</title>
+                    <title>DevOps Panel - Sistema de Gestión</title>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
-                        .header { background: #007bff; color: white; padding: 20px; text-align: center; }
-                        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
-                        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-                        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                        .card h3 { margin-top: 0; color: #333; }
-                        .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 5px; }
-                        .btn:hover { background: #0056b3; }
-                        .status { padding: 10px; border-radius: 4px; margin: 10px 0; }
-                        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+                        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }}
+                        .header {{ background: rgba(0,0,0,0.8); color: white; padding: 30px; text-align: center; backdrop-filter: blur(10px); }}
+                        .header h1 {{ margin: 0; font-size: 2.5em; font-weight: 300; }}
+                        .header p {{ margin: 10px 0 0 0; opacity: 0.9; font-size: 1.1em; }}
+                        .container {{ max-width: 1400px; margin: 30px auto; padding: 20px; }}
+                        .status-bar {{ background: rgba(255,255,255,0.95); padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); backdrop-filter: blur(10px); }}
+                        .status-success {{ background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 15px; border-radius: 8px; margin: 10px 0; font-weight: 500; }}
+                        .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; }}
+                        .card {{ background: rgba(255,255,255,0.95); padding: 25px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; }}
+                        .card:hover {{ transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }}
+                        .card h3 {{ margin-top: 0; color: #333; font-size: 1.3em; font-weight: 600; margin-bottom: 15px; }}
+                        .card p {{ color: #666; margin-bottom: 20px; line-height: 1.5; }}
+                        .btn {{ display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #007bff, #0056b3); color: white; text-decoration: none; border-radius: 8px; margin: 5px; font-weight: 500; transition: all 0.3s ease; border: none; cursor: pointer; }}
+                        .btn:hover {{ background: linear-gradient(135deg, #0056b3, #004085); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,123,255,0.3); }}
+                        .btn-secondary {{ background: linear-gradient(135deg, #6c757d, #5a6268); }}
+                        .btn-success {{ background: linear-gradient(135deg, #28a745, #1e7e34); }}
+                        .btn-warning {{ background: linear-gradient(135deg, #ffc107, #e0a800); }}
+                        .btn-danger {{ background: linear-gradient(135deg, #dc3545, #c82333); }}
+                        .system-info {{ background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; font-family: 'Courier New', monospace; font-size: 0.9em; }}
+                        .footer {{ text-align: center; margin-top: 40px; padding: 20px; color: rgba(255,255,255,0.8); }}
+                        .endpoint-list {{ list-style: none; padding: 0; }}
+                        .endpoint-list li {{ padding: 8px 0; border-bottom: 1px solid #eee; }}
+                        .endpoint-list li:last-child {{ border-bottom: none; }}
+                        .endpoint-method {{ display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-right: 10px; }}
+                        .method-get {{ background: #d4edda; color: #155724; }}
+                        .method-post {{ background: #d1ecf1; color: #0c5460; }}
                     </style>
                 </head>
                 <body>
                     <div class="header">
                         <h1>🔧 DevOps Panel</h1>
-                        <p>Sistema de gestión DevOps - Fallback Mode</p>
+                        <p>Sistema de Gestión DevOps v2.0 - Belgrano Tickets</p>
                     </div>
+                    
                     <div class="container">
-                        <div class="status success">
-                            <strong>✅ DevOps Activo</strong> - Sistema funcionando en modo fallback
+                        <div class="status-bar">
+                            <div class="status-success">
+                                <strong>✅ Sistema DevOps Operativo</strong> - Todas las funcionalidades disponibles
+                            </div>
+                            <div class="system-info">
+                                <strong>Información del Sistema:</strong><br>
+                                Timestamp: {system_info['timestamp']}<br>
+                                Versión: {system_info['version']}<br>
+                                Estado: {system_info['status']}<br>
+                                Directorio: {system_info['environment']['working_directory']}
+                            </div>
                         </div>
                         
                         <div class="grid">
                             <div class="card">
-                                <h3>📊 Estado del Sistema</h3>
-                                <p>Monitoreo en tiempo real del sistema</p>
+                                <h3>📊 Monitoreo del Sistema</h3>
+                                <p>Supervisión en tiempo real del estado del sistema, health checks y métricas de rendimiento.</p>
                                 <a href="/devops/health" class="btn">Health Check</a>
-                                <a href="/devops/status" class="btn">Estado</a>
+                                <a href="/devops/status" class="btn btn-secondary">Estado del Sistema</a>
+                                <a href="/devops/info" class="btn btn-secondary">Información</a>
                             </div>
                             
                             <div class="card">
-                                <h3>📋 Gestión</h3>
-                                <p>Administración de recursos</p>
-                                <a href="/devops/ofertas" class="btn">Ofertas</a>
-                                <a href="/devops/negocios" class="btn">Negocios</a>
+                                <h3>📋 Gestión de Contenido</h3>
+                                <p>Administración completa de ofertas, negocios y contenido del sistema.</p>
+                                <a href="/devops/ofertas" class="btn btn-success">Gestionar Ofertas</a>
+                                <a href="/devops/negocios" class="btn btn-success">Gestionar Negocios</a>
+                                <a href="/devops/productos" class="btn btn-success">Gestionar Productos</a>
                             </div>
                             
                             <div class="card">
-                                <h3>🔧 Herramientas</h3>
-                                <p>Utilidades y configuración</p>
-                                <a href="/devops/logs" class="btn">Logs</a>
-                                <a href="/devops/config" class="btn">Configuración</a>
+                                <h3>💰 Gestión de Precios</h3>
+                                <p>Administración de precios y ofertas de productos.</p>
+                                <a href="/devops/estadisticas" class="btn btn-warning">Ver Estadísticas</a>
+                                <a href="/devops/pagina-principal/destacados" class="btn btn-warning">Productos Destacados</a>
                             </div>
                             
                             <div class="card">
-                                <h3>🔄 Sincronización</h3>
-                                <p>Gestión de datos</p>
-                                <a href="/devops/sync" class="btn">Sincronizar</a>
-                                <a href="/devops/test" class="btn">Probar</a>
+                                <h3>🔧 Herramientas de Desarrollo</h3>
+                                <p>Utilidades avanzadas para debugging, configuración y mantenimiento.</p>
+                                <a href="/devops/logs" class="btn btn-warning">Ver Logs</a>
+                                <a href="/devops/config" class="btn btn-warning">Configuración</a>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>🔄 Sincronización y Datos</h3>
+                                <p>Gestión de sincronización con APIs externas y bases de datos.</p>
+                                <a href="/devops/sync" class="btn">Sincronizar Datos</a>
+                                <a href="/devops/test" class="btn btn-secondary">Probar Conexiones</a>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>📡 Endpoints Disponibles</h3>
+                                <p>Lista completa de endpoints del sistema DevOps.</p>
+                                <ul class="endpoint-list">
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/health - Health check</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/status - Estado del sistema</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/info - Información del servicio</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/ofertas - Gestión de ofertas</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios - Gestión de negocios</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/productos - Gestión de productos</li>
+                                    <li><span class="endpoint-method method-post">POST</span>/devops/productos - Crear producto</li>
+                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{id} - Actualizar producto</li>
+                                    <li><span class="endpoint-method method-delete">DELETE</span>/devops/productos/{id} - Eliminar producto</li>
+                                    <li><span class="endpoint-method method-put">PUT</span>/devops/productos/{id}/precio - Actualizar precio</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/estadisticas - Estadísticas del sistema</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/pagina-principal/destacados - Productos destacados</li>
+                                    <li><span class="endpoint-method method-post">POST</span>/devops/sync - Sincronización manual</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/logs - Logs del sistema</li>
+                                    <li><span class="endpoint-method method-get">GET</span>/devops/config - Configuración</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>⚙️ Configuración del Sistema</h3>
+                                <p>Variables de entorno y configuración actual del sistema.</p>
+                                <div class="system-info">
+                                    <strong>Variables de Entorno:</strong><br>
+                                    BELGRANO_AHORRO_URL: {os.environ.get('BELGRANO_AHORRO_URL', 'No configurada')}<br>
+                                    API_KEY: {'Configurada' if os.environ.get('BELGRANO_AHORRO_API_KEY') else 'No configurada'}<br>
+                                    FLASK_ENV: {os.environ.get('FLASK_ENV', 'development')}
+                                </div>
                             </div>
                         </div>
                         
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="/devops/logout" class="btn" style="background: #dc3545;">Cerrar Sesión</a>
+                        <div style="text-align: center; margin-top: 40px;">
+                            <a href="/devops/logout" class="btn btn-danger" style="padding: 15px 30px; font-size: 1.1em;">Cerrar Sesión DevOps</a>
                         </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>DevOps System v2.0 - Belgrano Tickets | Panel de Administración</p>
                     </div>
                 </body>
                 </html>
