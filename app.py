@@ -43,7 +43,7 @@ print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
-    from models import db, User, Ticket
+from models import db, User, Ticket
 except ImportError:
     # Fallback para importación desde belgrano_tickets
     from belgrano_tickets.models import db, User, Ticket
