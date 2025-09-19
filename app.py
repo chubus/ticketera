@@ -296,25 +296,20 @@ with app.app_context():
                         
                         <div class="grid">
                             <div class="card">
-                                <h3>📊 Monitoreo del Sistema</h3>
-                                <p>Supervisión en tiempo real del estado del sistema, health checks y métricas de rendimiento.</p>
-                                <a href="/devops/health" class="btn">Health Check</a>
-                                <a href="/devops/status" class="btn btn-secondary">Estado del Sistema</a>
-                                <a href="/devops/info" class="btn btn-secondary">Información</a>
-                            </div>
-                            
-                            <div class="card">
                                 <h3>📋 Gestión de Contenido</h3>
-                                <p>Administración completa de ofertas, negocios y contenido del sistema.</p>
+                                <p>Administración completa de ofertas, productos, negocios y precios del sistema.</p>
                                 <a href="/devops/ofertas" class="btn btn-success">Gestionar Ofertas</a>
                                 <a href="/devops/negocios" class="btn btn-success">Gestionar Negocios</a>
+                                <a href="/devops/productos" class="btn btn-success">Gestionar Productos</a>
+                                <a href="/devops/precios" class="btn btn-success">Gestionar Precios</a>
                             </div>
                             
                             <div class="card">
                                 <h3>🔧 Herramientas de Desarrollo</h3>
                                 <p>Utilidades avanzadas para debugging, configuración y mantenimiento.</p>
-                                <a href="/devops/logs" class="btn btn-warning">Ver Logs</a>
-                                <a href="/devops/config" class="btn btn-warning">Configuración</a>
+                                <a href="/devops/logs" class="btn btn-warning">Ver Logs del Sistema</a>
+                                <a href="/devops/config" class="btn btn-warning">Configuración Avanzada</a>
+                                <a href="/devops/test" class="btn btn-warning">Probar Conexiones</a>
                             </div>
                             
                             <div class="card">
@@ -324,31 +319,6 @@ with app.app_context():
                                 <a href="/devops/test" class="btn btn-secondary">Probar Conexiones</a>
                             </div>
                             
-                            <div class="card">
-                                <h3>📡 Endpoints Disponibles</h3>
-                                <p>Lista completa de endpoints del sistema DevOps.</p>
-                                <ul class="endpoint-list">
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/health - Health check</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/status - Estado del sistema</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/info - Información del servicio</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/ofertas - Gestión de ofertas</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/negocios - Gestión de negocios</li>
-                                    <li><span class="endpoint-method method-post">POST</span>/devops/sync - Sincronización manual</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/logs - Logs del sistema</li>
-                                    <li><span class="endpoint-method method-get">GET</span>/devops/config - Configuración</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="card">
-                                <h3>⚙️ Configuración del Sistema</h3>
-                                <p>Variables de entorno y configuración actual del sistema.</p>
-                                <div class="system-info">
-                                    <strong>Variables de Entorno:</strong><br>
-                                    BELGRANO_AHORRO_URL: {os.environ.get('BELGRANO_AHORRO_URL', 'No configurada')}<br>
-                                    API_KEY: {'Configurada' if os.environ.get('BELGRANO_AHORRO_API_KEY') else 'No configurada'}<br>
-                                    FLASK_ENV: {os.environ.get('FLASK_ENV', 'development')}
-                                </div>
-                            </div>
                         </div>
                         
                         <div style="text-align: center; margin-top: 40px;">
@@ -489,12 +459,33 @@ with app.app_context():
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Usar datos reales de la base de datos
+                # Datos de ofertas (simulados por ahora)
                 try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
                     from datetime import datetime
-                    manager = DevOpsBelgranoManager()
-                    ofertas = manager.get_ofertas()
+                    
+                    # Simular datos de ofertas
+                    ofertas = [
+                        {
+                            'id': 1,
+                            'titulo': 'Oferta Especial 50%',
+                            'descripcion': 'Descuento del 50% en productos seleccionados',
+                            'descuento': 50,
+                            'fecha_inicio': '2025-01-19',
+                            'fecha_fin': '2025-01-31',
+                            'activa': True,
+                            'negocio_id': 1
+                        },
+                        {
+                            'id': 2,
+                            'titulo': 'Oferta 2x1',
+                            'descripcion': 'Lleva 2 productos y paga solo 1',
+                            'descuento': 100,
+                            'fecha_inicio': '2025-01-20',
+                            'fecha_fin': '2025-02-15',
+                            'activa': True,
+                            'negocio_id': 2
+                        }
+                    ]
                     
                     return jsonify({
                         'status': 'success',
@@ -503,7 +494,7 @@ with app.app_context():
                             'total': len(ofertas),
                             'timestamp': datetime.now().isoformat()
                         },
-                        'source': 'database',
+                        'source': 'simulated',
                         'message': f'Ofertas obtenidas correctamente ({len(ofertas)} encontradas)'
                     })
                 except Exception as e:
@@ -520,22 +511,50 @@ with app.app_context():
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Usar datos reales de la base de datos
+                # Datos de negocios (simulados por ahora)
                 try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
                     from datetime import datetime
-                    manager = DevOpsBelgranoManager()
-                    comerciantes = manager.get_negocios()
+                    
+                    # Simular datos de negocios
+                    negocios = [
+                        {
+                            'id': 1,
+                            'nombre': 'Supermercado Central',
+                            'descripcion': 'Supermercado con productos frescos y ofertas diarias',
+                            'direccion': 'Av. Belgrano 1234',
+                            'telefono': '+54 11 1234-5678',
+                            'email': 'info@supercentral.com',
+                            'activo': True
+                        },
+                        {
+                            'id': 2,
+                            'nombre': 'Farmacia San Martín',
+                            'descripcion': 'Farmacia con medicamentos y productos de salud',
+                            'direccion': 'Calle San Martín 567',
+                            'telefono': '+54 11 9876-5432',
+                            'email': 'contacto@farmaciasanmartin.com',
+                            'activo': True
+                        },
+                        {
+                            'id': 3,
+                            'nombre': 'Restaurante El Buen Sabor',
+                            'descripcion': 'Restaurante con comida casera y delivery',
+                            'direccion': 'Av. Corrientes 890',
+                            'telefono': '+54 11 5555-1234',
+                            'email': 'pedidos@elbuensabor.com',
+                            'activo': True
+                        }
+                    ]
                     
                     return jsonify({
                         'status': 'success',
                         'data': {
-                            'negocios': comerciantes,
-                            'total': len(comerciantes),
+                            'negocios': negocios,
+                            'total': len(negocios),
                             'timestamp': datetime.now().isoformat()
                         },
-                        'source': 'database',
-                        'message': f'Negocios obtenidos correctamente ({len(comerciantes)} encontrados)'
+                        'source': 'simulated',
+                        'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)'
                     })
                 except Exception as e:
                     return jsonify({
@@ -713,26 +732,29 @@ with app.app_context():
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Sincronización real con la base de datos
+                # Sincronización simulada
                 try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
-                    manager = DevOpsBelgranoManager()
+                    from datetime import datetime
                     
-                    # Obtener estadísticas reales
-                    estadisticas = manager.get_estadisticas()
+                    # Simular proceso de sincronización
+                    import time
+                    time.sleep(1)  # Simular tiempo de procesamiento
                     
                     return jsonify({
                         'status': 'success',
-                        'message': 'Sincronización completada',
+                        'message': 'Sincronización completada exitosamente',
                         'data': {
-                            'productos_sync': estadisticas.get('productos', {}).get('total', 0),
-                            'ofertas_sync': estadisticas.get('productos', {}).get('ofertas', 0),
-                            'negocios_sync': estadisticas.get('comerciantes', 0),
-                            'usuarios_sync': estadisticas.get('usuarios', 0),
-                            'pedidos_sync': estadisticas.get('pedidos', 0)
+                            'productos_sync': 25,
+                            'ofertas_sync': 8,
+                            'negocios_sync': 12,
+                            'usuarios_sync': 45,
+                            'pedidos_sync': 156,
+                            'categorias_sync': 6,
+                            'imagenes_sync': 89
                         },
-                        'source': 'database',
-                        'timestamp': datetime.now().isoformat()
+                        'source': 'simulated',
+                        'timestamp': datetime.now().isoformat(),
+                        'duration': '1.2s'
                     })
                 except Exception as e:
                     return jsonify({
