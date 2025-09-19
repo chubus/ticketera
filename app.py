@@ -43,7 +43,7 @@ print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
-from models import db, User, Ticket
+    from models import db, User, Ticket
 except ImportError:
     # Fallback para importación desde belgrano_tickets
     from belgrano_tickets.models import db, User, Ticket
@@ -492,6 +492,7 @@ with app.app_context():
                 # Usar datos reales de la base de datos
                 try:
                     from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
                     manager = DevOpsBelgranoManager()
                     ofertas = manager.get_ofertas()
                     
@@ -522,6 +523,7 @@ with app.app_context():
                 # Usar datos reales de la base de datos
                 try:
                     from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
                     manager = DevOpsBelgranoManager()
                     comerciantes = manager.get_negocios()
                     
@@ -540,6 +542,125 @@ with app.app_context():
                         'status': 'error',
                         'message': f'Error obteniendo negocios: {str(e)}',
                         'data': [],
+                        'source': 'error'
+                    }), 500
+            
+            @app.route('/devops/productos')
+            def _devops_fallback_productos():
+                from flask import session, jsonify
+                if not session.get('devops_authenticated'):
+                    return jsonify({'error': 'No autorizado'}), 401
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
+                    manager = DevOpsBelgranoManager()
+                    productos = manager.get_productos()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': {
+                            'productos': productos,
+                            'total': len(productos),
+                            'timestamp': datetime.now().isoformat()
+                        },
+                        'source': 'database',
+                        'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo productos: {str(e)}',
+                        'data': [],
+                        'source': 'error'
+                    }), 500
+            
+            @app.route('/devops/precios')
+            def _devops_fallback_precios():
+                from flask import session, jsonify, request
+                if not session.get('devops_authenticated'):
+                    return jsonify({'error': 'No autorizado'}), 401
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
+                    manager = DevOpsBelgranoManager()
+                    
+                    negocio_id = request.args.get('negocio_id', type=int)
+                    precios = manager.get_precios(negocio_id)
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': {
+                            'precios': precios,
+                            'total': len(precios),
+                            'negocio_id': negocio_id,
+                            'timestamp': datetime.now().isoformat()
+                        },
+                        'source': 'database',
+                        'message': f'Precios obtenidos correctamente ({len(precios)} encontrados)'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo precios: {str(e)}',
+                        'data': [],
+                        'source': 'error'
+                    }), 500
+            
+            @app.route('/devops/estadisticas')
+            def _devops_fallback_estadisticas():
+                from flask import session, jsonify
+                if not session.get('devops_authenticated'):
+                    return jsonify({'error': 'No autorizado'}), 401
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
+                    manager = DevOpsBelgranoManager()
+                    estadisticas = manager.get_estadisticas()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': estadisticas,
+                        'source': 'database',
+                        'message': 'Estadísticas obtenidas correctamente'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo estadísticas: {str(e)}',
+                        'data': {},
+                        'source': 'error'
+                    }), 500
+            
+            @app.route('/devops/pagina-principal')
+            def _devops_fallback_pagina_principal():
+                from flask import session, jsonify
+                if not session.get('devops_authenticated'):
+                    return jsonify({'error': 'No autorizado'}), 401
+                
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
+                    manager = DevOpsBelgranoManager()
+                    elementos = manager.get_elementos_principal()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': elementos,
+                        'source': 'database',
+                        'message': 'Elementos de página principal obtenidos correctamente'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo elementos página principal: {str(e)}',
+                        'data': {},
                         'source': 'error'
                     }), 500
             
@@ -588,26 +709,47 @@ with app.app_context():
             @app.route('/devops/sync', methods=['GET', 'POST'])
             def _devops_fallback_sync():
                 from flask import session, jsonify
+                from datetime import datetime
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Sincronización completada',
-                    'data': {
-                        'ofertas_sync': 5,
-                        'negocios_sync': 3,
-                        'usuarios_sync': 8
-                    },
-                    'mode': 'fallback'
-                })
+                
+                # Sincronización real con la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    manager = DevOpsBelgranoManager()
+                    
+                    # Obtener estadísticas reales
+                    estadisticas = manager.get_estadisticas()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'message': 'Sincronización completada',
+                        'data': {
+                            'productos_sync': estadisticas.get('productos', {}).get('total', 0),
+                            'ofertas_sync': estadisticas.get('productos', {}).get('ofertas', 0),
+                            'negocios_sync': estadisticas.get('comerciantes', 0),
+                            'usuarios_sync': estadisticas.get('usuarios', 0),
+                            'pedidos_sync': estadisticas.get('pedidos', 0)
+                        },
+                        'source': 'database',
+                        'timestamp': datetime.now().isoformat()
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error en sincronización: {str(e)}',
+                        'data': {},
+                        'source': 'error'
+                    }), 500
             
             @app.route('/devops/test')
             def _devops_fallback_test():
                 from flask import session, jsonify
+                from datetime import datetime
                 return jsonify({
                     'status': 'success',
                     'message': 'DevOps funcionando correctamente',
-                    'timestamp': '2025-01-19T01:00:00Z',
+                    'timestamp': datetime.now().isoformat(),
                     'authenticated': session.get('devops_authenticated', False),
                     'mode': 'fallback'
                 })
