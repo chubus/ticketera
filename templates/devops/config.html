@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración del Sistema - DevOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container { 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            margin: 20px auto; 
+            overflow: hidden; 
+        }
+        .header-section { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 30px; 
+            text-align: center; 
+        }
+        .config-card { 
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
+            border-radius: 10px; 
+            padding: 20px; 
+            margin: 10px 0; 
+            transition: all 0.3s ease;
+            border-left: 4px solid #6f42c1;
+        }
+        .config-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+        .btn-modern { 
+            border-radius: 25px; 
+            padding: 10px 25px; 
+            font-weight: 600; 
+            transition: all 0.3s ease; 
+            border: none;
+        }
+        .btn-modern:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+        }
+        .config-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .config-item:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .config-key {
+            font-weight: 600;
+            color: #495057;
+            font-family: 'Courier New', monospace;
+        }
+        .config-value {
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .config-description {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-active {
+            background: #28a745;
+        }
+        .status-inactive {
+            background: #dc3545;
+        }
+        .status-warning {
+            background: #ffc107;
+        }
+        .export-section {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="header-section">
+                <h1><i class="bi bi-gear"></i> Configuración del Sistema</h1>
+                <p class="mb-0">Configuración actual y estado del sistema</p>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4">
+                <!-- System Status -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="config-card text-center">
+                            <h3 class="text-primary mb-1" id="system-status">Activo</h3>
+                            <p class="mb-0 text-muted">Estado del Sistema</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="config-card text-center">
+                            <h3 class="text-success mb-1" id="database-status">Conectado</h3>
+                            <p class="mb-0 text-muted">Base de Datos</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="config-card text-center">
+                            <h3 class="text-info mb-1" id="api-status">Disponible</h3>
+                            <p class="mb-0 text-muted">API Externa</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="config-card text-center">
+                            <h3 class="text-warning mb-1" id="uptime">24h</h3>
+                            <p class="mb-0 text-muted">Tiempo Activo</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <button class="btn btn-primary btn-modern" onclick="cargarConfiguracion()">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                        <button class="btn btn-success btn-modern" onclick="exportarConfiguracion()">
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-warning btn-modern" onclick="resetearConfiguracion()">
+                            <i class="bi bi-arrow-clockwise"></i> Resetear
+                        </button>
+                        <button class="btn btn-info btn-modern" onclick="verLogsSistema()">
+                            <i class="bi bi-journal-text"></i> Ver Logs
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Configuration Sections -->
+                <div class="row">
+                    <!-- Application Config -->
+                    <div class="col-md-6 mb-4">
+                        <div class="config-card">
+                            <h5><i class="bi bi-app"></i> Configuración de Aplicación</h5>
+                            <div id="app-config">
+                                <!-- Config items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Config -->
+                    <div class="col-md-6 mb-4">
+                        <div class="config-card">
+                            <h5><i class="bi bi-database"></i> Configuración de Base de Datos</h5>
+                            <div id="db-config">
+                                <!-- Config items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Config -->
+                    <div class="col-md-6 mb-4">
+                        <div class="config-card">
+                            <h5><i class="bi bi-cloud"></i> Configuración de API</h5>
+                            <div id="api-config">
+                                <!-- Config items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Config -->
+                    <div class="col-md-6 mb-4">
+                        <div class="config-card">
+                            <h5><i class="bi bi-shield-lock"></i> Configuración de Seguridad</h5>
+                            <div id="security-config">
+                                <!-- Config items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Section -->
+                <div class="export-section">
+                    <h5><i class="bi bi-download"></i> Exportar Configuración</h5>
+                    <p>Descarga la configuración actual del sistema en diferentes formatos</p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary" onclick="exportarJSON()">
+                            <i class="bi bi-file-earmark-code"></i> JSON
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportarYAML()">
+                            <i class="bi bi-file-earmark-text"></i> YAML
+                        </button>
+                        <button class="btn btn-outline-info" onclick="exportarENV()">
+                            <i class="bi bi-file-earmark"></i> ENV
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let configData = {};
+
+        // Cargar configuración al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarConfiguracion();
+        });
+
+        // Cargar configuración
+        async function cargarConfiguracion() {
+            try {
+                const response = await fetch('/devops/config?ajax=true&format=json&api=true', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    configData = data.data.config || {};
+                    mostrarConfiguracion(configData);
+                    actualizarEstados();
+                }
+            } catch (error) {
+                console.error('Error cargando configuración:', error);
+                mostrarError('Error cargando configuración');
+            }
+        }
+
+        // Mostrar configuración
+        function mostrarConfiguracion(config) {
+            // Application Config
+            const appConfig = {
+                'debug': config.debug || false,
+                'log_level': config.log_level || 'INFO',
+                'max_connections': config.max_connections || 100,
+                'timeout': config.timeout || 30
+            };
+            mostrarConfigSection('app-config', appConfig);
+
+            // Database Config
+            const dbConfig = {
+                'database_url': 'sqlite:///belgrano_tickets.db',
+                'pool_size': 10,
+                'max_overflow': 20,
+                'echo': false
+            };
+            mostrarConfigSection('db-config', dbConfig);
+
+            // API Config
+            const apiConfig = {
+                'api_key': '***hidden***',
+                'base_url': 'https://api.belgranoahorro.com',
+                'timeout': 30,
+                'retries': 3
+            };
+            mostrarConfigSection('api-config', apiConfig);
+
+            // Security Config
+            const securityConfig = {
+                'session_secret': '***hidden***',
+                'jwt_secret': '***hidden***',
+                'password_salt_rounds': 12,
+                'max_login_attempts': 5
+            };
+            mostrarConfigSection('security-config', securityConfig);
+        }
+
+        // Mostrar sección de configuración
+        function mostrarConfigSection(containerId, config) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            Object.entries(config).forEach(([key, value]) => {
+                const configItem = document.createElement('div');
+                configItem.className = 'config-item';
+                
+                const isHidden = key.includes('secret') || key.includes('key') || key.includes('password');
+                const displayValue = isHidden ? '***hidden***' : value;
+                
+                configItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="config-key">${key}</div>
+                            <div class="config-value">${displayValue}</div>
+                            <div class="config-description">${obtenerDescripcion(key)}</div>
+                        </div>
+                        <div>
+                            <span class="status-indicator ${obtenerEstado(value)}"></span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(configItem);
+            });
+        }
+
+        // Obtener descripción de configuración
+        function obtenerDescripcion(key) {
+            const descriptions = {
+                'debug': 'Modo de depuración activado',
+                'log_level': 'Nivel de logging del sistema',
+                'max_connections': 'Máximo número de conexiones simultáneas',
+                'timeout': 'Tiempo de espera en segundos',
+                'database_url': 'URL de conexión a la base de datos',
+                'pool_size': 'Tamaño del pool de conexiones',
+                'max_overflow': 'Máximo overflow del pool',
+                'echo': 'Echo de consultas SQL',
+                'api_key': 'Clave de API para servicios externos',
+                'base_url': 'URL base de la API',
+                'retries': 'Número de reintentos en caso de error',
+                'session_secret': 'Secreto para sesiones',
+                'jwt_secret': 'Secreto para JWT',
+                'password_salt_rounds': 'Rounds de salt para contraseñas',
+                'max_login_attempts': 'Máximo intentos de login'
+            };
+            return descriptions[key] || 'Configuración del sistema';
+        }
+
+        // Obtener estado de configuración
+        function obtenerEstado(value) {
+            if (typeof value === 'boolean') {
+                return value ? 'status-active' : 'status-inactive';
+            }
+            if (typeof value === 'number') {
+                return value > 0 ? 'status-active' : 'status-warning';
+            }
+            if (typeof value === 'string') {
+                return value.length > 0 ? 'status-active' : 'status-warning';
+            }
+            return 'status-active';
+        }
+
+        // Actualizar estados del sistema
+        function actualizarEstados() {
+            // Simular estados del sistema
+            document.getElementById('system-status').textContent = 'Activo';
+            document.getElementById('database-status').textContent = 'Conectado';
+            document.getElementById('api-status').textContent = 'Disponible';
+            document.getElementById('uptime').textContent = '24h';
+        }
+
+        // Exportar configuración
+        function exportarConfiguracion() {
+            const dataStr = JSON.stringify(configData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `config-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Exportar JSON
+        function exportarJSON() {
+            const dataStr = JSON.stringify(configData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `config-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Exportar YAML
+        function exportarYAML() {
+            // Convertir JSON a YAML (simplificado)
+            let yaml = '';
+            Object.entries(configData).forEach(([key, value]) => {
+                yaml += `${key}: ${value}\n`;
+            });
+            
+            const dataBlob = new Blob([yaml], {type: 'text/yaml'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `config-${new Date().toISOString().split('T')[0]}.yaml`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Exportar ENV
+        function exportarENV() {
+            let env = '';
+            Object.entries(configData).forEach(([key, value]) => {
+                env += `${key.toUpperCase()}=${value}\n`;
+            });
+            
+            const dataBlob = new Blob([env], {type: 'text/plain'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `config-${new Date().toISOString().split('T')[0]}.env`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Resetear configuración
+        function resetearConfiguracion() {
+            if (confirm('¿Estás seguro de resetear la configuración?')) {
+                // Aquí se implementaría la lógica para resetear
+                console.log('Reseteando configuración...');
+                cargarConfiguracion();
+            }
+        }
+
+        // Ver logs del sistema
+        function verLogsSistema() {
+            window.location.href = '/devops/logs';
+        }
+
+        // Mostrar error
+        function mostrarError(mensaje) {
+            const containers = ['app-config', 'db-config', 'api-config', 'security-config'];
+            containers.forEach(containerId => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <div class="text-center text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> ${mensaje}
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

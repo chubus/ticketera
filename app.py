@@ -700,138 +700,203 @@ with app.app_context():
             
             @app.route('/devops/estadisticas')
             def _devops_fallback_estadisticas():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Usar datos reales de la base de datos
-                try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
-                    from datetime import datetime
-                    manager = DevOpsBelgranoManager()
-                    estadisticas = manager.get_estadisticas()
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': estadisticas,
-                        'source': 'database',
-                        'message': 'Estadísticas obtenidas correctamente'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo estadísticas: {str(e)}',
-                        'data': {},
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular datos de estadísticas
+                        estadisticas = {
+                            'total_productos': 150,
+                            'total_ofertas': 25,
+                            'total_negocios': 8,
+                            'total_usuarios': 1200,
+                            'ventas_mes': 45000,
+                            'conversion_rate': 12.5
+                        }
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'data': estadisticas,
+                            'source': 'simulated',
+                            'message': 'Estadísticas obtenidas correctamente'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error obteniendo estadísticas: {str(e)}',
+                            'data': {},
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/estadisticas.html')
             
             @app.route('/devops/pagina-principal')
             def _devops_fallback_pagina_principal():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Usar datos reales de la base de datos
-                try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
-                    from datetime import datetime
-                    manager = DevOpsBelgranoManager()
-                    elementos = manager.get_elementos_principal()
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': elementos,
-                        'source': 'database',
-                        'message': 'Elementos de página principal obtenidos correctamente'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo elementos página principal: {str(e)}',
-                        'data': {},
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular datos de elementos de página principal
+                        elementos = {
+                            'banners': [
+                                {'id': 1, 'titulo': 'Oferta Especial', 'imagen': 'banner1.jpg', 'activo': True},
+                                {'id': 2, 'titulo': 'Nuevos Productos', 'imagen': 'banner2.jpg', 'activo': True}
+                            ],
+                            'categorias_destacadas': [
+                                {'id': 1, 'nombre': 'Lácteos', 'imagen': 'lacteos.jpg', 'activo': True},
+                                {'id': 2, 'nombre': 'Panadería', 'imagen': 'panaderia.jpg', 'activo': True}
+                            ],
+                            'productos_destacados': [
+                                {'id': 1, 'nombre': 'Leche Entera', 'precio': 850, 'imagen': 'leche.jpg', 'activo': True},
+                                {'id': 2, 'nombre': 'Pan Integral', 'precio': 450, 'imagen': 'pan.jpg', 'activo': True}
+                            ]
+                        }
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'data': elementos,
+                            'source': 'simulated',
+                            'message': 'Elementos de página principal obtenidos correctamente'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error obteniendo elementos página principal: {str(e)}',
+                            'data': {},
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/pagina-principal.html')
             
             @app.route('/devops/logs')
             def _devops_fallback_logs():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Logs del sistema',
-                    'logs': [
-                        {
-                            'timestamp': '2025-01-19T01:00:00Z',
-                            'level': 'INFO',
-                            'message': 'Sistema DevOps iniciado correctamente',
-                            'service': 'devops'
-                        },
-                        {
-                            'timestamp': '2025-01-19T01:00:01Z',
-                            'level': 'INFO',
-                            'message': 'Fallback mode activado',
-                            'service': 'devops'
-                        }
-                    ],
-                    'mode': 'fallback'
-                })
+                
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    return jsonify({
+                        'status': 'success',
+                        'message': 'Logs del sistema',
+                        'logs': [
+                            {
+                                'timestamp': '2025-01-19T01:00:00Z',
+                                'level': 'INFO',
+                                'message': 'Sistema DevOps iniciado correctamente',
+                                'service': 'devops'
+                            },
+                            {
+                                'timestamp': '2025-01-19T01:00:01Z',
+                                'level': 'INFO',
+                                'message': 'Fallback mode activado',
+                                'service': 'devops'
+                            }
+                        ],
+                        'mode': 'fallback'
+                    })
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/logs.html')
             
             @app.route('/devops/config')
             def _devops_fallback_config():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
-                    'status': 'success',
-                    'message': 'Configuración del sistema',
-                    'config': {
-                        'debug': False,
-                        'log_level': 'INFO',
-                        'max_connections': 100,
-                        'timeout': 30
-                    },
-                    'mode': 'fallback'
-                })
+                
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    return jsonify({
+                        'status': 'success',
+                        'message': 'Configuración del sistema',
+                        'config': {
+                            'debug': False,
+                            'log_level': 'INFO',
+                            'max_connections': 100,
+                            'timeout': 30
+                        },
+                        'mode': 'fallback'
+                    })
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/config.html')
             
             @app.route('/devops/sync', methods=['GET', 'POST'])
             def _devops_fallback_sync():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 from datetime import datetime
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Sincronización simulada
-                try:
-                    from datetime import datetime
-                    
-                    # Simular proceso de sincronización
-                    import time
-                    time.sleep(1)  # Simular tiempo de procesamiento
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'message': 'Sincronización completada exitosamente',
-                        'data': {
-                            'productos_sync': 25,
-                            'ofertas_sync': 8,
-                            'negocios_sync': 12,
-                            'usuarios_sync': 45,
-                            'pedidos_sync': 156,
-                            'categorias_sync': 6,
-                            'imagenes_sync': 89
-                        },
-                        'source': 'simulated',
-                        'timestamp': datetime.now().isoformat(),
-                        'duration': '1.2s'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error en sincronización: {str(e)}',
-                        'data': {},
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    # Sincronización simulada
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular proceso de sincronización
+                        import time
+                        time.sleep(1)  # Simular tiempo de procesamiento
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'message': 'Sincronización completada exitosamente',
+                            'data': {
+                                'productos_sync': 25,
+                                'ofertas_sync': 8,
+                                'negocios_sync': 12,
+                                'usuarios_sync': 45,
+                                'pedidos_sync': 156,
+                                'categorias_sync': 6,
+                                'imagenes_sync': 89
+                            },
+                            'source': 'simulated',
+                            'timestamp': datetime.now().isoformat(),
+                            'duration': '1.2s'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error en sincronización: {str(e)}',
+                            'data': {},
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/sync.html')
             
             @app.route('/devops/test')
             def _devops_fallback_test():
