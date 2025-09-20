@@ -43,7 +43,7 @@ print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
-    from models import db, User, Ticket
+from models import db, User, Ticket
 except ImportError:
     # Fallback para importación desde belgrano_tickets
     from belgrano_tickets.models import db, User, Ticket
@@ -700,93 +700,57 @@ with app.app_context():
             
             @app.route('/devops/estadisticas')
             def _devops_fallback_estadisticas():
-                from flask import session, jsonify, request, render_template
+                from flask import session, jsonify
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
-                    request.args.get('ajax') == 'true' and 
-                    request.args.get('format') == 'json' and 
-                    request.args.get('api') == 'true' and
-                    request.args.get('json') == 'true'):
-                    try:
-                        from datetime import datetime
-                        
-                        # Simular datos de estadísticas
-                        estadisticas = {
-                            'total_productos': 150,
-                            'total_ofertas': 25,
-                            'total_negocios': 8,
-                            'total_usuarios': 1200,
-                            'ventas_mes': 45000,
-                            'conversion_rate': 12.5
-                        }
-                        
-                        return jsonify({
-                            'status': 'success',
-                            'data': estadisticas,
-                            'source': 'simulated',
-                            'message': 'Estadísticas obtenidas correctamente'
-                        })
-                    except Exception as e:
-                        return jsonify({
-                            'status': 'error',
-                            'message': f'Error obteniendo estadísticas: {str(e)}',
-                            'data': {},
-                            'source': 'error'
-                        }), 500
-                
-                # Si no es AJAX, devolver template HTML
-                return render_template('devops/estadisticas.html')
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
+                    manager = DevOpsBelgranoManager()
+                    estadisticas = manager.get_estadisticas()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': estadisticas,
+                        'source': 'database',
+                        'message': 'Estadísticas obtenidas correctamente'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo estadísticas: {str(e)}',
+                        'data': {},
+                        'source': 'error'
+                    }), 500
             
             @app.route('/devops/pagina-principal')
             def _devops_fallback_pagina_principal():
-                from flask import session, jsonify, request, render_template
+                from flask import session, jsonify
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
-                    request.args.get('ajax') == 'true' and 
-                    request.args.get('format') == 'json' and 
-                    request.args.get('api') == 'true' and
-                    request.args.get('json') == 'true'):
-                    try:
-                        from datetime import datetime
-                        
-                        # Simular datos de elementos de página principal
-                        elementos = {
-                            'banners': [
-                                {'id': 1, 'titulo': 'Oferta Especial', 'imagen': 'banner1.jpg', 'activo': True},
-                                {'id': 2, 'titulo': 'Nuevos Productos', 'imagen': 'banner2.jpg', 'activo': True}
-                            ],
-                            'categorias_destacadas': [
-                                {'id': 1, 'nombre': 'Lácteos', 'imagen': 'lacteos.jpg', 'activo': True},
-                                {'id': 2, 'nombre': 'Panadería', 'imagen': 'panaderia.jpg', 'activo': True}
-                            ],
-                            'productos_destacados': [
-                                {'id': 1, 'nombre': 'Leche Entera', 'precio': 850, 'imagen': 'leche.jpg', 'activo': True},
-                                {'id': 2, 'nombre': 'Pan Integral', 'precio': 450, 'imagen': 'pan.jpg', 'activo': True}
-                            ]
-                        }
-                        
-                        return jsonify({
-                            'status': 'success',
-                            'data': elementos,
-                            'source': 'simulated',
-                            'message': 'Elementos de página principal obtenidos correctamente'
-                        })
-                    except Exception as e:
-                        return jsonify({
-                            'status': 'error',
-                            'message': f'Error obteniendo elementos página principal: {str(e)}',
-                            'data': {},
-                            'source': 'error'
-                        }), 500
-                
-                # Si no es AJAX, devolver template HTML
-                return render_template('devops/pagina-principal.html')
+                # Usar datos reales de la base de datos
+                try:
+                    from devops_belgrano_manager import DevOpsBelgranoManager
+                    from datetime import datetime
+                    manager = DevOpsBelgranoManager()
+                    elementos = manager.get_elementos_principal()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'data': elementos,
+                        'source': 'database',
+                        'message': 'Elementos de página principal obtenidos correctamente'
+                    })
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error obteniendo elementos página principal: {str(e)}',
+                        'data': {},
+                        'source': 'error'
+                    }), 500
             
             @app.route('/devops/logs')
             def _devops_fallback_logs():

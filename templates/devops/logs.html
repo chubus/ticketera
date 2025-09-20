@@ -7,253 +7,171 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        .main-container { 
-            background: white; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            margin: 20px auto; 
-            overflow: hidden; 
-        }
-        .header-section { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            padding: 30px; 
-            text-align: center; 
-        }
-        .stats-card { 
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
-            border-radius: 10px; 
-            padding: 20px; 
-            margin: 10px 0; 
-            transition: all 0.3s ease;
-            border-left: 4px solid #6c757d;
-        }
-        .stats-card:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-        }
-        .table-modern { 
-            border-radius: 10px; 
-            overflow: hidden; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-        }
-        .btn-modern { 
-            border-radius: 25px; 
-            padding: 10px 25px; 
-            font-weight: 600; 
-            transition: all 0.3s ease; 
-            border: none;
-        }
-        .btn-modern:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
-        }
-        .search-box { 
-            border-radius: 25px; 
-            border: 2px solid #e9ecef; 
-            padding: 12px 20px; 
-            transition: all 0.3s ease; 
-        }
-        .search-box:focus { 
-            border-color: #6c757d; 
-            box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25); 
-        }
-        .filter-badge {
-            background: linear-gradient(135deg, #6c757d, #5a6268);
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             color: white;
-            border-radius: 20px;
-            padding: 5px 15px;
-            margin: 2px;
-            display: inline-block;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .filter-badge:hover {
-            transform: scale(1.05);
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        }
-        .filter-badge.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-        }
-        .table-hover tbody tr:hover {
-            background-color: rgba(108, 117, 125, 0.1);
-            transform: scale(1.01);
-            transition: all 0.3s ease;
-        }
-        .loading-spinner {
-            display: none;
-            text-align: center;
             padding: 20px;
-        }
-        .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #6c757d;
+            margin-bottom: 30px;
         }
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 20px;
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .log-level {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 600;
-        }
-        .log-info {
-            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-            color: #0c5460;
-        }
-        .log-warning {
-            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-            color: #856404;
+        .log-entry {
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         .log-error {
-            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-            color: #721c24;
+            border-left-color: #dc3545;
+            background: #f8d7da;
         }
-        .log-debug {
-            background: linear-gradient(135deg, #e2e3e5, #d6d8db);
-            color: #383d41;
+        .log-warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .log-success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .log-info {
+            border-left-color: #17a2b8;
+            background: #d1ecf1;
+        }
+        .badge {
+            font-size: 0.8em;
+        }
+        .btn {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .filter-buttons {
+            margin-bottom: 20px;
+        }
+        .filter-buttons .btn {
+            margin: 5px;
         }
         .log-timestamp {
             font-size: 0.9em;
             color: #6c757d;
         }
         .log-message {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            font-weight: 500;
+            margin: 5px 0;
         }
-        .auto-refresh {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-        .auto-refresh:hover {
-            transform: scale(1.05);
-        }
-        .auto-refresh.active {
-            background: linear-gradient(135deg, #dc3545, #c82333);
+        .log-service {
+            font-size: 0.8em;
+            color: #495057;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="main-container">
-            <!-- Header -->
-            <div class="header-section">
-                <h1><i class="bi bi-journal-text"></i> Logs del Sistema</h1>
-                <p class="mb-0">Monitoreo y análisis de logs del sistema</p>
+    <div class="header">
+        <h1><i class="bi bi-journal-text"></i> Logs del Sistema</h1>
+        <p>Sistema DevOps - Monitoreo de Logs en Tiempo Real</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3><i class="bi bi-activity"></i> Monitoreo de Logs</h3>
             </div>
-
-            <!-- Content -->
-            <div class="p-4">
-                <!-- Stats -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="stats-card text-center">
-                            <h3 class="text-primary mb-1" id="total-logs">0</h3>
-                            <p class="mb-0 text-muted">Total Logs</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card text-center">
-                            <h3 class="text-success mb-1" id="logs-info">0</h3>
-                            <p class="mb-0 text-muted">INFO</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card text-center">
-                            <h3 class="text-warning mb-1" id="logs-warning">0</h3>
-                            <p class="mb-0 text-muted">WARNING</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card text-center">
-                            <h3 class="text-danger mb-1" id="logs-error">0</h3>
-                            <p class="mb-0 text-muted">ERROR</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Controls -->
+            <div class="card-body">
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control search-box" id="search-logs" placeholder="Buscar en logs...">
+                            <input type="text" class="form-control" id="search-logs" placeholder="Buscar en logs...">
                         </div>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-primary btn-modern" onclick="cargarLogs()">
+                    <div class="col-md-6">
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-outline-primary" onclick="filtrarLogs('all')">Todos</button>
+                            <button class="btn btn-outline-danger" onclick="filtrarLogs('error')">Errores</button>
+                            <button class="btn btn-outline-warning" onclick="filtrarLogs('warning')">Advertencias</button>
+                            <button class="btn btn-outline-success" onclick="filtrarLogs('success')">Éxito</button>
+                            <button class="btn btn-outline-info" onclick="filtrarLogs('info')">Info</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-primary" id="total-logs">0</h5>
+                                <p class="card-text">Total Logs</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-danger" id="error-logs">0</h5>
+                                <p class="card-text">Errores</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-warning" id="warning-logs">0</h5>
+                                <p class="card-text">Advertencias</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-success" id="success-logs">0</h5>
+                                <p class="card-text">Éxito</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="bi bi-list-ul"></i> Entradas de Log</h5>
+                    <div>
+                        <button class="btn btn-success" onclick="cargarLogs()">
                             <i class="bi bi-arrow-clockwise"></i> Actualizar
                         </button>
-                        <button class="btn btn-success btn-modern" onclick="exportarLogs()">
+                        <button class="btn btn-info" onclick="exportarLogs()">
                             <i class="bi bi-download"></i> Exportar
                         </button>
-                        <button class="btn btn-warning btn-modern auto-refresh" id="auto-refresh" onclick="toggleAutoRefresh()">
-                            <i class="bi bi-play"></i> Auto Refresh
+                        <button class="btn btn-secondary" onclick="volverPanel()">
+                            <i class="bi bi-arrow-left"></i> Volver al Panel
                         </button>
                     </div>
                 </div>
 
-                <!-- Filters -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="filter-badge active" data-filter="all">Todos</span>
-                            <span class="filter-badge" data-filter="info">INFO</span>
-                            <span class="filter-badge" data-filter="warning">WARNING</span>
-                            <span class="filter-badge" data-filter="error">ERROR</span>
-                            <span class="filter-badge" data-filter="debug">DEBUG</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Loading -->
-                <div class="loading-spinner" id="loading-logs">
+                <div id="loading-logs" class="text-center py-4" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
                     <p class="mt-2">Cargando logs...</p>
                 </div>
 
-                <!-- Table -->
-                <div class="table-responsive" id="table-container">
-                    <table class="table table-hover table-modern" id="logs-table">
-                        <thead class="table-dark">
-                            <tr>
-                                <th><i class="bi bi-hash"></i> ID</th>
-                                <th><i class="bi bi-circle-fill"></i> Nivel</th>
-                                <th><i class="bi bi-clock"></i> Timestamp</th>
-                                <th><i class="bi bi-gear"></i> Servicio</th>
-                                <th><i class="bi bi-chat-text"></i> Mensaje</th>
-                                <th><i class="bi bi-gear"></i> Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logs-tbody">
-                            <!-- Datos se cargarán aquí -->
-                        </tbody>
-                    </table>
-                </div>
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
 
-                <!-- Empty State -->
-                <div class="empty-state" id="empty-state" style="display: none;">
-                    <i class="bi bi-journal-text"></i>
-                    <h4>No hay logs disponibles</h4>
-                    <p>Los logs aparecerán aquí cuando el sistema genere actividad</p>
-                    <button class="btn btn-primary btn-modern" onclick="cargarLogs()">
-                        <i class="bi bi-arrow-clockwise"></i> Recargar
-                    </button>
+                <div id="logs-container">
+                    <!-- Los logs se cargarán aquí dinámicamente -->
                 </div>
             </div>
         </div>
@@ -261,209 +179,152 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let logsData = [];
+        let logs = [];
         let filtroActual = 'all';
-        let autoRefreshInterval = null;
 
         // Cargar logs al iniciar
         document.addEventListener('DOMContentLoaded', function() {
             cargarLogs();
-            configurarFiltros();
         });
 
-        // Cargar logs
-        async function cargarLogs() {
+        function cargarLogs() {
             document.getElementById('loading-logs').style.display = 'block';
-            document.getElementById('table-container').style.display = 'none';
-            document.getElementById('empty-state').style.display = 'none';
-            
-            try {
-                const response = await fetch('/devops/logs?ajax=true&format=json&api=true', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const data = await response.json();
+            document.getElementById('error-message').style.display = 'none';
+
+            fetch('/devops/logs', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading-logs').style.display = 'none';
                 
                 if (data.status === 'success') {
-                    logsData = data.data.logs || [];
-                    mostrarLogs(logsData);
-                    actualizarStats();
+                    logs = data.logs || [];
+                    mostrarLogs(logs);
+                    actualizarEstadisticas();
+                } else {
+                    mostrarError('Error cargando logs: ' + data.message);
                 }
-            } catch (error) {
-                console.error('Error cargando logs:', error);
-                mostrarError('Error cargando logs');
-            } finally {
+            })
+            .catch(error => {
                 document.getElementById('loading-logs').style.display = 'none';
-                document.getElementById('table-container').style.display = 'block';
-            }
+                mostrarError('Error de conexión: ' + error.message);
+            });
         }
 
-        // Mostrar logs en tabla
-        function mostrarLogs(logs) {
-            const tbody = document.getElementById('logs-tbody');
-            tbody.innerHTML = '';
+        function mostrarLogs(logsFiltrados) {
+            const container = document.getElementById('logs-container');
+            container.innerHTML = '';
 
-            if (logs.length === 0) {
-                document.getElementById('empty-state').style.display = 'block';
-                document.getElementById('table-container').style.display = 'none';
+            if (logsFiltrados.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No hay logs disponibles</div>';
                 return;
             }
 
-            logs.forEach(log => {
-                const row = document.createElement('tr');
-                const timestamp = new Date(log.timestamp).toLocaleString();
-                const levelClass = `log-${log.level.toLowerCase()}`;
+            logsFiltrados.forEach(log => {
+                const logDiv = document.createElement('div');
+                logDiv.className = `log-entry log-${log.level.toLowerCase()}`;
                 
-                row.innerHTML = `
-                    <td><strong>${log.id || 'N/A'}</strong></td>
-                    <td>
-                        <span class="log-level ${levelClass}">${log.level}</span>
-                    </td>
-                    <td>
-                        <div class="log-timestamp">${timestamp}</div>
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary">${log.service}</span>
-                    </td>
-                    <td>
-                        <div class="log-message">${log.message}</div>
-                    </td>
-                    <td>
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-outline-info" onclick="verDetallesLog(${log.id || 0})" title="Ver Detalles">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-warning" onclick="filtrarPorServicio('${log.service}')" title="Filtrar por Servicio">
-                                <i class="bi bi-funnel"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarLog(${log.id || 0})" title="Eliminar">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                const timestamp = new Date(log.timestamp).toLocaleString();
+                
+                logDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-${getLevelColor(log.level)} me-2">${log.level}</span>
+                                <span class="log-service">${log.service}</span>
+                                <span class="log-timestamp ms-auto">${timestamp}</span>
+                            </div>
+                            <div class="log-message">${log.message}</div>
                         </div>
-                    </td>
+                    </div>
                 `;
-                tbody.appendChild(row);
+                
+                container.appendChild(logDiv);
             });
         }
 
-        // Actualizar estadísticas
-        function actualizarStats() {
-            const total = logsData.length;
-            const info = logsData.filter(l => l.level === 'INFO').length;
-            const warning = logsData.filter(l => l.level === 'WARNING').length;
-            const error = logsData.filter(l => l.level === 'ERROR').length;
+        function getLevelColor(level) {
+            switch(level.toLowerCase()) {
+                case 'error': return 'danger';
+                case 'warning': return 'warning';
+                case 'success': return 'success';
+                case 'info': return 'info';
+                default: return 'secondary';
+            }
+        }
 
+        function filtrarLogs(nivel) {
+            filtroActual = nivel;
+            
+            // Actualizar botones
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            let logsFiltrados = logs;
+            
+            if (nivel !== 'all') {
+                logsFiltrados = logs.filter(log => log.level.toLowerCase() === nivel);
+            }
+            
+            mostrarLogs(logsFiltrados);
+        }
+
+        function actualizarEstadisticas() {
+            const total = logs.length;
+            const errores = logs.filter(log => log.level.toLowerCase() === 'error').length;
+            const advertencias = logs.filter(log => log.level.toLowerCase() === 'warning').length;
+            const exitos = logs.filter(log => log.level.toLowerCase() === 'success').length;
+            
             document.getElementById('total-logs').textContent = total;
-            document.getElementById('logs-info').textContent = info;
-            document.getElementById('logs-warning').textContent = warning;
-            document.getElementById('logs-error').textContent = error;
+            document.getElementById('error-logs').textContent = errores;
+            document.getElementById('warning-logs').textContent = advertencias;
+            document.getElementById('success-logs').textContent = exitos;
         }
 
-        // Configurar filtros
-        function configurarFiltros() {
-            document.querySelectorAll('.filter-badge').forEach(badge => {
-                badge.addEventListener('click', function() {
-                    // Remover clase active de todos
-                    document.querySelectorAll('.filter-badge').forEach(b => b.classList.remove('active'));
-                    // Agregar clase active al clickeado
-                    this.classList.add('active');
-                    
-                    filtroActual = this.dataset.filter;
-                    aplicarFiltros();
-                });
-            });
-        }
-
-        // Aplicar filtros
-        function aplicarFiltros() {
-            let filtrados = logsData;
-            
-            if (filtroActual !== 'all') {
-                filtrados = logsData.filter(log => log.level.toLowerCase() === filtroActual);
-            }
-            
-            mostrarLogs(filtrados);
-        }
-
-        // Búsqueda
-        document.getElementById('search-logs').addEventListener('input', function(e) {
-            const termino = e.target.value.toLowerCase();
-            const filtrados = logsData.filter(log => 
-                log.message.toLowerCase().includes(termino) ||
-                log.service.toLowerCase().includes(termino) ||
-                log.level.toLowerCase().includes(termino)
-            );
-            mostrarLogs(filtrados);
-        });
-
-        // Toggle auto refresh
-        function toggleAutoRefresh() {
-            const button = document.getElementById('auto-refresh');
-            
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-                button.innerHTML = '<i class="bi bi-play"></i> Auto Refresh';
-                button.classList.remove('active');
-            } else {
-                autoRefreshInterval = setInterval(cargarLogs, 5000); // Cada 5 segundos
-                button.innerHTML = '<i class="bi bi-pause"></i> Auto Refresh';
-                button.classList.add('active');
-            }
-        }
-
-        // Exportar logs
         function exportarLogs() {
-            const dataStr = JSON.stringify(logsData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `logs-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
+            const csv = 'Timestamp,Level,Service,Message\n' +
+                logs.map(log => 
+                    `"${log.timestamp}","${log.level}","${log.service}","${log.message.replace(/"/g, '""')}"`
+                ).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'logs_sistema.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
-        // Ver detalles del log
-        function verDetallesLog(id) {
-            const log = logsData.find(l => l.id === id);
-            if (log) {
-                alert(`Detalles del Log:\n\nID: ${log.id}\nNivel: ${log.level}\nServicio: ${log.service}\nMensaje: ${log.message}\nTimestamp: ${log.timestamp}`);
-            }
-        }
-
-        // Filtrar por servicio
-        function filtrarPorServicio(servicio) {
-            const filtrados = logsData.filter(log => log.service === servicio);
-            mostrarLogs(filtrados);
-        }
-
-        // Eliminar log
-        function eliminarLog(id) {
-            if (confirm('¿Estás seguro de eliminar este log?')) {
-                logsData = logsData.filter(l => l.id !== id);
-                mostrarLogs(logsData);
-                actualizarStats();
-            }
-        }
-
-        // Mostrar error
         function mostrarError(mensaje) {
-            const tbody = document.getElementById('logs-tbody');
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-danger">
-                        <i class="bi bi-exclamation-triangle"></i> ${mensaje}
-                    </td>
-                </tr>
-            `;
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = mensaje;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
         }
 
-        // Limpiar al salir
-        window.addEventListener('beforeunload', function() {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-            }
+        function volverPanel() {
+            window.location.href = '/devops/';
+        }
+
+        // Búsqueda en tiempo real
+        document.getElementById('search-logs').addEventListener('input', function() {
+            const busqueda = this.value.toLowerCase();
+            const logsFiltrados = logs.filter(log => 
+                log.message.toLowerCase().includes(busqueda) ||
+                log.service.toLowerCase().includes(busqueda) ||
+                log.level.toLowerCase().includes(busqueda)
+            );
+            mostrarLogs(logsFiltrados);
         });
+
+        // Auto-refresh cada 30 segundos
+        setInterval(cargarLogs, 30000);
     </script>
 </body>
 </html>

@@ -3,230 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincronización - DevOps</title>
+    <title>Sincronización de Datos - DevOps</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        .main-container { 
-            background: white; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            margin: 20px auto; 
-            overflow: hidden; 
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
         }
-        .header-section { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            padding: 30px; 
-            text-align: center; 
-        }
-        .sync-card { 
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
-            border-radius: 10px; 
-            padding: 20px; 
-            margin: 10px 0; 
-            transition: all 0.3s ease;
-            border-left: 4px solid #17a2b8;
-        }
-        .sync-card:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-        }
-        .btn-modern { 
-            border-radius: 25px; 
-            padding: 10px 25px; 
-            font-weight: 600; 
-            transition: all 0.3s ease; 
-            border: none;
-        }
-        .btn-modern:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
-        }
-        .progress-modern {
-            height: 25px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #e9ecef, #f8f9fa);
-            overflow: hidden;
-        }
-        .progress-bar-modern {
-            background: linear-gradient(135deg, #17a2b8, #138496);
-            border-radius: 12px;
-            transition: width 0.3s ease;
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .sync-item {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            border: 1px solid #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
             transition: all 0.3s ease;
         }
         .sync-item:hover {
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        .sync-status {
+        .sync-item.syncing {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .sync-item.success {
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+        .sync-item.error {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        .btn {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
         }
-        .status-pending {
-            background: #ffc107;
+        .status-syncing {
+            background-color: #2196f3;
+            animation: pulse 1.5s infinite;
         }
-        .status-running {
-            background: #17a2b8;
-        }
-        .status-completed {
-            background: #28a745;
+        .status-success {
+            background-color: #4caf50;
         }
         .status-error {
-            background: #dc3545;
+            background-color: #f44336;
         }
-        .sync-log {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            max-height: 200px;
-            overflow-y: auto;
+        .status-pending {
+            background-color: #ff9800;
         }
-        .log-entry {
-            margin: 5px 0;
-            padding: 5px 10px;
-            border-radius: 4px;
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
-        .log-info {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        .log-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        .log-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .log-error {
-            background: #f8d7da;
-            color: #721c24;
+        .sync-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="main-container">
-            <!-- Header -->
-            <div class="header-section">
-                <h1><i class="bi bi-arrow-repeat"></i> Sincronización</h1>
-                <p class="mb-0">Sincronización manual y automática de datos</p>
+    <div class="header">
+        <h1><i class="bi bi-arrow-repeat"></i> Sincronización de Datos</h1>
+        <p>Sistema DevOps - Gestión de Sincronización</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3><i class="bi bi-database"></i> Estado de Sincronización</h3>
             </div>
-
-            <!-- Content -->
-            <div class="p-4">
-                <!-- Stats -->
+            <div class="card-body">
                 <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="sync-card text-center">
-                            <h3 class="text-primary mb-1" id="total-sync">0</h3>
-                            <p class="mb-0 text-muted">Total Sincronizaciones</p>
+                    <div class="col-md-8">
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-success" onclick="iniciarSincronizacion()">
+                                <i class="bi bi-play-circle"></i> Iniciar Sincronización
+                            </button>
+                            <button class="btn btn-warning" onclick="pausarSincronizacion()">
+                                <i class="bi bi-pause-circle"></i> Pausar
+                            </button>
+                            <button class="btn btn-info" onclick="cargarEstado()">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar
+                            </button>
+                            <button class="btn btn-secondary" onclick="volverPanel()">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </button>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="sync-card text-center">
-                            <h3 class="text-success mb-1" id="sync-exitosas">0</h3>
-                            <p class="mb-0 text-muted">Exitosas</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="sync-card text-center">
-                            <h3 class="text-warning mb-1" id="sync-pendientes">0</h3>
-                            <p class="mb-0 text-muted">Pendientes</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="sync-card text-center">
-                            <h3 class="text-danger mb-1" id="sync-errores">0</h3>
-                            <p class="mb-0 text-muted">Con Errores</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Controls -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <button class="btn btn-primary btn-modern" onclick="iniciarSincronizacion()">
-                            <i class="bi bi-play"></i> Iniciar Sincronización
-                        </button>
-                        <button class="btn btn-success btn-modern" onclick="cargarSincronizacion()">
-                            <i class="bi bi-arrow-clockwise"></i> Actualizar
-                        </button>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-warning btn-modern" onclick="pausarSincronizacion()">
-                            <i class="bi bi-pause"></i> Pausar
-                        </button>
-                        <button class="btn btn-info btn-modern" onclick="verHistorial()">
-                            <i class="bi bi-clock-history"></i> Historial
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Progress -->
-                <div class="row mb-4" id="progress-section" style="display: none;">
-                    <div class="col-12">
-                        <div class="sync-card">
-                            <h5><i class="bi bi-arrow-repeat"></i> Progreso de Sincronización</h5>
-                            <div class="progress-modern">
-                                <div class="progress-bar-modern" id="sync-progress" style="width: 0%"></div>
-                            </div>
-                            <div class="mt-2">
-                                <span id="progress-text">Iniciando sincronización...</span>
-                            </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="auto-sync" checked>
+                            <label class="form-check-label" for="auto-sync">
+                                Sincronización Automática
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sync Modules -->
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="sync-card">
-                            <h5><i class="bi bi-box-seam"></i> Módulos de Sincronización</h5>
-                            <div id="sync-modules">
-                                <!-- Sync modules will be loaded here -->
-                            </div>
+                <div class="sync-stats">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 id="total-items">0</h4>
+                            <p class="mb-0">Total Items</p>
                         </div>
-                    </div>
-
-                    <div class="col-md-6 mb-4">
-                        <div class="sync-card">
-                            <h5><i class="bi bi-journal-text"></i> Log de Sincronización</h5>
-                            <div class="sync-log" id="sync-log">
-                                <!-- Sync log will be loaded here -->
-                            </div>
+                        <div class="col-md-3">
+                            <h4 id="synced-items">0</h4>
+                            <p class="mb-0">Sincronizados</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 id="pending-items">0</h4>
+                            <p class="mb-0">Pendientes</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 id="error-items">0</h4>
+                            <p class="mb-0">Errores</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Results -->
-                <div class="row" id="results-section" style="display: none;">
-                    <div class="col-12">
-                        <div class="sync-card">
-                            <h5><i class="bi bi-check-circle"></i> Resultados de Sincronización</h5>
-                            <div id="sync-results">
-                                <!-- Sync results will be loaded here -->
-                            </div>
-                        </div>
+                <div id="loading-sync" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
                     </div>
+                    <p class="mt-2">Cargando estado de sincronización...</p>
+                </div>
+
+                <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+                <div id="success-message" class="alert alert-success" style="display: none;"></div>
+
+                <div id="sync-container">
+                    <!-- Los elementos de sincronización se cargarán aquí dinámicamente -->
                 </div>
             </div>
         </div>
@@ -235,222 +177,150 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let syncData = {};
-        let syncInterval = null;
+        let isSyncing = false;
 
-        // Cargar sincronización al iniciar
+        // Cargar estado al iniciar
         document.addEventListener('DOMContentLoaded', function() {
-            cargarSincronizacion();
+            cargarEstado();
         });
 
-        // Cargar sincronización
-        async function cargarSincronizacion() {
-            try {
-                const response = await fetch('/devops/sync?ajax=true&format=json&api=true', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const data = await response.json();
+        function cargarEstado() {
+            document.getElementById('loading-sync').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+
+            fetch('/devops/sync', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading-sync').style.display = 'none';
                 
                 if (data.status === 'success') {
                     syncData = data.data || {};
                     mostrarSincronizacion(syncData);
-                    actualizarStats();
+                    actualizarEstadisticas();
+                } else {
+                    mostrarError('Error cargando estado: ' + data.message);
                 }
-            } catch (error) {
-                console.error('Error cargando sincronización:', error);
-                mostrarError('Error cargando sincronización');
-            }
+            })
+            .catch(error => {
+                document.getElementById('loading-sync').style.display = 'none';
+                mostrarError('Error de conexión: ' + error.message);
+            });
         }
 
-        // Mostrar sincronización
         function mostrarSincronizacion(data) {
-            // Mostrar módulos de sincronización
-            const modules = [
-                { name: 'Ofertas', count: data.ofertas_sync || 0, status: 'completed' },
-                { name: 'Negocios', count: data.negocios_sync || 0, status: 'completed' },
-                { name: 'Productos', count: data.productos_sync || 0, status: 'completed' },
-                { name: 'Precios', count: data.precios_sync || 0, status: 'completed' },
-                { name: 'Usuarios', count: data.usuarios_sync || 0, status: 'completed' },
-                { name: 'Pedidos', count: data.pedidos_sync || 0, status: 'completed' },
-                { name: 'Categorías', count: data.categorias_sync || 0, status: 'completed' },
-                { name: 'Imágenes', count: data.imagenes_sync || 0, status: 'completed' }
+            const container = document.getElementById('sync-container');
+            container.innerHTML = '';
+
+            const elementos = [
+                { nombre: 'Usuarios', cantidad: data.usuarios_sync || 0, icono: 'bi-people' },
+                { nombre: 'Productos', cantidad: data.productos_sync || 0, icono: 'bi-box' },
+                { nombre: 'Negocios', cantidad: data.negocios_sync || 0, icono: 'bi-building' },
+                { nombre: 'Ofertas', cantidad: data.ofertas_sync || 0, icono: 'bi-tag' },
+                { nombre: 'Categorías', cantidad: data.categorias_sync || 0, icono: 'bi-folder' },
+                { nombre: 'Pedidos', cantidad: data.pedidos_sync || 0, icono: 'bi-cart' },
+                { nombre: 'Imágenes', cantidad: data.imagenes_sync || 0, icono: 'bi-image' }
             ];
 
-            const modulesContainer = document.getElementById('sync-modules');
-            modulesContainer.innerHTML = '';
-
-            modules.forEach(module => {
-                const moduleItem = document.createElement('div');
-                moduleItem.className = 'sync-item';
-                moduleItem.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
+            elementos.forEach(elemento => {
+                const syncDiv = document.createElement('div');
+                syncDiv.className = 'sync-item';
+                
+                syncDiv.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            <i class="bi ${elemento.icono} fs-2 text-primary"></i>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">${elemento.nombre}</h6>
+                            <small class="text-muted">Sincronización de ${elemento.nombre.toLowerCase()}</small>
+                        </div>
+                        <div class="col-md-3">
                             <div class="d-flex align-items-center">
-                                <span class="sync-status status-${module.status}"></span>
-                                <strong>${module.name}</strong>
+                                <span class="status-indicator status-success"></span>
+                                <span class="fw-bold">${elemento.cantidad} items</span>
                             </div>
-                            <small class="text-muted">${module.count} elementos sincronizados</small>
                         </div>
-                        <div>
-                            <button class="btn btn-sm btn-outline-primary" onclick="sincronizarModulo('${module.name.toLowerCase()}')">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </button>
+                        <div class="col-md-3">
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 100%"></div>
+                            </div>
                         </div>
                     </div>
                 `;
-                modulesContainer.appendChild(moduleItem);
-            });
-
-            // Mostrar log de sincronización
-            mostrarLogSincronizacion();
-        }
-
-        // Mostrar log de sincronización
-        function mostrarLogSincronizacion() {
-            const logContainer = document.getElementById('sync-log');
-            const logs = [
-                { level: 'info', message: 'Sistema de sincronización iniciado', timestamp: new Date().toLocaleTimeString() },
-                { level: 'success', message: 'Sincronización de ofertas completada', timestamp: new Date().toLocaleTimeString() },
-                { level: 'success', message: 'Sincronización de negocios completada', timestamp: new Date().toLocaleTimeString() },
-                { level: 'warning', message: 'Algunos productos no se pudieron sincronizar', timestamp: new Date().toLocaleTimeString() },
-                { level: 'info', message: 'Sincronización finalizada exitosamente', timestamp: new Date().toLocaleTimeString() }
-            ];
-
-            logContainer.innerHTML = '';
-            logs.forEach(log => {
-                const logEntry = document.createElement('div');
-                logEntry.className = `log-entry log-${log.level}`;
-                logEntry.innerHTML = `
-                    <div class="d-flex justify-content-between">
-                        <span>${log.message}</span>
-                        <small>${log.timestamp}</small>
-                    </div>
-                `;
-                logContainer.appendChild(logEntry);
+                
+                container.appendChild(syncDiv);
             });
         }
 
-        // Actualizar estadísticas
-        function actualizarStats() {
-            const total = 8; // Total de módulos
-            const exitosas = 7; // Módulos sincronizados exitosamente
-            const pendientes = 1; // Módulos pendientes
-            const errores = 0; // Módulos con errores
+        function actualizarEstadisticas() {
+            const total = Object.values(syncData).reduce((sum, val) => sum + (val || 0), 0);
+            const sincronizados = total;
+            const pendientes = 0;
+            const errores = 0;
 
-            document.getElementById('total-sync').textContent = total;
-            document.getElementById('sync-exitosas').textContent = exitosas;
-            document.getElementById('sync-pendientes').textContent = pendientes;
-            document.getElementById('sync-errores').textContent = errores;
+            document.getElementById('total-items').textContent = total;
+            document.getElementById('synced-items').textContent = sincronizados;
+            document.getElementById('pending-items').textContent = pendientes;
+            document.getElementById('error-items').textContent = errores;
         }
 
-        // Iniciar sincronización
         function iniciarSincronizacion() {
-            document.getElementById('progress-section').style.display = 'block';
-            document.getElementById('results-section').style.display = 'none';
-            
-            let progress = 0;
-            const progressBar = document.getElementById('sync-progress');
-            const progressText = document.getElementById('progress-text');
-            
-            syncInterval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress > 100) progress = 100;
-                
-                progressBar.style.width = progress + '%';
-                progressText.textContent = `Sincronizando... ${Math.round(progress)}%`;
-                
-                if (progress >= 100) {
-                    clearInterval(syncInterval);
-                    mostrarResultados();
-                }
-            }, 500);
+            if (isSyncing) {
+                mostrarError('La sincronización ya está en progreso');
+                return;
+            }
+
+            isSyncing = true;
+            mostrarSuccess('Iniciando sincronización...');
+
+            // Simular proceso de sincronización
+            setTimeout(() => {
+                isSyncing = false;
+                mostrarSuccess('Sincronización completada exitosamente');
+                cargarEstado();
+            }, 3000);
         }
 
-        // Mostrar resultados
-        function mostrarResultados() {
-            document.getElementById('results-section').style.display = 'block';
-            
-            const resultsContainer = document.getElementById('sync-results');
-            resultsContainer.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="sync-item">
-                            <div class="d-flex justify-content-between">
-                                <span><strong>Ofertas</strong></span>
-                                <span class="text-success">8 sincronizadas</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="sync-item">
-                            <div class="d-flex justify-content-between">
-                                <span><strong>Negocios</strong></span>
-                                <span class="text-success">12 sincronizados</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="sync-item">
-                            <div class="d-flex justify-content-between">
-                                <span><strong>Productos</strong></span>
-                                <span class="text-success">25 sincronizados</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="sync-item">
-                            <div class="d-flex justify-content-between">
-                                <span><strong>Precios</strong></span>
-                                <span class="text-success">45 sincronizados</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> Sincronización completada exitosamente en 1.2s
-                    </div>
-                </div>
-            `;
-        }
-
-        // Pausar sincronización
         function pausarSincronizacion() {
-            if (syncInterval) {
-                clearInterval(syncInterval);
-                syncInterval = null;
+            if (!isSyncing) {
+                mostrarError('No hay sincronización en progreso');
+                return;
             }
+
+            isSyncing = false;
+            mostrarSuccess('Sincronización pausada');
         }
 
-        // Sincronizar módulo específico
-        function sincronizarModulo(module) {
-            console.log(`Sincronizando módulo: ${module}`);
-            // Aquí se implementaría la lógica para sincronizar un módulo específico
-        }
-
-        // Ver historial
-        function verHistorial() {
-            window.location.href = '/devops/logs';
-        }
-
-        // Mostrar error
         function mostrarError(mensaje) {
-            const containers = ['sync-modules', 'sync-log'];
-            containers.forEach(containerId => {
-                const container = document.getElementById(containerId);
-                container.innerHTML = `
-                    <div class="text-center text-danger">
-                        <i class="bi bi-exclamation-triangle"></i> ${mensaje}
-                    </div>
-                `;
-            });
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = mensaje;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
         }
 
-        // Limpiar al salir
-        window.addEventListener('beforeunload', function() {
-            if (syncInterval) {
-                clearInterval(syncInterval);
+        function mostrarSuccess(mensaje) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = mensaje;
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function volverPanel() {
+            window.location.href = '/devops/';
+        }
+
+        // Auto-refresh cada 30 segundos si está habilitado
+        setInterval(() => {
+            if (document.getElementById('auto-sync').checked) {
+                cargarEstado();
             }
-        });
+        }, 30000);
     </script>
 </body>
 </html>
