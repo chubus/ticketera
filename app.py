@@ -43,10 +43,17 @@ print(f"🗄️ Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
-from models import db, User, Ticket
+    from models import db, User, Ticket
 except ImportError:
-    # Fallback para importación desde belgrano_tickets
-    from belgrano_tickets.models import db, User, Ticket
+    try:
+        # Fallback para importación desde belgrano_tickets
+        from belgrano_tickets.models import db, User, Ticket
+    except ImportError:
+        # Fallback final: importación absoluta
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from models import db, User, Ticket
 
 # ==========================================
 # CONFIGURACIÓN DE COMUNICACIÓN API
