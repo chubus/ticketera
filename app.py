@@ -455,179 +455,248 @@ with app.app_context():
             
             @app.route('/devops/ofertas')
             def _devops_fallback_ofertas():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Datos de ofertas (simulados por ahora)
-                try:
-                    from datetime import datetime
-                    
-                    # Simular datos de ofertas
-                    ofertas = [
-                        {
-                            'id': 1,
-                            'titulo': 'Oferta Especial 50%',
-                            'descripcion': 'Descuento del 50% en productos seleccionados',
-                            'descuento': 50,
-                            'fecha_inicio': '2025-01-19',
-                            'fecha_fin': '2025-01-31',
-                            'activa': True,
-                            'negocio_id': 1
-                        },
-                        {
-                            'id': 2,
-                            'titulo': 'Oferta 2x1',
-                            'descripcion': 'Lleva 2 productos y paga solo 1',
-                            'descuento': 100,
-                            'fecha_inicio': '2025-01-20',
-                            'fecha_fin': '2025-02-15',
-                            'activa': True,
-                            'negocio_id': 2
-                        }
-                    ]
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': {
-                            'ofertas': ofertas,
-                            'total': len(ofertas),
-                            'timestamp': datetime.now().isoformat()
-                        },
-                        'source': 'simulated',
-                        'message': f'Ofertas obtenidas correctamente ({len(ofertas)} encontradas)'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo ofertas: {str(e)}',
-                        'data': [],
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular datos de ofertas
+                        ofertas = [
+                            {
+                                'id': 1,
+                                'titulo': 'Oferta Especial 50%',
+                                'descripcion': 'Descuento del 50% en productos seleccionados',
+                                'descuento': 50,
+                                'fecha_inicio': '2025-01-19',
+                                'fecha_fin': '2025-01-31',
+                                'activa': True,
+                                'negocio_id': 1
+                            },
+                            {
+                                'id': 2,
+                                'titulo': 'Oferta 2x1',
+                                'descripcion': 'Lleva 2 productos y paga solo 1',
+                                'descuento': 100,
+                                'fecha_inicio': '2025-01-20',
+                                'fecha_fin': '2025-02-15',
+                                'activa': True,
+                                'negocio_id': 2
+                            }
+                        ]
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'data': {
+                                'ofertas': ofertas,
+                                'total': len(ofertas),
+                                'timestamp': datetime.now().isoformat()
+                            },
+                            'source': 'simulated',
+                            'message': f'Ofertas obtenidas correctamente ({len(ofertas)} encontradas)'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error obteniendo ofertas: {str(e)}',
+                            'data': [],
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/ofertas.html')
             
             @app.route('/devops/negocios')
             def _devops_fallback_negocios():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Datos de negocios (simulados por ahora)
-                try:
-                    from datetime import datetime
-                    
-                    # Simular datos de negocios
-                    negocios = [
-                        {
-                            'id': 1,
-                            'nombre': 'Supermercado Central',
-                            'descripcion': 'Supermercado con productos frescos y ofertas diarias',
-                            'direccion': 'Av. Belgrano 1234',
-                            'telefono': '+54 11 1234-5678',
-                            'email': 'info@supercentral.com',
-                            'activo': True
-                        },
-                        {
-                            'id': 2,
-                            'nombre': 'Farmacia San Martín',
-                            'descripcion': 'Farmacia con medicamentos y productos de salud',
-                            'direccion': 'Calle San Martín 567',
-                            'telefono': '+54 11 9876-5432',
-                            'email': 'contacto@farmaciasanmartin.com',
-                            'activo': True
-                        },
-                        {
-                            'id': 3,
-                            'nombre': 'Restaurante El Buen Sabor',
-                            'descripcion': 'Restaurante con comida casera y delivery',
-                            'direccion': 'Av. Corrientes 890',
-                            'telefono': '+54 11 5555-1234',
-                            'email': 'pedidos@elbuensabor.com',
-                            'activo': True
-                        }
-                    ]
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': {
-                            'negocios': negocios,
-                            'total': len(negocios),
-                            'timestamp': datetime.now().isoformat()
-                        },
-                        'source': 'simulated',
-                        'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo negocios: {str(e)}',
-                        'data': [],
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular datos de negocios
+                        negocios = [
+                            {
+                                'id': 1,
+                                'nombre': 'Supermercado Central',
+                                'descripcion': 'Supermercado con productos frescos y ofertas diarias',
+                                'direccion': 'Av. Belgrano 1234',
+                                'telefono': '+54 11 1234-5678',
+                                'email': 'info@supercentral.com',
+                                'activo': True
+                            },
+                            {
+                                'id': 2,
+                                'nombre': 'Farmacia San Martín',
+                                'descripcion': 'Farmacia con medicamentos y productos de salud',
+                                'direccion': 'Calle San Martín 567',
+                                'telefono': '+54 11 9876-5432',
+                                'email': 'contacto@farmaciasanmartin.com',
+                                'activo': True
+                            },
+                            {
+                                'id': 3,
+                                'nombre': 'Restaurante El Buen Sabor',
+                                'descripcion': 'Restaurante con comida casera y delivery',
+                                'direccion': 'Av. Corrientes 890',
+                                'telefono': '+54 11 5555-1234',
+                                'email': 'pedidos@elbuensabor.com',
+                                'activo': True
+                            }
+                        ]
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'data': {
+                                'negocios': negocios,
+                                'total': len(negocios),
+                                'timestamp': datetime.now().isoformat()
+                            },
+                            'source': 'simulated',
+                            'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error obteniendo negocios: {str(e)}',
+                            'data': [],
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/negocios.html')
             
             @app.route('/devops/productos')
             def _devops_fallback_productos():
-                from flask import session, jsonify
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Usar datos reales de la base de datos
-                try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
-                    from datetime import datetime
-                    manager = DevOpsBelgranoManager()
-                    productos = manager.get_productos()
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': {
-                            'productos': productos,
-                            'total': len(productos),
-                            'timestamp': datetime.now().isoformat()
-                        },
-                        'source': 'database',
-                        'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo productos: {str(e)}',
-                        'data': [],
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular datos de productos
+                        productos = [
+                            {
+                                'id': 1,
+                                'nombre': 'Leche Entera 1L',
+                                'descripcion': 'Leche fresca pasteurizada',
+                                'precio': 850.0,
+                                'categoria': 'Lácteos',
+                                'stock': 50,
+                                'activo': True
+                            },
+                            {
+                                'id': 2,
+                                'nombre': 'Pan Integral',
+                                'descripcion': 'Pan de molde integral',
+                                'precio': 450.0,
+                                'categoria': 'Panadería',
+                                'stock': 25,
+                                'activo': True
+                            }
+                        ]
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'data': {
+                                'productos': productos,
+                                'total': len(productos),
+                                'timestamp': datetime.now().isoformat()
+                            },
+                            'source': 'simulated',
+                            'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error obteniendo productos: {str(e)}',
+                            'data': [],
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/productos.html')
             
             @app.route('/devops/precios')
             def _devops_fallback_precios():
-                from flask import session, jsonify, request
+                from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Usar datos reales de la base de datos
-                try:
-                    from devops_belgrano_manager import DevOpsBelgranoManager
-                    from datetime import datetime
-                    manager = DevOpsBelgranoManager()
-                    
-                    negocio_id = request.args.get('negocio_id', type=int)
-                    precios = manager.get_precios(negocio_id)
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'data': {
-                            'precios': precios,
-                            'total': len(precios),
-                            'negocio_id': negocio_id,
-                            'timestamp': datetime.now().isoformat()
-                        },
-                        'source': 'database',
-                        'message': f'Precios obtenidos correctamente ({len(precios)} encontrados)'
-                    })
-                except Exception as e:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'Error obteniendo precios: {str(e)}',
-                        'data': [],
-                        'source': 'error'
-                    }), 500
+                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                    request.args.get('ajax') == 'true' and 
+                    request.args.get('format') == 'json' and 
+                    request.args.get('api') == 'true' and
+                    request.args.get('json') == 'true'):
+                    try:
+                        from datetime import datetime
+                        
+                        # Simular datos de precios
+                        precios = [
+                            {
+                                'id': 1,
+                                'producto_id': 1,
+                                'negocio_id': 1,
+                                'precio': 850.0,
+                                'precio_anterior': 950.0,
+                                'descuento': 10.5,
+                                'fecha_actualizacion': '2025-01-19',
+                                'activo': True
+                            },
+                            {
+                                'id': 2,
+                                'producto_id': 2,
+                                'negocio_id': 1,
+                                'precio': 450.0,
+                                'precio_anterior': 500.0,
+                                'descuento': 10.0,
+                                'fecha_actualizacion': '2025-01-19',
+                                'activo': True
+                            }
+                        ]
+                        
+                        return jsonify({
+                            'status': 'success',
+                            'data': {
+                                'precios': precios,
+                                'total': len(precios),
+                                'timestamp': datetime.now().isoformat()
+                            },
+                            'source': 'simulated',
+                            'message': f'Precios obtenidos correctamente ({len(precios)} encontrados)'
+                        })
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error obteniendo precios: {str(e)}',
+                            'data': [],
+                            'source': 'error'
+                        }), 500
+                
+                # Si no es AJAX, devolver template HTML
+                return render_template('devops/precios.html')
             
             @app.route('/devops/estadisticas')
             def _devops_fallback_estadisticas():
