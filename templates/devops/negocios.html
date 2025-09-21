@@ -77,7 +77,7 @@
                 <span class="navbar-text me-3">
                     <i class="fas fa-user"></i> {{ session.devops_username }}
                 </span>
-                <a class="nav-link" href="{{ '/devops/logout' }}">
+                <a class="nav-link" href="/devops/logout">
                     <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                 </a>
             </div>
@@ -94,19 +94,19 @@
                         <a class="nav-link" href="/devops/">
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
-                        <a class="nav-link" href="{{ '/devops/productos' }}">
+                        <a class="nav-link" href="/devops/productos">
                             <i class="fas fa-box"></i> Productos
                         </a>
-                        <a class="nav-link" href="{{ url_for('devops.sucursales') }}">
+                        <a class="nav-link" href="/devops/negocios">
                             <i class="fas fa-store"></i> Sucursales
                         </a>
-                        <a class="nav-link active" href="{{ '/devops/negocios' }}">
+                        <a class="nav-link active" href="/devops/negocios">
                             <i class="fas fa-building"></i> Negocios
                         </a>
-                        <a class="nav-link" href="{{ '/devops/ofertas' }}">
+                        <a class="nav-link" href="/devops/ofertas">
                             <i class="fas fa-tags"></i> Ofertas
                         </a>
-                        <a class="nav-link" href="{{ '/devops/precios' }}">
+                        <a class="nav-link" href="/devops/precios">
                             <i class="fas fa-dollar-sign"></i> Precios
                         </a>
                     </nav>
@@ -203,7 +203,7 @@
                     <h5 class="modal-title"><i class="fas fa-plus"></i> Agregar Nuevo Negocio</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST" action="{{ url_for('devops.agregar_negocio') }}">
+                <form method="POST" action="/devops/negocios">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
