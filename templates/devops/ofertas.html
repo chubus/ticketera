@@ -169,7 +169,7 @@
                                 <select class="form-select" id="producto_id" name="producto_id" required>
                                     <option value="">Seleccionar producto</option>
                                     {% for producto in productos %}
-                                    <option value="{{ producto.id }}">{{ producto.nombre }}</option>
+                                    <option value="{{ producto.id }}">{{ producto.nombre }} - ${{ "%.2f"|format(producto.precio) }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -224,7 +224,7 @@
                                 <select class="form-select" id="edit_producto_id" name="producto_id" required>
                                     <option value="">Seleccionar producto</option>
                                     {% for producto in productos %}
-                                    <option value="{{ producto.id }}">{{ producto.nombre }}</option>
+                                    <option value="{{ producto.id }}">{{ producto.nombre }} - ${{ "%.2f"|format(producto.precio) }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

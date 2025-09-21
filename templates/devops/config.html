@@ -160,7 +160,7 @@
                 document.getElementById('loading-config').style.display = 'none';
                 
                 if (data.status === 'success') {
-                    configuracion = data.config || {};
+                    configuracion = data.data || {};
                     mostrarConfiguracion(configuracion);
                 } else {
                     mostrarError('Error cargando configuración: ' + data.message);
@@ -178,40 +178,29 @@
 
             // Configuración del Sistema
             const sistemaSection = crearSeccion('Sistema', {
-                'Debug Mode': config.debug ? 'Activo' : 'Inactivo',
-                'Log Level': config.log_level || 'INFO',
-                'Max Connections': config.max_connections || '100',
-                'Timeout': config.timeout || '30'
+                'Python Version': config.system?.python_version || 'N/A',
+                'Working Directory': config.system?.working_directory || 'N/A',
+                'Blueprint Prefix': config.system?.blueprint_prefix || '/devops',
+                'Timestamp': config.timestamp || 'N/A'
             });
 
-            // Configuración de Base de Datos
-            const dbSection = crearSeccion('Base de Datos', {
-                'Host': 'localhost',
-                'Port': '5432',
-                'Database': 'belgrano_ahorro',
-                'Connection Pool': '10'
+            // Configuración de Entorno
+            const envSection = crearSeccion('Variables de Entorno', {
+                'BELGRANO_AHORRO_URL': config.environment?.BELGRANO_AHORRO_URL || 'No configurada',
+                'BELGRANO_AHORRO_API_KEY': config.environment?.BELGRANO_AHORRO_API_KEY || 'No configurada',
+                'API_TIMEOUT_SECS': config.environment?.API_TIMEOUT_SECS || '10'
             });
 
-            // Configuración de API
-            const apiSection = crearSeccion('API', {
-                'Base URL': 'https://api.belgranoahorro.com',
-                'Rate Limit': '1000/hour',
-                'Timeout': '30s',
-                'Retry Attempts': '3'
-            });
-
-            // Configuración de Seguridad
-            const seguridadSection = crearSeccion('Seguridad', {
-                'SSL Enabled': 'Sí',
-                'CORS Enabled': 'Sí',
-                'Session Timeout': '3600s',
-                'Password Policy': 'Activa'
+            // Configuración de Endpoints
+            const endpointsSection = crearSeccion('Endpoints', {
+                'Base URL': config.endpoints?.base_url || 'No configurada',
+                'API Prefix': config.endpoints?.api_prefix || '/api',
+                'Timeout': config.endpoints?.timeout + 's' || '10s'
             });
 
             container.appendChild(sistemaSection);
-            container.appendChild(dbSection);
-            container.appendChild(apiSection);
-            container.appendChild(seguridadSection);
+            container.appendChild(envSection);
+            container.appendChild(endpointsSection);
         }
 
         function crearSeccion(titulo, items) {

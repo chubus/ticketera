@@ -149,6 +149,7 @@
                                         <th>Descripción</th>
                                         <th>Precio</th>
                                         <th>Categoría</th>
+                                        <th>Negocio</th>
                                         <th>Stock</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
@@ -162,6 +163,7 @@
                                         <td>{{ producto.descripcion[:50] }}...</td>
                                         <td>${{ "%.2f"|format(producto.precio) }}</td>
                                         <td>{{ producto.categoria }}</td>
+                                        <td>{{ producto.negocio }}</td>
                                         <td>{{ producto.stock }}</td>
                                         <td>
                                             {% if producto.activo %}
@@ -172,7 +174,7 @@
                                         </td>
                                         <td>
                                             <button class="btn btn-sm btn-warning btn-action" 
-                                                    onclick="editarProducto({{ producto.id }}, '{{ producto.nombre }}', '{{ producto.descripcion }}', {{ producto.precio }}, '{{ producto.categoria }}', {{ producto.stock }}, {{ producto.activo|lower }})">
+                                                    onclick="editarProducto({{ producto.id }}, '{{ producto.nombre }}', '{{ producto.descripcion }}', {{ producto.precio }}, '{{ producto.categoria }}', '{{ producto.negocio }}', {{ producto.stock }}, {{ producto.activo|lower }})">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="btn btn-sm btn-danger btn-action" 
@@ -210,6 +212,10 @@
                                 <label for="categoria" class="form-label">Categoría</label>
                                 <select class="form-select" id="categoria" name="categoria" required>
                                     <option value="">Seleccionar categoría</option>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.nombre }}">{{ categoria.nombre }}</option>
+                                    {% endfor %}
+                                    {% if not categorias %}
                                     <option value="Lácteos">Lácteos</option>
                                     <option value="Panadería">Panadería</option>
                                     <option value="Frutas y Verduras">Frutas y Verduras</option>
@@ -218,6 +224,7 @@
                                     <option value="Limpieza">Limpieza</option>
                                     <option value="Higiene">Higiene</option>
                                     <option value="Otros">Otros</option>
+                                    {% endif %}
                                 </select>
                             </div>
                         </div>
@@ -226,14 +233,28 @@
                             <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="precio" class="form-label">Precio</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input type="number" class="form-control" id="precio" name="precio" step="0.01" min="0" required>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label for="negocio" class="form-label">Negocio</label>
+                                <select class="form-select" id="negocio" name="negocio" required>
+                                    <option value="">Seleccionar negocio</option>
+                                    {% for negocio in negocios %}
+                                    <option value="{{ negocio.nombre }}">{{ negocio.nombre }}</option>
+                                    {% endfor %}
+                                    {% if not negocios %}
+                                    <option value="Supermercado Central">Supermercado Central</option>
+                                    <option value="Farmacia San Martín">Farmacia San Martín</option>
+                                    <option value="Restaurante El Buen Sabor">Restaurante El Buen Sabor</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label for="stock" class="form-label">Stock</label>
                                 <input type="number" class="form-control" id="stock" name="stock" min="0" value="0" required>
                             </div>
@@ -269,6 +290,10 @@
                                 <label for="edit_categoria" class="form-label">Categoría</label>
                                 <select class="form-select" id="edit_categoria" name="categoria" required>
                                     <option value="">Seleccionar categoría</option>
+                                    {% for categoria in categorias %}
+                                    <option value="{{ categoria.nombre }}">{{ categoria.nombre }}</option>
+                                    {% endfor %}
+                                    {% if not categorias %}
                                     <option value="Lácteos">Lácteos</option>
                                     <option value="Panadería">Panadería</option>
                                     <option value="Frutas y Verduras">Frutas y Verduras</option>
@@ -277,6 +302,7 @@
                                     <option value="Limpieza">Limpieza</option>
                                     <option value="Higiene">Higiene</option>
                                     <option value="Otros">Otros</option>
+                                    {% endif %}
                                 </select>
                             </div>
                         </div>
@@ -285,18 +311,32 @@
                             <textarea class="form-control" id="edit_descripcion" name="descripcion" rows="3" required></textarea>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="edit_precio" class="form-label">Precio</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input type="number" class="form-control" id="edit_precio" name="precio" step="0.01" min="0" required>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
+                                <label for="edit_negocio" class="form-label">Negocio</label>
+                                <select class="form-select" id="edit_negocio" name="negocio" required>
+                                    <option value="">Seleccionar negocio</option>
+                                    {% for negocio in negocios %}
+                                    <option value="{{ negocio.nombre }}">{{ negocio.nombre }}</option>
+                                    {% endfor %}
+                                    {% if not negocios %}
+                                    <option value="Supermercado Central">Supermercado Central</option>
+                                    <option value="Farmacia San Martín">Farmacia San Martín</option>
+                                    <option value="Restaurante El Buen Sabor">Restaurante El Buen Sabor</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
                                 <label for="edit_stock" class="form-label">Stock</label>
                                 <input type="number" class="form-control" id="edit_stock" name="stock" min="0" required>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <div class="form-check mt-4">
                                     <input class="form-check-input" type="checkbox" id="edit_activo" name="activo">
                                     <label class="form-check-label" for="edit_activo">
@@ -343,11 +383,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function editarProducto(id, nombre, descripcion, precio, categoria, stock, activo) {
+        function editarProducto(id, nombre, descripcion, precio, categoria, negocio, stock, activo) {
             document.getElementById('edit_nombre').value = nombre;
             document.getElementById('edit_descripcion').value = descripcion;
             document.getElementById('edit_precio').value = precio;
             document.getElementById('edit_categoria').value = categoria;
+            document.getElementById('edit_negocio').value = negocio;
             document.getElementById('edit_stock').value = stock;
             document.getElementById('edit_activo').checked = activo;
             

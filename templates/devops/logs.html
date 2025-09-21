@@ -199,7 +199,7 @@
                 document.getElementById('loading-logs').style.display = 'none';
                 
                 if (data.status === 'success') {
-                    logs = data.logs || [];
+                    logs = data.data?.logs || [];
                     mostrarLogs(logs);
                     actualizarEstadisticas();
                 } else {

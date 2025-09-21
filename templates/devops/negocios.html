@@ -163,7 +163,7 @@
                                         <td>{{ negocio.id }}</td>
                                         <td>{{ negocio.nombre }}</td>
                                         <td>{{ negocio.descripcion[:50] }}...</td>
-                                        <td>{{ negocio.categoria }}</td>
+                                        <td>{{ negocio.categoria or 'N/A' }}</td>
                                         <td>{{ negocio.direccion }}</td>
                                         <td>{{ negocio.telefono }}</td>
                                         <td>{{ negocio.email }}</td>
