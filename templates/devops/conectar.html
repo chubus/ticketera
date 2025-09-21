@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conexión Belgrano Ahorro - DevOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); min-height: 100vh; }
+        .navbar { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected { background: #28a745; }
+        .status-disconnected { background: #dc3545; }
+        .status-checking { background: #ffc107; }
+        .status-disabled { background: #6c757d; }
+        .btn { border-radius: 8px; padding: 12px 24px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/devops/">
+                <i class="fas fa-cogs"></i> DevOps Panel
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user"></i> DevOps User
+                </span>
+                <a class="nav-link" href="/devops/logout">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3 class="mb-0">
+                            <i class="fas fa-link"></i> Conexión Belgrano Ahorro
+                        </h3>
+                        <p class="mb-0">Verificación y gestión de conexión con el sistema Belgrano Ahorro</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="stats-container">
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="connection-status">Verificando...</h5>
+                                        <p class="card-text">Estado de Conexión</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="response-time">-</h5>
+                                        <p class="card-text">Tiempo de Respuesta</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="api-status">-</h5>
+                                        <p class="card-text">Estado API</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="last-check">-</h5>
+                                        <p class="card-text">Última Verificación</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-cog"></i> Configuración Actual</h5>
+                                    </div>
+                                    <div class="card-body" id="config-details">
+                                        <div class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                            <p class="mt-2">Cargando configuración...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-chart-line"></i> Estado de Conexión</h5>
+                                    </div>
+                                    <div class="card-body" id="connection-details">
+                                        <div class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Verificando...</span>
+                                            </div>
+                                            <p class="mt-2">Verificando conexión...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button class="btn btn-primary me-2" onclick="verificarConexion()">
+                                <i class="fas fa-sync-alt"></i> Verificar Conexión
+                            </button>
+                            <button class="btn btn-info me-2" onclick="verConfiguracion()">
+                                <i class="fas fa-cog"></i> Ver Configuración
+                            </button>
+                            <a href="/devops/" class="btn btn-secondary">
+                                <i class="fas fa-home"></i> Volver al Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function verificarConexion() {
+            document.getElementById('connection-details').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Verificando...</span>
+                    </div>
+                    <p class="mt-2">Verificando conexión...</p>
+                </div>
+            `;
+            
+            fetch('/devops/conectar-belgrano?ajax=true&format=json&api=true&json=true', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    mostrarEstadoConexion(data.data);
+                    actualizarEstadisticas(data.data);
+                } else {
+                    mostrarError('Error verificando conexión: ' + data.message);
+                }
+            })
+            .catch(error => {
+                mostrarError('Error verificando conexión: ' + error);
+            });
+        }
+        
+        function verConfiguracion() {
+            fetch('/devops/config?ajax=true&format=json&api=true&json=true', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    mostrarConfiguracion(data.data);
+                } else {
+                    mostrarError('Error cargando configuración: ' + data.message);
+                }
+            })
+            .catch(error => {
+                mostrarError('Error cargando configuración: ' + error);
+            });
+        }
+        
+        function mostrarEstadoConexion(data) {
+            const container = document.getElementById('connection-details');
+            const belgrano = data.belgrano_ahorro;
+            const devops = data.devops_api_client;
+            
+            let statusClass = 'status-disconnected';
+            let statusText = 'Desconectado';
+            
+            if (belgrano.status === 'connected') {
+                statusClass = 'status-connected';
+                statusText = 'Conectado';
+            } else if (belgrano.status === 'checking') {
+                statusClass = 'status-checking';
+                statusText = 'Verificando...';
+            } else if (belgrano.status === 'disabled') {
+                statusClass = 'status-disabled';
+                statusText = 'Deshabilitado';
+            }
+            
+            container.innerHTML = `
+                <div class="mb-3">
+                    <h6><i class="fas fa-globe"></i> Belgrano Ahorro</h6>
+                    <p><span class="status-indicator ${statusClass}"></span>${statusText}</p>
+                    <p><strong>URL:</strong> ${belgrano.url || 'No configurada'}</p>
+                    <p><strong>API Key:</strong> ${belgrano.api_key_configured ? 'Configurada' : 'No configurada'}</p>
+                    ${belgrano.error ? `<p class="text-danger"><strong>Error:</strong> ${belgrano.error}</p>` : ''}
+                    ${belgrano.message ? `<p class="text-info"><strong>Mensaje:</strong> ${belgrano.message}</p>` : ''}
+                </div>
+                <div>
+                    <h6><i class="fas fa-cogs"></i> DevOps API Client</h6>
+                    <p><span class="status-indicator ${devops.status === 'active' ? 'status-connected' : 'status-disconnected'}"></span>${devops.status === 'active' ? 'Activo' : 'Inactivo'}</p>
+                    <p><strong>Disponible:</strong> ${devops.available ? 'Sí' : 'No'}</p>
+                </div>
+            `;
+        }
+        
+        function mostrarConfiguracion(data) {
+            const container = document.getElementById('config-details');
+            container.innerHTML = `
+                <div class="mb-3">
+                    <h6><i class="fas fa-globe"></i> Variables de Entorno</h6>
+                    <p><strong>BELGRANO_AHORRO_URL:</strong> ${data.environment.BELGRANO_AHORRO_URL || 'No configurada'}</p>
+                    <p><strong>BELGRANO_AHORRO_API_KEY:</strong> ${data.environment.BELGRANO_AHORRO_API_KEY}</p>
+                    <p><strong>API_TIMEOUT_SECS:</strong> ${data.environment.API_TIMEOUT_SECS}</p>
+                </div>
+                <div class="mb-3">
+                    <h6><i class="fas fa-desktop"></i> Sistema</h6>
+                    <p><strong>Python:</strong> ${data.system.python_version}</p>
+                    <p><strong>Directorio:</strong> ${data.system.working_directory}</p>
+                    <p><strong>Blueprint:</strong> ${data.system.blueprint_prefix}</p>
+                </div>
+                <div>
+                    <h6><i class="fas fa-link"></i> Endpoints</h6>
+                    <p><strong>Base URL:</strong> ${data.endpoints.base_url || 'No configurada'}</p>
+                    <p><strong>API Prefix:</strong> ${data.endpoints.api_prefix}</p>
+                    <p><strong>Timeout:</strong> ${data.endpoints.timeout}s</p>
+                </div>
+            `;
+        }
+        
+        function actualizarEstadisticas(data) {
+            const belgrano = data.belgrano_ahorro;
+            const now = new Date().toLocaleString();
+            
+            document.getElementById('connection-status').textContent = 
+                belgrano.status === 'connected' ? 'Conectado' : 
+                belgrano.status === 'disabled' ? 'Deshabilitado' : 'Desconectado';
+            
+            document.getElementById('response-time').textContent = 
+                belgrano.response_time ? belgrano.response_time + 's' : '-';
+            
+            document.getElementById('api-status').textContent = 
+                belgrano.api_key_configured ? 'Configurada' : 'No configurada';
+            
+            document.getElementById('last-check').textContent = now;
+        }
+        
+        function mostrarError(mensaje) {
+            const container = document.getElementById('connection-details');
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> ${mensaje}
+                </div>
+            `;
+        }
+        
+        // Cargar información inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarConexion();
+            verConfiguracion();
+        });
+    </script>
+</body>
+</html>
