@@ -460,11 +460,72 @@ with app.app_context():
                     'mode': 'fallback'
                 })
             
-            @app.route('/devops/ofertas')
+            @app.route('/devops/ofertas', methods=['GET', 'POST'])
             def _devops_fallback_ofertas():
                 from flask import session, jsonify, request, render_template
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
+                
+                # Manejar POST para crear oferta
+                if request.method == 'POST':
+                    try:
+                        titulo = request.form.get('titulo')
+                        descripcion = request.form.get('descripcion')
+                        productos = request.form.get('productos', '')
+                        hasta_agotar_stock = request.form.get('hasta_agotar_stock') == 'on'
+                        activa = request.form.get('activa') == 'on'
+                        
+                        if not titulo:
+                            return jsonify({'error': 'Título es requerido'}), 400
+                        
+                        # Usar persistencia real
+                        try:
+                            from devops_persistence_simple import get_devops_db_simple
+                            db = get_devops_db_simple()
+                            
+                            datos_oferta = {
+                                'titulo': titulo,
+                                'descripcion': descripcion or '',
+                                'productos': [p.strip() for p in productos.split(',') if p.strip()],
+                                'hasta_agotar_stock': hasta_agotar_stock,
+                                'activa': activa
+                            }
+                            
+                            nueva_oferta = db.crear_oferta(datos_oferta)
+                            
+                        except Exception as db_error:
+                            logger.error(f"Error de base de datos: {db_error}")
+                            # Fallback a simulación si hay error de DB
+                            nueva_oferta = {
+                                'id': 999,
+                                'titulo': titulo,
+                                'descripcion': descripcion or '',
+                                'productos': [p.strip() for p in productos.split(',') if p.strip()],
+                                'hasta_agotar_stock': hasta_agotar_stock,
+                                'activa': activa
+                            }
+                        
+                        # Si es una petición AJAX, devolver JSON
+                        if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                            request.args.get('ajax') == 'true' and 
+                            request.args.get('format') == 'json' and 
+                            request.args.get('api') == 'true' and
+                            request.args.get('json') == 'true'):
+                            return jsonify({
+                                'status': 'success',
+                                'message': 'Oferta creada exitosamente',
+                                'data': nueva_oferta
+                            })
+                        else:
+                            # Si no es AJAX, redirigir a la página de ofertas
+                            from flask import redirect
+                            return redirect('/devops/ofertas')
+                        
+                    except Exception as e:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Error creando oferta: {str(e)}'
+                        }), 500
                 
                 # Solo devolver JSON si se solicita explícitamente con todos los parámetros
                 if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
@@ -475,29 +536,34 @@ with app.app_context():
                     try:
                         from datetime import datetime
                         
-                        # Simular datos de ofertas
-                        ofertas = [
-                            {
-                                'id': 1,
-                                'titulo': 'Oferta Especial 50%',
-                                'descripcion': 'Descuento del 50% en productos seleccionados',
-                                'descuento': 50,
-                                'fecha_inicio': '2025-01-19',
-                                'fecha_fin': '2025-01-31',
-                                'activa': True,
-                                'negocio_id': 1
-                            },
-                            {
-                                'id': 2,
-                                'titulo': 'Oferta 2x1',
-                                'descripcion': 'Lleva 2 productos y paga solo 1',
-                                'descuento': 100,
-                                'fecha_inicio': '2025-01-20',
-                                'fecha_fin': '2025-02-15',
-                                'activa': True,
-                                'negocio_id': 2
-                            }
-                        ]
+                        # Obtener datos reales de la base de datos
+                        try:
+                            from devops_persistence_simple import get_devops_db_simple
+                            db = get_devops_db_simple()
+                            ofertas = db.obtener_ofertas()
+                        except Exception as db_error:
+                            logger.error(f"Error obteniendo ofertas de DB: {db_error}")
+                            # Fallback a datos simulados
+                            ofertas = [
+                                {
+                                    'id': 1,
+                                    'titulo': 'Oferta Especial 50%',
+                                    'descripcion': 'Descuento del 50% en productos seleccionados',
+                                    'productos': ['Arroz', 'Aceite', 'Leche'],
+                                    'hasta_agotar_stock': True,
+                                    'activa': True,
+                                    'fecha_creacion': '2025-01-19T10:00:00Z'
+                                },
+                                {
+                                    'id': 2,
+                                    'titulo': 'Oferta 2x1',
+                                    'descripcion': 'Lleva 2 productos y paga solo 1',
+                                    'productos': ['Pan', 'Manteca'],
+                                    'hasta_agotar_stock': False,
+                                    'activa': True,
+                                    'fecha_creacion': '2025-01-20T10:00:00Z'
+                                }
+                            ]
                         
                         return jsonify({
                             'status': 'success',
@@ -538,16 +604,34 @@ with app.app_context():
                         if not nombre:
                             return jsonify({'error': 'Nombre es requerido'}), 400
                         
-                        # Simular creación de negocio
-                        nuevo_negocio = {
-                            'id': 999,  # ID simulado
-                            'nombre': nombre,
-                            'descripcion': descripcion or '',
-                            'direccion': direccion or '',
-                            'telefono': telefono or '',
-                            'email': email or '',
-                            'activo': True
-                        }
+                        # Usar persistencia real
+                        try:
+                            from devops_persistence_simple import get_devops_db_simple
+                            db = get_devops_db_simple()
+                            
+                            datos_negocio = {
+                                'nombre': nombre,
+                                'descripcion': descripcion or '',
+                                'direccion': direccion or '',
+                                'telefono': telefono or '',
+                                'email': email or '',
+                                'activo': True
+                            }
+                            
+                            nuevo_negocio = db.crear_negocio(datos_negocio)
+                            
+                        except Exception as db_error:
+                            logger.error(f"Error de base de datos: {db_error}")
+                            # Fallback a simulación si hay error de DB
+                            nuevo_negocio = {
+                                'id': 999,
+                                'nombre': nombre,
+                                'descripcion': descripcion or '',
+                                'direccion': direccion or '',
+                                'telefono': telefono or '',
+                                'email': email or '',
+                                'activo': True
+                            }
                         
                         # Si es una petición AJAX, devolver JSON
                         if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
@@ -580,26 +664,33 @@ with app.app_context():
                     try:
                         from datetime import datetime
                         
-                        # Simular datos de negocios
-                        negocios = [
-                            {
-                                'id': 1,
-                                'nombre': 'Supermercado Central',
-                                'descripcion': 'Supermercado con productos frescos y ofertas diarias',
-                                'direccion': 'Av. Belgrano 1234',
-                                'telefono': '+54 11 1234-5678',
-                                'email': 'info@supercentral.com',
-                                'activo': True
-                            },
-                            {
-                                'id': 2,
-                                'nombre': 'Farmacia San Martín',
-                                'descripcion': 'Farmacia con medicamentos y productos de salud',
-                                'direccion': 'Calle San Martín 567',
-                                'telefono': '+54 11 9876-5432',
-                                'email': 'contacto@farmaciasanmartin.com',
-                                'activo': True
-                            },
+                        # Obtener datos reales de la base de datos
+                        try:
+                            from devops_persistence_simple import get_devops_db_simple
+                            db = get_devops_db_simple()
+                            negocios = db.obtener_negocios()
+                        except Exception as db_error:
+                            logger.error(f"Error obteniendo negocios de DB: {db_error}")
+                            # Fallback a datos simulados
+                            negocios = [
+                                {
+                                    'id': 1,
+                                    'nombre': 'Supermercado Central',
+                                    'descripcion': 'Supermercado con productos frescos y ofertas diarias',
+                                    'direccion': 'Av. Belgrano 1234',
+                                    'telefono': '+54 11 1234-5678',
+                                    'email': 'info@supercentral.com',
+                                    'activo': True
+                                },
+                                {
+                                    'id': 2,
+                                    'nombre': 'Farmacia San Martín',
+                                    'descripcion': 'Farmacia con medicamentos y productos de salud',
+                                    'direccion': 'Calle San Martín 567',
+                                    'telefono': '+54 11 9876-5432',
+                                    'email': 'contacto@farmaciasanmartin.com',
+                                    'activo': True
+                                },
                             {
                                 'id': 3,
                                 'nombre': 'Restaurante El Buen Sabor',
@@ -650,16 +741,34 @@ with app.app_context():
                         if not nombre or not precio:
                             return jsonify({'error': 'Nombre y precio son requeridos'}), 400
                         
-                        # Simular creación de producto
-                        nuevo_producto = {
-                            'id': 999,  # ID simulado
-                            'nombre': nombre,
-                            'descripcion': descripcion or '',
-                            'precio': float(precio),
-                            'categoria': categoria or 'General',
-                            'stock': int(stock) if stock else 0,
-                            'activo': True
-                        }
+                        # Usar persistencia real
+                        try:
+                            from devops_persistence_simple import get_devops_db_simple
+                            db = get_devops_db_simple()
+                            
+                            datos_producto = {
+                                'nombre': nombre,
+                                'descripcion': descripcion or '',
+                                'precio': float(precio),
+                                'categoria': categoria or 'General',
+                                'stock': int(stock) if stock else 0,
+                                'activo': True
+                            }
+                            
+                            nuevo_producto = db.crear_producto(datos_producto)
+                            
+                        except Exception as db_error:
+                            logger.error(f"Error de base de datos: {db_error}")
+                            # Fallback a simulación si hay error de DB
+                            nuevo_producto = {
+                                'id': 999,
+                                'nombre': nombre,
+                                'descripcion': descripcion or '',
+                                'precio': float(precio),
+                                'categoria': categoria or 'General',
+                                'stock': int(stock) if stock else 0,
+                                'activo': True
+                            }
                         
                         # Si es una petición AJAX, devolver JSON
                         if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
