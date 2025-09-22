@@ -189,7 +189,7 @@
             document.getElementById('error-message').style.display = 'none';
 
             fetch('/devops/sync?ajax=true&format=json&api=true&json=true', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(response => response.json())
             .then(data => {
