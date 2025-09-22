@@ -556,12 +556,12 @@ with app.app_context():
                             from devops_persistence import get_devops_db
                             
                             db = get_devops_db()
-                            ofertas = db.obtener_ofertas()
+                            lista_ofertas = db.obtener_ofertas()
                             
                         except Exception as db_error:
                             logger.error(f"Error obteniendo ofertas de DB: {db_error}")
                             # Fallback a datos simulados
-                            ofertas = [
+                            lista_ofertas = [
                                 {
                                     'id': 1,
                                     'titulo': 'Oferta Especial 50%',
@@ -585,12 +585,12 @@ with app.app_context():
                         return jsonify({
                             'status': 'success',
                             'data': {
-                                'ofertas': ofertas,
-                                'total': len(ofertas),
+                                'ofertas': lista_ofertas,
+                                'total': len(lista_ofertas),
                                 'timestamp': datetime.now().isoformat()
                             },
                             'source': 'simulated',
-                            'message': f'Ofertas obtenidas correctamente ({len(ofertas)} encontradas)'
+                            'message': f'Ofertas obtenidas correctamente ({len(lista_ofertas)} encontradas)'
                         })
                     except Exception as e:
                         return jsonify({
@@ -601,7 +601,16 @@ with app.app_context():
                         }), 500
                 
                 # Si no es AJAX, devolver template HTML
-                return render_template('devops/ofertas.html')
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from devops_persistence import get_devops_db
+                    db = get_devops_db()
+                    lista_ofertas = db.obtener_ofertas()
+                except Exception:
+                    lista_ofertas = []
+                return render_template('devops/ofertas.html', ofertas=lista_ofertas)
             
             @app.route('/devops/negocios', methods=['GET', 'POST'])
             def _devops_fallback_negocios():
@@ -701,51 +710,10 @@ with app.app_context():
                             from devops_persistence import get_devops_db
                             
                             db = get_devops_db()
-                            negocios = db.obtener_negocios()
-                            
-                        except Exception as db_error:
-                            logger.error(f"Error obteniendo negocios de DB: {db_error}")
-                            # Fallback a datos simulados
-                            negocios = [
-                                {
-                                    'id': 1,
-                                    'nombre': 'Supermercado Central',
-                                    'descripcion': 'Supermercado con productos frescos y ofertas diarias',
-                                    'direccion': 'Av. Belgrano 1234',
-                                    'telefono': '+54 11 1234-5678',
-                                    'email': 'info@supercentral.com',
-                                    'activo': True
-                                },
-                                {
-                                    'id': 2,
-                                    'nombre': 'Farmacia San Martín',
-                                    'descripcion': 'Farmacia con medicamentos y productos de salud',
-                                    'direccion': 'Calle San Martín 567',
-                                    'telefono': '+54 11 9876-5432',
-                                    'email': 'contacto@farmaciasanmartin.com',
-                                    'activo': True
-                                },
-                            {
-                                'id': 3,
-                                'nombre': 'Restaurante El Buen Sabor',
-                                'descripcion': 'Restaurante con comida casera y delivery',
-                                'direccion': 'Av. Corrientes 890',
-                                'telefono': '+54 11 5555-1234',
-                                'email': 'pedidos@elbuensabor.com',
-                                'activo': True
-                            }
-                        ]
-                        
-                        return jsonify({
-                            'status': 'success',
-                            'data': {
-                                'negocios': negocios,
-                                'total': len(negocios),
-                                'timestamp': datetime.now().isoformat()
-                            },
-                            'source': 'simulated',
-                            'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)'
-                        })
+                            lista_negocios = db.obtener_negocios()
+                        except Exception:
+                            lista_negocios = []
+                        return render_template('devops/negocios.html', negocios=lista_negocios)
                     except Exception as e:
                         return jsonify({
                             'status': 'error',
@@ -755,7 +723,16 @@ with app.app_context():
                         }), 500
                 
                 # Si no es AJAX, devolver template HTML
-                return render_template('devops/negocios.html')
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from devops_persistence import get_devops_db
+                    db = get_devops_db()
+                    lista_negocios = db.obtener_negocios()
+                except Exception:
+                    lista_negocios = []
+                return render_template('devops/negocios.html', negocios=lista_negocios)
 
             @app.route('/devops/sucursales', methods=['GET', 'POST'])
             def _devops_fallback_sucursales():
@@ -947,42 +924,12 @@ with app.app_context():
                             from devops_persistence import get_devops_db
                             
                             db = get_devops_db()
-                            productos = db.obtener_productos()
-                            
-                        except Exception as db_error:
-                            logger.error(f"Error obteniendo productos de DB: {db_error}")
-                            # Fallback a datos simulados
-                            productos = [
-                                {
-                                    'id': 1,
-                                    'nombre': 'Leche Entera 1L',
-                                    'descripcion': 'Leche fresca pasteurizada',
-                                    'precio': 850.0,
-                                    'categoria': 'Lácteos',
-                                    'stock': 50,
-                                    'activo': True
-                                },
-                                {
-                                    'id': 2,
-                                    'nombre': 'Pan Integral',
-                                    'descripcion': 'Pan de molde integral',
-                                    'precio': 450.0,
-                                    'categoria': 'Panadería',
-                                    'stock': 25,
-                                    'activo': True
-                                }
-                            ]
-                        
-                        return jsonify({
-                            'status': 'success',
-                            'data': {
-                                'productos': productos,
-                                'total': len(productos),
-                                'timestamp': datetime.now().isoformat()
-                            },
-                            'source': 'simulated',
-                            'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
-                        })
+                            lista_productos = db.obtener_productos()
+                            lista_negocios = db.obtener_negocios()
+                            lista_categorias = db.obtener_categorias()
+                        except Exception:
+                            lista_productos, lista_negocios, lista_categorias = [], [], []
+                        return render_template('devops/productos.html', productos=lista_productos, negocios=lista_negocios, categorias=lista_categorias)
                     except Exception as e:
                         return jsonify({
                             'status': 'error',
@@ -994,65 +941,69 @@ with app.app_context():
                 # Si no es AJAX, devolver template HTML
                 return render_template('devops/productos.html')
             
-            @app.route('/devops/precios')
+            @app.route('/devops/precios', methods=['GET', 'POST'])
             def _devops_fallback_precios():
-                from flask import session, jsonify, request, render_template
+                from flask import session, jsonify, request, render_template, redirect, flash
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
-                # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
-                    request.args.get('ajax') == 'true' and 
-                    request.args.get('format') == 'json' and 
-                    request.args.get('api') == 'true' and
-                    request.args.get('json') == 'true'):
+                # Actualizar precio vía POST
+                if request.method == 'POST':
                     try:
-                        from datetime import datetime
-                        
-                        # Simular datos de precios
-                        precios = [
-                            {
-                                'id': 1,
-                                'producto_id': 1,
-                                'negocio_id': 1,
-                                'precio': 850.0,
-                                'precio_anterior': 950.0,
-                                'descuento': 10.5,
-                                'fecha_actualizacion': '2025-01-19',
-                                'activo': True
-                            },
-                            {
-                                'id': 2,
-                                'producto_id': 2,
-                                'negocio_id': 1,
-                                'precio': 450.0,
-                                'precio_anterior': 500.0,
-                                'descuento': 10.0,
-                                'fecha_actualizacion': '2025-01-19',
-                                'activo': True
-                            }
-                        ]
-                        
-                        return jsonify({
-                            'status': 'success',
-                            'data': {
-                                'precios': precios,
-                                'total': len(precios),
-                                'timestamp': datetime.now().isoformat()
-                            },
-                            'source': 'simulated',
-                            'message': f'Precios obtenidos correctamente ({len(precios)} encontrados)'
-                        })
+                        producto_id = request.form.get('producto_id')
+                        nuevo_precio = request.form.get('nuevo_precio')
+                        motivo = request.form.get('motivo', '')
+
+                        if not producto_id or not nuevo_precio:
+                            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                                return jsonify({'status': 'error', 'message': 'producto_id y nuevo_precio son requeridos'}), 400
+                            else:
+                                flash('Producto y nuevo precio son requeridos', 'error')
+                                return redirect('/devops/precios')
+
+                        try:
+                            import sys
+                            import os
+                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                            from devops_persistence import get_devops_db
+                            db = get_devops_db()
+                            actualizado = db.actualizar_precio_producto(int(producto_id), float(nuevo_precio), motivo)
+                        except Exception as db_error:
+                            logger.error(f"Error actualizando precio: {db_error}")
+                            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                                return jsonify({'status': 'error', 'message': str(db_error)}), 500
+                            else:
+                                flash(f'Error actualizando precio: {db_error}', 'error')
+                                return redirect('/devops/precios')
+
+                        if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                            request.args.get('ajax') == 'true' and 
+                            request.args.get('format') == 'json' and 
+                            request.args.get('api') == 'true' and
+                            request.args.get('json') == 'true'):
+                            return jsonify({'status': 'success', 'message': 'Precio actualizado', 'data': actualizado})
+                        else:
+                            flash('Precio actualizado', 'success')
+                            return redirect('/devops/precios')
                     except Exception as e:
-                        return jsonify({
-                            'status': 'error',
-                            'message': f'Error obteniendo precios: {str(e)}',
-                            'data': [],
-                            'source': 'error'
-                        }), 500
-                
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify({'status': 'error', 'message': str(e)}), 500
+                        else:
+                            flash(f'Error: {e}', 'error')
+                            return redirect('/devops/precios')
+
                 # Si no es AJAX, devolver template HTML
-                return render_template('devops/precios.html')
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from devops_persistence import get_devops_db
+                    db = get_devops_db()
+                    lista_precios = db.obtener_precios()
+                    lista_productos = db.obtener_productos()
+                except Exception:
+                    lista_precios, lista_productos = [], []
+                return render_template('devops/precios.html', precios=lista_precios, productos=lista_productos)
             
             @app.route('/devops/estadisticas')
             def _devops_fallback_estadisticas():
