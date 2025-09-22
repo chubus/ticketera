@@ -7,17 +7,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body {
+        body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
         }
         .header {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            color: white;
+            color: white; 
             padding: 20px;
-            text-align: center;
+            text-align: center; 
             margin-bottom: 30px;
         }
         .card {
@@ -29,8 +29,8 @@
         }
         .config-section {
             border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 10px; 
+            padding: 20px; 
             margin-bottom: 20px;
             background: #f8f9fa;
         }
@@ -89,7 +89,7 @@
     <div class="header">
         <h1><i class="bi bi-gear-fill"></i> Configuración del Sistema</h1>
         <p>Sistema DevOps - Configuración Avanzada</p>
-    </div>
+            </div>
 
     <div class="container">
         <div class="card">
@@ -102,32 +102,32 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
                             <input type="text" class="form-control" id="search-config" placeholder="Buscar configuración...">
-                        </div>
                     </div>
+                </div>
                     <div class="col-md-6">
                         <div class="btn-group w-100" role="group">
                             <button class="btn btn-outline-primary" onclick="cargarConfiguracion()">
-                                <i class="bi bi-arrow-clockwise"></i> Actualizar
-                            </button>
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
                             <button class="btn btn-outline-success" onclick="guardarConfiguracion()">
                                 <i class="bi bi-check-circle"></i> Guardar
                             </button>
                             <button class="btn btn-outline-info" onclick="exportarConfiguracion()">
-                                <i class="bi bi-download"></i> Exportar
-                            </button>
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
                             <button class="btn btn-outline-secondary" onclick="volverPanel()">
                                 <i class="bi bi-arrow-left"></i> Volver
-                            </button>
+                        </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 <div id="loading-config" class="text-center py-4" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
-                    </div>
+                            </div>
                     <p class="mt-2">Cargando configuración...</p>
-                </div>
+                    </div>
 
                 <div id="error-message" class="alert alert-danger" style="display: none;"></div>
                 <div id="success-message" class="alert alert-success" style="display: none;"></div>
@@ -153,7 +153,7 @@
             document.getElementById('error-message').style.display = 'none';
 
             fetch('/devops/config', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(response => response.json())
             .then(data => {
