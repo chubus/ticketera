@@ -191,8 +191,8 @@
             document.getElementById('loading-logs').style.display = 'block';
             document.getElementById('error-message').style.display = 'none';
             
-            fetch('/devops/logs', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            fetch('/devops/logs?ajax=true&format=json&api=true&json=true', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(response => response.json())
             .then(data => {
