@@ -549,11 +549,21 @@ with app.app_context():
                             'activo': True
                         }
                         
-                        return jsonify({
-                            'status': 'success',
-                            'message': 'Negocio creado exitosamente',
-                            'data': nuevo_negocio
-                        })
+                        # Si es una petición AJAX, devolver JSON
+                        if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                            request.args.get('ajax') == 'true' and 
+                            request.args.get('format') == 'json' and 
+                            request.args.get('api') == 'true' and
+                            request.args.get('json') == 'true'):
+                            return jsonify({
+                                'status': 'success',
+                                'message': 'Negocio creado exitosamente',
+                                'data': nuevo_negocio
+                            })
+                        else:
+                            # Si no es AJAX, redirigir a la página de negocios
+                            from flask import redirect
+                            return redirect('/devops/negocios')
                         
                     except Exception as e:
                         return jsonify({
@@ -651,11 +661,21 @@ with app.app_context():
                             'activo': True
                         }
                         
-                        return jsonify({
-                            'status': 'success',
-                            'message': 'Producto creado exitosamente',
-                            'data': nuevo_producto
-                        })
+                        # Si es una petición AJAX, devolver JSON
+                        if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+                            request.args.get('ajax') == 'true' and 
+                            request.args.get('format') == 'json' and 
+                            request.args.get('api') == 'true' and
+                            request.args.get('json') == 'true'):
+                            return jsonify({
+                                'status': 'success',
+                                'message': 'Producto creado exitosamente',
+                                'data': nuevo_producto
+                            })
+                        else:
+                            # Si no es AJAX, redirigir a la página de productos
+                            from flask import redirect
+                            return redirect('/devops/productos')
                         
                     except Exception as e:
                         return jsonify({
