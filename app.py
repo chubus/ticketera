@@ -694,36 +694,37 @@ with app.app_context():
                                 nuevo_negocio = db.crear_negocio(datos_negocio)
                         else:
                             # Fallback a persistencia local
-                            import sys
-                            import os
-                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                            from devops_persistence import get_devops_db
-                            
-                            db = get_devops_db()
-                            
-                            datos_negocio = {
-                                'nombre': nombre,
-                                'descripcion': descripcion or '',
-                                'direccion': direccion or '',
-                                'telefono': telefono or '',
-                                'email': email or '',
-                                'activo': True
-                            }
-                            
-                            nuevo_negocio = db.crear_negocio(datos_negocio)
-                            
-                        except Exception as db_error:
-                            logger.error(f"Error de base de datos: {db_error}")
-                            # Fallback a simulación si hay error de DB
-                            nuevo_negocio = {
-                                'id': 999,
-                                'nombre': nombre,
-                                'descripcion': descripcion or '',
-                                'direccion': direccion or '',
-                                'telefono': telefono or '',
-                                'email': email or '',
-                                'activo': True
-                            }
+                            try:
+                                import sys
+                                import os
+                                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                                from devops_persistence import get_devops_db
+                                
+                                db = get_devops_db()
+                                
+                                datos_negocio = {
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                                nuevo_negocio = db.crear_negocio(datos_negocio)
+                                
+                            except Exception as db_error:
+                                logger.error(f"Error de base de datos: {db_error}")
+                                # Fallback a simulación si hay error de DB
+                                nuevo_negocio = {
+                                    'id': 999,
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
                         
                         # Si es una petición AJAX, devolver JSON
                         if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
