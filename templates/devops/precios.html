@@ -7,233 +7,109 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .sidebar { background: #fff; box-shadow: 2px 0 10px rgba(0,0,0,0.1); min-height: calc(100vh - 76px); }
-        .sidebar .nav-link { color: #333; padding: 12px 20px; border-radius: 8px; margin: 2px 10px; transition: all 0.3s ease; }
-        .sidebar .nav-link:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: translateX(5px); }
-        .sidebar .nav-link.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .card { border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
-        .main-content { padding: 2rem; }
-        .btn-action { border-radius: 8px; padding: 8px 16px; font-size: 0.9rem; }
-        .table { border-radius: 10px; overflow: hidden; }
-        .modal-content { border-radius: 15px; border: none; }
-        .form-control, .form-select { border-radius: 8px; border: 2px solid #e9ecef; }
-        .form-control:focus, .form-select:focus { border-color: #667eea; box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25); }
-        .price-input { max-width: 120px; }
-        .bulk-actions { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        body { background: #f8f9fa; }
+        .navbar { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .card { box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+        .btn-gradient { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; }
+        .btn-gradient:hover { filter: brightness(0.95); color: #fff; }
+        .badge-soft { background: rgba(102,126,234,.15); color: #667eea; }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/devops/">
-                <i class="fas fa-cogs"></i> DevOps Panel
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">
-                    <i class="fas fa-user"></i> {{ session.devops_username }}
-                </span>
-                <a class="nav-link" href="/devops/logout">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                </a>
-            </div>
-        </div>
-    </nav>
+<nav class="navbar navbar-dark px-3 mb-4">
+    <a class="navbar-brand" href="/devops/">DevOps</a>
+    <div>
+        <a class="btn btn-light btn-sm" href="/devops/">Inicio</a>
+        <a class="btn btn-light btn-sm" href="/devops/negocios">Negocios</a>
+        <a class="btn btn-light btn-sm" href="/devops/productos">Productos</a>
+        <a class="btn btn-light btn-sm" href="/devops/ofertas">Ofertas</a>
+    </div>
+</nav>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 sidebar p-0">
-                <div class="p-3">
-                    <h6 class="text-muted mb-3">GESTIÓN DE CONTENIDO</h6>
-                    <nav class="nav flex-column">
-                        <a class="nav-link" href="/devops/">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                        <a class="nav-link" href="/devops/productos">
-                            <i class="fas fa-box"></i> Productos
-                        </a>
-                        <!-- Sucursales eliminado -->
-                        <a class="nav-link" href="/devops/negocios">
-                            <i class="fas fa-building"></i> Negocios
-                        </a>
-                        <a class="nav-link" href="/devops/ofertas">
-                            <i class="fas fa-tags"></i> Ofertas
-                        </a>
-                        <a class="nav-link active" href="/devops/precios">
-                            <i class="fas fa-dollar-sign"></i> Precios
-                        </a>
-                    </nav>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 main-content">
-                <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="fas fa-dollar-sign"></i> Gestión de Precios</h2>
-                    <div>
-                        <button class="btn btn-success me-2" onclick="aplicarCambiosMasivos()">
-                            <i class="fas fa-save"></i> Aplicar Cambios
-                        </button>
-                        <button class="btn btn-warning" onclick="revertirCambios()">
-                            <i class="fas fa-undo"></i> Revertir
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }}"></i>
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <!-- Acciones masivas eliminadas: gestión uno a uno -->
-
-                <!-- Precios Table -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-list"></i> Lista de Precios</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Producto</th>
-                                        <th>Categoría</th>
-                                        <th>Precio Actual</th>
-                                        <th>Nuevo Precio</th>
-                                        <th>Guardar</th>
-                                        <th>Stock</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for precio in precios %}
-                                    <tr>
-                                        <td>{{ precio.id }}</td>
-                                        <td>{{ precio.nombre }}</td>
-                                        <td>{{ precio.categoria }}</td>
-                                        <td>${{ "%.2f"|format(precio.precio) }}</td>
-                                        <td>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control price-input" 
-                                                       value="{{ "%.2f"|format(precio.precio) }}" 
-                                                       step="0.01" min="0" 
-                                                       data-producto-id="{{ precio.id }}"
-                                                       data-precio-original="{{ precio.precio }}">
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-success" onclick="guardarPrecio({{ precio.id }})">
-                                                <i class="fas fa-save"></i>
-                                            </button>
-                                        </td>
-                                        <td>{{ precio.stock }}</td>
-                                        <td>
-                                            {% if precio.activo %}
-                                                <span class="badge bg-success">Activo</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Inactivo</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+<div class="container">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header fw-bold">Actualizar Precio</div>
+                <div class="card-body">
+                    <form method="POST" action="/devops/precios">
+                        <div class="mb-3">
+                            <label class="form-label">Producto</label>
+                            <select id="producto_id" name="producto_id" class="form-select" required>
+                                <option value="">Cargando productos...</option>
+                            </select>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nuevo Precio</label>
+                            <input type="number" name="nuevo_precio" class="form-control" step="0.01" min="0" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo</label>
+                            <input type="text" name="motivo" class="form-control" placeholder="Ej: Ajuste de mercado" />
+                        </div>
+                        <button type="submit" class="btn btn-gradient w-100"><i class="fa fa-dollar-sign"></i> Actualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span class="fw-bold">Historial de Precios</span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="cargarPrecios()"><i class="fa fa-rotate"></i></button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Precio Actual</th>
+                                <th>Último Cambio</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_precios"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal Confirmar Cambios -->
-    <div class="modal fade" id="confirmarCambiosModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Cambios de Precios</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Se van a actualizar los precios de los siguientes productos:
-                    </div>
-                    <div id="resumenCambios">
-                        <!-- Se llenará dinámicamente -->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" onclick="confirmarCambios()">
-                        <i class="fas fa-check"></i> Confirmar Cambios
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+<script>
+    async function cargarProductos() {
+        try {
+            const res = await fetch('/devops/productos?ajax=true&format=json&api=true&json=true', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = await res.json();
+            const select = document.getElementById('producto_id');
+            select.innerHTML = '<option value="">Seleccionar producto</option>';
+            (data.data?.productos || []).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id; opt.textContent = `${p.nombre} - $${p.precio}`;
+                select.appendChild(opt);
+            });
+        } catch (e) { console.error('Error cargando productos', e); }
+    }
+    async function cargarPrecios() {
+        try {
+            const res = await fetch('/devops/precios?ajax=true&format=json&api=true&json=true', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const data = await res.json();
+            const tbody = document.getElementById('tbody_precios');
+            tbody.innerHTML = '';
+            (data.data?.precios || []).forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${p.nombre}</td>
+                    <td>$${p.precio}</td>
+                    <td>$${p.ultimo_precio || p.precio}</td>
+                    <td>${(p.fecha_ultimo || '').toString().slice(0,10)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) { console.error('Error cargando precios', e); }
+    }
+    window.addEventListener('DOMContentLoaded', () => { cargarProductos(); cargarPrecios(); });
+</script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function calcularCambio(input) {
-            const productoId = input.dataset.productoId;
-            const precioOriginal = parseFloat(input.dataset.precioOriginal);
-            const nuevoPrecio = parseFloat(input.value);
-            
-            if (nuevoPrecio > 0) {
-                const cambio = ((nuevoPrecio - precioOriginal) / precioOriginal) * 100;
-                const badge = document.getElementById(`cambio-${productoId}`);
-                
-                if (cambio > 0) {
-                    badge.className = 'badge bg-success';
-                    badge.textContent = `+${cambio.toFixed(1)}%`;
-                } else if (cambio < 0) {
-                    badge.className = 'badge bg-danger';
-                    badge.textContent = `${cambio.toFixed(1)}%`;
-                } else {
-                    badge.className = 'badge bg-secondary';
-                    badge.textContent = '0%';
-                }
-            }
-        }
-
-        function guardarPrecio(productoId) {
-            const input = document.querySelector(`.price-input[data-producto-id="${productoId}"]`);
-            if (!input) return;
-            const nuevoPrecio = parseFloat(input.value);
-            if (isNaN(nuevoPrecio) || nuevoPrecio < 0) {
-                alert('Precio inválido');
-                return;
-            }
-            fetch(`/devops/precios/actualizar/${productoId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ precio: nuevoPrecio })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Precio actualizado');
-                    location.reload();
-                } else {
-                    alert('Error: ' + (data.error || 'No se pudo actualizar'));
-                }
-            })
-            .catch(err => alert('Error: ' + err));
-        }
-    </script>
 </body>
 </html>

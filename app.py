@@ -143,14 +143,6 @@ except Exception as e:
                 except:
                     print("❌ No se puede listar archivos del directorio")
 
-# Registrar APIs REST de DevOps
-try:
-    from api_devops_rest import api_devops_bp
-    app.register_blueprint(api_devops_bp)
-    print("✅ APIs REST DevOps registradas en /api/devops/*")
-except Exception as e:
-    print(f"❌ Error registrando APIs REST DevOps: {e}")
-
 # Inicializar db con la app
 db.init_app(app)
 
@@ -626,6 +618,16 @@ with app.app_context():
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
+                # Importar cliente API
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from belgrano_client import belgrano_client
+                except Exception as e:
+                    logger.error(f"Error importing belgrano_client: {e}")
+                    belgrano_client = None
+                
                 # Manejar POST para crear negocio
                 if request.method == 'POST':
                     try:
@@ -642,8 +644,56 @@ with app.app_context():
                                 flash('Nombre es requerido', 'error')
                                 return redirect('/devops/negocios')
                         
-                        # Usar persistencia real
-                        try:
+                        # Usar API de Belgrano Ahorro
+                        if belgrano_client:
+                            try:
+                                datos_negocio = {
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                                resultado = belgrano_client.create_business(datos_negocio)
+                                
+                                if 'error' in resultado:
+                                    logger.error(f"Error creando negocio via API: {resultado['error']}")
+                                    raise Exception(f"API Error: {resultado['error']}")
+                                
+                                nuevo_negocio = {
+                                    'id': resultado['data']['id'],
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                            except Exception as api_error:
+                                logger.error(f"Error en API: {api_error}")
+                                # Fallback a persistencia local
+                                import sys
+                                import os
+                                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                                from devops_persistence import get_devops_db
+                                
+                                db = get_devops_db()
+                                
+                                datos_negocio = {
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                                nuevo_negocio = db.crear_negocio(datos_negocio)
+                        else:
+                            # Fallback a persistencia local
                             import sys
                             import os
                             sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
