@@ -143,6 +143,14 @@ except Exception as e:
                 except:
                     print("❌ No se puede listar archivos del directorio")
 
+# Registrar APIs REST de DevOps
+try:
+    from api_devops_rest import api_devops_bp
+    app.register_blueprint(api_devops_bp)
+    print("✅ APIs REST DevOps registradas en /api/devops/*")
+except Exception as e:
+    print(f"❌ Error registrando APIs REST DevOps: {e}")
+
 # Inicializar db con la app
 db.init_app(app)
 
