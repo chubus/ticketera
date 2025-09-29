@@ -47,7 +47,7 @@ try:
 except ImportError:
     try:
         # Fallback para importación desde belgrano_tickets
-        from belgrano_tickets.models import db, User, Ticket
+        from models import db, User, Ticket
     except ImportError:
         # Fallback final: importación absoluta
         import sys
@@ -87,7 +87,7 @@ else:
 
 # Importar cliente API
 try:
-    from belgrano_tickets.api_client import create_api_client, test_api_connection
+    from api_client import create_api_client, test_api_connection
     if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
         api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
         print("Cliente API de Belgrano Ahorro inicializado")
