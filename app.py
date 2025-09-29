@@ -1500,6 +1500,10 @@ def health_check():
             'version': '2.0.0'
         }), 200
     except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 @app.route('/status')
 def status_check():
