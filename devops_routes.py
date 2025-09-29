@@ -862,49 +862,52 @@ def gestion_ofertas():
         try:
             titulo = request.form.get('titulo', '').strip()
             descripcion = request.form.get('descripcion', '').strip()
-            productos = request.form.get('productos', '').strip()
             hasta_agotar_stock = request.form.get('hasta_agotar_stock') == 'on'
             activa = request.form.get('activa') == 'on'
-            
-            if not all([titulo, descripcion, productos]):
-                flash('Título, descripción y productos son requeridos', 'error')
+
+            if not titulo:
+                flash('Título es requerido', 'error')
                 return redirect(url_for('devops.gestion_ofertas'))
-            
-            # Cargar datos actuales
-            from devops_persistence import get_devops_db, guardar_datos_json
-            import uuid
+
+            # Aceptar detalle por producto (producto_id[], precio[], stock[]) o CSV simple
+            productos_detalle = []
+            ids = request.form.getlist('producto_id[]')
+            precios = request.form.getlist('precio[]')
+            stocks = request.form.getlist('stock[]')
+            if ids:
+                for i, pid in enumerate(ids):
+                    try:
+                        productos_detalle.append({
+                            'id': int(pid),
+                            'precio': float(precios[i]) if i < len(precios) and precios[i] not in (None, '') else None,
+                            'stock': int(stocks[i]) if i < len(stocks) and stocks[i] not in (None, '') else None,
+                        })
+                    except Exception:
+                        continue
+            else:
+                productos_csv = request.form.get('productos', '').strip()
+                if productos_csv:
+                    for pid in [p.strip() for p in productos_csv.split(',') if p.strip()]:
+                        try:
+                            productos_detalle.append({'id': int(pid)})
+                        except Exception:
+                            continue
+
+            from devops_persistence import get_devops_db
             db = get_devops_db()
-            if not datos:
-                datos = {'productos': [], 'sucursales': [], 'ofertas': [], 'negocios': {}, 'categorias': {}}
-            
-            # Crear nueva oferta
-            oferta_id = str(uuid.uuid4())
-            nueva_oferta = {
-                'id': oferta_id,
+            db.crear_oferta({
                 'titulo': titulo,
                 'descripcion': descripcion,
-                'productos': productos,
+                'productos': productos_detalle,
                 'hasta_agotar_stock': hasta_agotar_stock,
-                'activa': activa,
-                'fecha_creacion': datetime.now().isoformat()
-            }
-            
-            # Agregar a la lista
-            if 'ofertas' not in datos:
-                datos['ofertas'] = []
-            datos['ofertas'].append(nueva_oferta)
-            
-            # Guardar
-            if guardar_datos_json(datos):
-                flash(f'Oferta "{titulo}" creada exitosamente', 'success')
-                logger.info(f"Oferta creada desde DevOps: {titulo}")
-            else:
-                flash('Error al guardar la oferta', 'error')
-                
+                'activa': activa
+            })
+
+            flash(f'Oferta "{titulo}" creada exitosamente', 'success')
         except Exception as e:
             logger.error(f"Error creando oferta desde DevOps: {e}")
             flash('Error interno al crear la oferta', 'error')
-        
+
         return redirect(url_for('devops.gestion_ofertas'))
     
     # Solo devolver JSON si se solicita explícitamente con todos los parámetros
@@ -972,6 +975,87 @@ def gestion_ofertas():
         logger.error(f"Error cargando datos para ofertas: {e}")
         # Fallback con datos vacíos
         return render_template('devops/ofertas.html', ofertas=[])
+
+# =================================================================
+# PRODUCTOS (evitar 404 y permitir crear)
+# =================================================================
+
+@devops_bp.route('/productos', methods=['GET', 'POST'])
+@devops_login_required
+def gestion_productos():
+    from flask import request, render_template, redirect, flash
+    if request.method == 'POST':
+        try:
+            nombre = request.form.get('nombre')
+            precio = request.form.get('precio')
+            descripcion = request.form.get('descripcion') or ''
+            categoria = request.form.get('categoria') or 'General'
+            stock = request.form.get('stock') or '0'
+            negocio_id = request.form.get('negocio_id')
+
+            if not nombre or not precio:
+                flash('Nombre y precio son requeridos', 'error')
+                return redirect(url_for('devops.gestion_productos'))
+
+            from devops_persistence import get_devops_db
+            db = get_devops_db()
+            db.crear_producto({
+                'nombre': nombre,
+                'descripcion': descripcion,
+                'precio': float(precio),
+                'categoria': categoria,
+                'stock': int(stock),
+                'negocio_id': int(negocio_id) if negocio_id else None,
+                'activo': True,
+            })
+            flash('Producto creado exitosamente', 'success')
+            return redirect(url_for('devops.gestion_productos'))
+        except Exception as e:
+            logger.error(f"Error creando producto: {e}")
+            flash(f'Error creando producto: {e}', 'error')
+            return redirect(url_for('devops.gestion_productos'))
+
+    # GET
+    try:
+        from devops_persistence import get_devops_db
+        db = get_devops_db()
+        productos = db.obtener_productos()
+        negocios = db.obtener_negocios()
+        categorias = db.obtener_categorias()
+    except Exception:
+        productos, negocios, categorias = [], [], []
+    return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
+
+# =================================================================
+# PRECIOS (evitar 404 y permitir actualizar)
+# =================================================================
+
+@devops_bp.route('/precios', methods=['GET', 'POST'])
+@devops_login_required
+def gestion_precios():
+    from flask import request, render_template, redirect, flash
+    from devops_persistence import get_devops_db
+    db = get_devops_db()
+    if request.method == 'POST':
+        try:
+            producto_id = request.form.get('producto_id')
+            nuevo_precio = request.form.get('nuevo_precio')
+            motivo = request.form.get('motivo', '')
+            if not producto_id or not nuevo_precio:
+                flash('Producto y nuevo precio son requeridos', 'error')
+                return redirect(url_for('devops.gestion_precios'))
+            db.actualizar_precio_producto(int(producto_id), float(nuevo_precio), motivo)
+            flash('Precio actualizado', 'success')
+            return redirect(url_for('devops.gestion_precios'))
+        except Exception as e:
+            logger.error(f"Error actualizando precio: {e}")
+            flash(f'Error actualizando precio: {e}', 'error')
+            return redirect(url_for('devops.gestion_precios'))
+
+    # GET
+    precios = db.obtener_precios()
+    productos = db.obtener_productos()
+    return render_template('devops/precios.html', precios=precios, productos=productos)
 
 # =================================================================
 # MANEJO DE ERRORES
