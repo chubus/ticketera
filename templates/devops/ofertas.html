@@ -169,9 +169,12 @@
                                 <input type="text" class="form-control" id="titulo" name="titulo" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="productos" class="form-label">Productos (escribir nombres separados por comas)</label>
-                                <input type="text" class="form-control" id="productos" name="productos" placeholder="Ej: Arroz, Aceite, Leche" required>
-                                <small class="form-text text-muted">Escribe los nombres de los productos separados por comas</small>
+                                <label class="form-label">Productos con precio y stock</label>
+                                <div id="productos-container"></div>
+                                <button class="btn btn-sm btn-outline-primary mt-2" type="button" onclick="agregarProductoFila()">
+                                    <i class="fas fa-plus"></i> Agregar producto
+                                </button>
+                                <small class="form-text text-muted d-block mt-1">Cada fila permite definir producto, precio y stock.</small>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -292,6 +295,8 @@
         // Cargar productos al iniciar
         document.addEventListener('DOMContentLoaded', function() {
             cargarProductos();
+            // agregar una fila por defecto
+            agregarProductoFila();
         });
 
         function cargarProductos() {
@@ -302,22 +307,30 @@
             .then(data => {
                 if (data.status === 'success' && data.data && data.data.productos) {
                     const productos = data.data.productos;
-                    
-                    // Crear lista de nombres de productos para autocompletar
-                    const nombresProductos = productos.map(p => p.nombre).join(', ');
-                    
-                    // Actualizar placeholders con nombres de productos disponibles
-                    document.getElementById('productos').placeholder = `Ej: ${productos.slice(0, 3).map(p => p.nombre).join(', ')}`;
-                    document.getElementById('edit_productos').placeholder = `Ej: ${productos.slice(0, 3).map(p => p.nombre).join(', ')}`;
-                    
-                    console.log('Productos disponibles:', nombresProductos);
+                    window.__productos_cache = productos;
                 }
             })
             .catch(error => {
                 console.error('Error cargando productos:', error);
-                document.getElementById('productos').placeholder = 'Error cargando productos';
-                document.getElementById('edit_productos').placeholder = 'Error cargando productos';
             });
+        }
+
+        function agregarProductoFila() {
+            const container = document.getElementById('productos-container');
+            const idx = container.children.length;
+            const fila = document.createElement('div');
+            fila.className = 'input-group mb-2';
+            fila.innerHTML = `
+                <select class="form-select" name="producto_id[]" required>
+                    ${(window.__productos_cache || []).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
+                </select>
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" name="precio[]" step="0.01" min="0" placeholder="Precio" required>
+                <span class="input-group-text">Stock</span>
+                <input type="number" class="form-control" name="stock[]" min="0" placeholder="Stock" required>
+                <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(fila);
         }
 
         function editarOferta(id, titulo, descripcion, productos, hasta_agotar_stock, activa) {

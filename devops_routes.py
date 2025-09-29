@@ -1024,6 +1024,26 @@ def gestion_productos():
         categorias = db.obtener_categorias()
     except Exception:
         productos, negocios, categorias = [], [], []
+
+    # Soporte JSON para AJAX (utilizado por otros módulos)
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+        request.args.get('ajax') == 'true' and 
+        request.args.get('format') == 'json' and 
+        request.args.get('api') == 'true' and
+        request.args.get('json') == 'true'):
+        try:
+            return jsonify({
+                'status': 'success',
+                'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)',
+                'data': {
+                    'productos': productos,
+                    'total': len(productos)
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error devolviendo JSON de productos: {e}")
+            return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
+
     return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
 
 # =================================================================
@@ -1055,6 +1075,27 @@ def gestion_precios():
     # GET
     precios = db.obtener_precios()
     productos = db.obtener_productos()
+
+    # Soporte JSON para AJAX (utilizado por templates)
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+        request.args.get('ajax') == 'true' and 
+        request.args.get('format') == 'json' and 
+        request.args.get('api') == 'true' and
+        request.args.get('json') == 'true'):
+        try:
+            return jsonify({
+                'status': 'success',
+                'message': f'Precios obtenidos correctamente ({len(precios)} encontrados)',
+                'data': {
+                    'precios': precios,
+                    'productos': productos,
+                    'total': len(precios)
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error devolviendo JSON de precios: {e}")
+            return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
+
     return render_template('devops/precios.html', precios=precios, productos=productos)
 
 # =================================================================
