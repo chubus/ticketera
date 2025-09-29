@@ -98,50 +98,24 @@ except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
 
-# Importar blueprint de DevOps con ruta robusta
+"""Registro único y robusto del blueprint DevOps.
+Evita múltiples registros y rutas duplicadas.
+"""
 try:
-    # Intento directo si el cwd es la raíz del proyecto
     from devops_routes import devops_bp
+except Exception:
+    import sys
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    from devops_routes import devops_bp  # reintento con sys.path ajustado
+
+# Registrar una sola vez si no está ya registrado
+if 'devops' not in [bp.name for bp in app.blueprints.values()]:
     app.register_blueprint(devops_bp)
-    print("Blueprint de DevOps registrado (import directo)")
-except Exception as e:
-    try:
-        # Añadir la raíz del proyecto al sys.path y reintentar
-        import sys
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
-        from devops_routes import devops_bp as devops_bp_root
-        app.register_blueprint(devops_bp_root)
-        print("Blueprint de DevOps registrado (import con sys.path raíz)")
-    except Exception as e2:
-        # Fallback: cargar por ruta absoluta con importlib
-        try:
-            import importlib.util
-            devops_path = os.path.join(project_root, 'devops_routes.py')
-            spec = importlib.util.spec_from_file_location('devops_routes', devops_path)
-            module = importlib.util.module_from_spec(spec)
-            assert spec and spec.loader
-            spec.loader.exec_module(module)
-            devops_bp_dynamic = getattr(module, 'devops_bp', None)
-            if devops_bp_dynamic is not None:
-                app.register_blueprint(devops_bp_dynamic)
-                print("Blueprint de DevOps registrado (importlib por ruta)")
-            else:
-                print("No se encontró devops_bp en devops_routes.py (importlib)")
-        except Exception as e3:
-            print(f"❌ No se pudo registrar el blueprint de DevOps: {e3}")
-            # Verificar si el archivo existe
-            if os.path.exists(devops_path):
-                print(f"✅ Archivo devops_routes.py existe en: {devops_path}")
-            else:
-                print(f"❌ Archivo devops_routes.py NO existe en: {devops_path}")
-                # Listar archivos en el directorio
-                try:
-                    files = os.listdir(project_root)
-                    print(f"📁 Archivos en {project_root}: {files}")
-                except:
-                    print("❌ No se puede listar archivos del directorio")
+    print("Blueprint de DevOps registrado")
+else:
+    print("Blueprint de DevOps ya estaba registrado; se omite registro duplicado")
 
 # Inicializar db con la app
 db.init_app(app)
@@ -1413,6 +1387,9 @@ def login():
         
         # Validaciones básicas
         if not email or not password:
+            # Si es una petición AJAX, devolver JSON
+            if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+                return jsonify({'error': 'Campos requeridos: email y password'}), 400
             flash('Por favor complete todos los campos', 'warning')
             return render_template('login.html')
         
@@ -1520,6 +1497,76 @@ def health_check():
             'ahorro_api': ahorro_api_status,
             'total_tickets': total_tickets,
             'total_usuarios': total_usuarios,
+            'version': '2.0.0'
+        }), 200
+    except Exception as e:
+
+@app.route('/status')
+def status_check():
+    """Status detallado de la aplicación"""
+    try:
+        # Verificar que la base de datos esté funcionando
+        total_tickets = Ticket.query.count()
+        total_usuarios = User.query.count()
+        
+        # Obtener tickets por estado
+        tickets_pendientes = Ticket.query.filter_by(estado='pendiente').count()
+        tickets_en_proceso = Ticket.query.filter_by(estado='en_proceso').count()
+        tickets_completados = Ticket.query.filter_by(estado='completado').count()
+        
+        # Verificar conexión con API de Belgrano Ahorro
+        ahorro_api_status = "unknown"
+        if api_client:
+            try:
+                health = api_client.health_check()
+                ahorro_api_status = health.get('status', 'unknown')
+            except:
+                ahorro_api_status = "disconnected"
+        
+        return jsonify({
+            'status': 'operational',
+            'service': 'Belgrano Tickets',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'ahorro_api': ahorro_api_status,
+            'statistics': {
+                'total_tickets': total_tickets,
+                'total_usuarios': total_usuarios,
+                'tickets_pendientes': tickets_pendientes,
+                'tickets_en_proceso': tickets_en_proceso,
+                'tickets_completados': tickets_completados
+            },
+            'version': '2.0.0'
+        }), 200
+    except Exception as e:
+        logger.error(f"Error en status check: {e}")
+        return jsonify({
+            'status': 'error',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 500
+
+@app.route('/ping')
+def ping_check():
+    """Ping simple para verificar conectividad"""
+    return jsonify({
+        'pong': True,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/health')
+def api_health_check():
+    """Health check específico para API"""
+    try:
+        # Verificar que la base de datos esté funcionando
+        total_tickets = Ticket.query.count()
+        
+        return jsonify({
+            'status': 'healthy',
+            'service': 'Belgrano Tickets API',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'total_tickets': total_tickets,
             'version': '2.0.0'
         }), 200
     except Exception as e:
