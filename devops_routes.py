@@ -910,71 +910,91 @@ def gestion_ofertas():
 
         return redirect(url_for('devops.gestion_ofertas'))
     
-    # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
-        request.args.get('ajax') == 'true' and 
-        request.args.get('format') == 'json' and 
-        request.args.get('api') == 'true' and
-        request.args.get('json') == 'true'):
-        try:
-            # Simular datos de ofertas
-            ofertas = [
-                {
-                    'id': 1,
-                    'titulo': 'Oferta Especial 50%',
-                    'descripcion': 'Descuento del 50% en productos seleccionados',
-                    'descuento': 50,
-                    'producto_id': 1,
-                    'producto_nombre': 'Producto Ejemplo',
-                    'fecha_inicio': '2025-01-19',
-                    'fecha_fin': '2025-01-31',
-                    'activa': True
-                },
-                {
-                    'id': 2,
-                    'titulo': 'Oferta 2x1',
-                    'descripcion': 'Lleva 2 productos y paga solo 1',
-                    'descuento': 100,
-                    'producto_id': 2,
-                    'producto_nombre': 'Producto Ejemplo 2',
-                    'fecha_inicio': '2025-01-20',
-                    'fecha_fin': '2025-02-15',
-                    'activa': True
-                }
-            ]
-            
-            return jsonify({
-                'status': 'success',
-                'message': f'Ofertas obtenidas correctamente ({len(ofertas)} encontradas)',
-                'data': {
-                    'ofertas': ofertas,
-                    'total': len(ofertas),
-                    'timestamp': datetime.now().isoformat()
-                },
-                'source': 'simulated'
-            })
-            
-        except Exception as e:
-            logger.error(f"Error obteniendo ofertas: {e}")
-            return jsonify({
-                'status': 'error',
-                'message': f'Error obteniendo ofertas: {str(e)}',
-                'data': []
-            }), 500
+    # Siempre devolver la interfaz HTML (no JSON) para ofertas
     
     # Si no es AJAX, devolver template HTML con datos reales
     try:
         from devops_persistence import get_devops_db
         db = get_devops_db()
         ofertas = db.obtener_ofertas()
+        # Mapa de productos id->nombre para mostrar nombres en la lista
+        try:
+            productos = db.obtener_productos()
+            productos_map = {p['id']: p.get('nombre') or p.get('name') for p in productos} if isinstance(productos, list) else {}
+        except Exception:
+            productos_map = {}
             
         # Devolver template con datos reales
-        return render_template('devops/ofertas.html', ofertas=ofertas)
+        return render_template('devops/ofertas.html', ofertas=ofertas, productos_map=productos_map)
         
     except Exception as e:
         logger.error(f"Error cargando datos para ofertas: {e}")
         # Fallback con datos vacíos
-        return render_template('devops/ofertas.html', ofertas=[])
+        return render_template('devops/ofertas.html', ofertas=[], productos_map={})
+
+# =================================================================
+# NEGOCIOS (evitar 404 y permitir crear/listar con JSON)
+# =================================================================
+
+@devops_bp.route('/negocios', methods=['GET', 'POST'])
+@devops_login_required
+def gestion_negocios():
+    from flask import request, render_template, redirect, flash
+    from devops_persistence import get_devops_db
+    db = get_devops_db()
+
+    if request.method == 'POST':
+        try:
+            nombre = request.form.get('nombre')
+            descripcion = request.form.get('descripcion') or ''
+            direccion = request.form.get('direccion') or ''
+            telefono = request.form.get('telefono') or ''
+            email = request.form.get('email') or ''
+            activo = request.form.get('activo') == 'on'
+            if not nombre:
+                flash('Nombre es requerido', 'error')
+                return redirect(url_for('devops.gestion_negocios'))
+            db.crear_negocio({
+                'nombre': nombre,
+                'descripcion': descripcion,
+                'direccion': direccion,
+                'telefono': telefono,
+                'email': email,
+                'activo': activo
+            })
+            flash('Negocio creado exitosamente', 'success')
+            return redirect(url_for('devops.gestion_negocios'))
+        except Exception as e:
+            logger.error(f"Error creando negocio: {e}")
+            flash(f'Error creando negocio: {e}', 'error')
+            return redirect(url_for('devops.gestion_negocios'))
+
+    # GET
+    try:
+        negocios = db.obtener_negocios()
+    except Exception:
+        negocios = []
+
+    # Soporte JSON para AJAX (para combos en productos/sucursales)
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+        request.args.get('ajax') == 'true' and 
+        request.args.get('format') == 'json' and 
+        request.args.get('api') == 'true' and
+        request.args.get('json') == 'true'):
+        try:
+            return jsonify({
+                'status': 'success',
+                'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)',
+                'data': {
+                    'negocios': negocios,
+                    'total': len(negocios)
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error devolviendo JSON de negocios: {e}")
+            return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
+
+    return render_template('devops/negocios.html', negocios=negocios)
 
 # =================================================================
 # PRODUCTOS (evitar 404 y permitir crear)

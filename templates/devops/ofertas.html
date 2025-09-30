@@ -116,7 +116,17 @@
                                         <td>{{ oferta.id[:8] }}...</td>
                                         <td>{{ oferta.titulo }}</td>
                                         <td>{{ oferta.descripcion[:50] }}...</td>
-                                        <td>{{ oferta.productos }}</td>
+                                        <td>
+                                            {% if oferta.productos %}
+                                                {% set items = [] %}
+                                                {% for item in oferta.productos %}
+                                                    {% set _ = items.append(productos_map.get(item.id) if productos_map else (item.nombre if item.nombre is defined else item.id)) %}
+                                                {% endfor %}
+                                                {{ items|join(', ') }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             {% if oferta.hasta_agotar_stock %}
                                                 <span class="badge bg-info"><i class="fas fa-boxes"></i> Sí</span>
