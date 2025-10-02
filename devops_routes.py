@@ -902,6 +902,21 @@ def gestion_ofertas():
                 'hasta_agotar_stock': hasta_agotar_stock,
                 'activa': activa
             })
+            
+            # Sincronizar con Belgrano Ahorro API
+            try:
+                if devops_api_client:
+                    api_data = {
+                        'titulo': titulo,
+                        'descripcion': descripcion,
+                        'productos': productos_detalle,
+                        'hasta_agotar_stock': hasta_agotar_stock,
+                        'activa': activa
+                    }
+                    api_post('offers', api_data)
+                    logger.info(f"Oferta sincronizada con Belgrano Ahorro: {titulo}")
+            except Exception as api_error:
+                logger.warning(f"Error sincronizando oferta con API: {api_error}")
 
             flash(f'Oferta "{titulo}" creada exitosamente', 'success')
         except Exception as e:
@@ -1028,6 +1043,24 @@ def gestion_productos():
                 'negocio_id': int(negocio_id) if negocio_id else None,
                 'activo': True,
             })
+            
+            # Sincronizar con Belgrano Ahorro API
+            try:
+                if devops_api_client:
+                    api_data = {
+                        'nombre': nombre,
+                        'descripcion': descripcion,
+                        'precio': float(precio),
+                        'categoria': categoria,
+                        'stock': int(stock),
+                        'negocio_id': int(negocio_id) if negocio_id else None,
+                        'activo': True
+                    }
+                    api_post('products', api_data)
+                    logger.info(f"Producto sincronizado con Belgrano Ahorro: {nombre}")
+            except Exception as api_error:
+                logger.warning(f"Error sincronizando producto con API: {api_error}")
+            
             flash('Producto creado exitosamente', 'success')
             return redirect(url_for('devops.gestion_productos'))
         except Exception as e:
@@ -1085,6 +1118,20 @@ def gestion_precios():
                 flash('Producto y nuevo precio son requeridos', 'error')
                 return redirect(url_for('devops.gestion_precios'))
             db.actualizar_precio_producto(int(producto_id), float(nuevo_precio), motivo)
+            
+            # Sincronizar con Belgrano Ahorro API
+            try:
+                if devops_api_client:
+                    api_data = {
+                        'producto_id': int(producto_id),
+                        'nuevo_precio': float(nuevo_precio),
+                        'motivo': motivo
+                    }
+                    api_put('products', int(producto_id), api_data)
+                    logger.info(f"Precio sincronizado con Belgrano Ahorro: producto {producto_id}")
+            except Exception as api_error:
+                logger.warning(f"Error sincronizando precio con API: {api_error}")
+            
             flash('Precio actualizado', 'success')
             return redirect(url_for('devops.gestion_precios'))
         except Exception as e:
@@ -1117,6 +1164,87 @@ def gestion_precios():
             return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
 
     return render_template('devops/precios.html', precios=precios, productos=productos)
+
+# =================================================================
+# NEGOCIOS (evitar 404 y permitir crear/listar con JSON)
+# =================================================================
+
+@devops_bp.route('/negocios', methods=['GET', 'POST'])
+@devops_login_required
+def gestion_negocios():
+    from flask import request, render_template, redirect, flash
+    from devops_persistence import get_devops_db
+    db = get_devops_db()
+
+    if request.method == 'POST':
+        try:
+            nombre = request.form.get('nombre')
+            descripcion = request.form.get('descripcion') or ''
+            direccion = request.form.get('direccion') or ''
+            telefono = request.form.get('telefono') or ''
+            email = request.form.get('email') or ''
+            activo = request.form.get('activo') == 'on'
+            if not nombre:
+                flash('Nombre es requerido', 'error')
+                return redirect(url_for('devops.gestion_negocios'))
+            db.crear_negocio({
+                'nombre': nombre,
+                'descripcion': descripcion,
+                'direccion': direccion,
+                'telefono': telefono,
+                'email': email,
+                'activo': activo
+            })
+            
+            # Sincronizar con Belgrano Ahorro API
+            try:
+                if devops_api_client:
+                    api_data = {
+                        'nombre': nombre,
+                        'descripcion': descripcion,
+                        'direccion': direccion,
+                        'telefono': telefono,
+                        'email': email,
+                        'activo': activo
+                    }
+                    api_post('businesses', api_data)
+                    logger.info(f"Negocio sincronizado con Belgrano Ahorro: {nombre}")
+            except Exception as api_error:
+                logger.warning(f"Error sincronizando negocio con API: {api_error}")
+            
+            flash('Negocio creado exitosamente', 'success')
+            return redirect(url_for('devops.gestion_negocios'))
+        except Exception as e:
+            logger.error(f"Error creando negocio: {e}")
+            flash(f'Error creando negocio: {e}', 'error')
+            return redirect(url_for('devops.gestion_negocios'))
+
+    # GET
+    try:
+        negocios = db.obtener_negocios()
+    except Exception:
+        negocios = []
+
+    # Soporte JSON para AJAX (para combos en productos/sucursales)
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+        request.args.get('ajax') == 'true' and 
+        request.args.get('format') == 'json' and 
+        request.args.get('api') == 'true' and
+        request.args.get('json') == 'true'):
+        try:
+            return jsonify({
+                'status': 'success',
+                'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)',
+                'data': {
+                    'negocios': negocios,
+                    'total': len(negocios)
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error devolviendo JSON de negocios: {e}")
+            return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
+
+    return render_template('devops/negocios.html', negocios=negocios)
 
 # =================================================================
 # MANEJO DE ERRORES
