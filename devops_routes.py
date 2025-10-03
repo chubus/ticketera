@@ -36,15 +36,15 @@ DEVOPS_PASSWORD_HASH = generate_password_hash(DEVOPS_PASSWORD_PLAIN)
 env_status = os.environ.get('FLASK_ENV', 'development')
 if not BELGRANO_AHORRO_URL:
     if env_status != 'production':
-        logger.info("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+        logger.info("BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
     else:
-        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+        logger.warning("Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY:
     if env_status != 'production':
-        logger.info("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+        logger.info("BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
     else:
-        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+        logger.warning("Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
 # Importar cliente API (dos estrategias)
 devops_api_client = None
@@ -951,72 +951,72 @@ def gestion_ofertas():
 # NEGOCIOS (evitar 404 y permitir crear/listar con JSON)
 # =================================================================
 
-@devops_bp.route('/negocios', methods=['GET', 'POST'])
-@devops_login_required
-def gestion_negocios():
-    from flask import request, render_template, redirect, flash
-    from devops_persistence import get_devops_db
-    db = get_devops_db()
+# @devops_bp.route('/negocios', methods=['GET', 'POST'])
+# # @devops_login_required
+# # def gestion_negocios_old():
+# #     from flask import request, render_template, redirect, flash
+# #     from devops_persistence import get_devops_db
+#     db = get_devops_db()
 
-    if request.method == 'POST':
-        try:
-            nombre = request.form.get('nombre')
-            descripcion = request.form.get('descripcion') or ''
-            direccion = request.form.get('direccion') or ''
-            telefono = request.form.get('telefono') or ''
-            email = request.form.get('email') or ''
-            activo = request.form.get('activo') == 'on'
-            if not nombre:
-                flash('Nombre es requerido', 'error')
-                return redirect(url_for('devops.gestion_negocios'))
-            db.crear_negocio({
-                'nombre': nombre,
-                'descripcion': descripcion,
-                'direccion': direccion,
-                'telefono': telefono,
-                'email': email,
-                'activo': activo
-            })
-            flash('Negocio creado exitosamente', 'success')
-            return redirect(url_for('devops.gestion_negocios'))
-        except Exception as e:
-            logger.error(f"Error creando negocio: {e}")
-            flash(f'Error creando negocio: {e}', 'error')
-            return redirect(url_for('devops.gestion_negocios'))
+#     if request.method == 'POST':
+#         try:
+#             nombre = request.form.get('nombre')
+#             descripcion = request.form.get('descripcion') or ''
+#             direccion = request.form.get('direccion') or ''
+#             telefono = request.form.get('telefono') or ''
+#             email = request.form.get('email') or ''
+#             activo = request.form.get('activo') == 'on'
+#             if not nombre:
+#                 flash('Nombre es requerido', 'error')
+#                 return redirect(url_for('devops.gestion_negocios'))
+#             db.crear_negocio({
+#                 'nombre': nombre,
+#                 'descripcion': descripcion,
+#                 'direccion': direccion,
+#                 'telefono': telefono,
+#                 'email': email,
+#                 'activo': activo
+#             })
+#             flash('Negocio creado exitosamente', 'success')
+#             return redirect(url_for('devops.gestion_negocios'))
+#         except Exception as e:
+#             logger.error(f"Error creando negocio: {e}")
+#             flash(f'Error creando negocio: {e}', 'error')
+#             return redirect(url_for('devops.gestion_negocios'))
 
-    # GET
-    try:
-        negocios = db.obtener_negocios()
-    except Exception:
-        negocios = []
+#     # GET
+#     try:
+#         negocios = db.obtener_negocios()
+#     except Exception:
+#         negocios = []
 
-    # Soporte JSON para AJAX (para combos en productos/sucursales)
-    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
-        request.args.get('ajax') == 'true' and 
-        request.args.get('format') == 'json' and 
-        request.args.get('api') == 'true' and
-        request.args.get('json') == 'true'):
-        try:
-            return jsonify({
-                'status': 'success',
-                'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)',
-                'data': {
-                    'negocios': negocios,
-                    'total': len(negocios)
-                }
-            })
-        except Exception as e:
-            logger.error(f"Error devolviendo JSON de negocios: {e}")
-            return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
+#     # Soporte JSON para AJAX (para combos en productos/sucursales)
+#     if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
+#         request.args.get('ajax') == 'true' and 
+#         request.args.get('format') == 'json' and 
+#         request.args.get('api') == 'true' and
+#         request.args.get('json') == 'true'):
+#         try:
+#             return jsonify({
+#                 'status': 'success',
+#                 'message': f'Negocios obtenidos correctamente ({len(negocios)} encontrados)',
+#                 'data': {
+#                     'negocios': negocios,
+#                     'total': len(negocios)
+#                 }
+#             })
+#         except Exception as e:
+#             logger.error(f"Error devolviendo JSON de negocios: {e}")
+#             return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
 
-    return render_template('devops/negocios.html', negocios=negocios)
+#     return render_template('devops/negocios.html', negocios=negocios)
 
 # =================================================================
 # PRODUCTOS (evitar 404 y permitir crear)
 # =================================================================
 
 @devops_bp.route('/productos', methods=['GET', 'POST'])
-@devops_login_required
+# @devops_login_required
 def gestion_productos():
     from flask import request, render_template, redirect, flash
     if request.method == 'POST':
@@ -1104,7 +1104,7 @@ def gestion_productos():
 # =================================================================
 
 @devops_bp.route('/precios', methods=['GET', 'POST'])
-@devops_login_required
+# @devops_login_required
 def gestion_precios():
     from flask import request, render_template, redirect, flash
     from devops_persistence import get_devops_db

@@ -39,7 +39,7 @@ env_db_path = os.environ.get('TICKETS_DB_PATH')
 db_path = env_db_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'belgrano_tickets.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-print(f"🗄️ Ticketera DB_PATH: {db_path}")
+print(f"Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
@@ -66,17 +66,17 @@ BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 env_status = os.environ.get('FLASK_ENV', 'development')
 if not BELGRANO_AHORRO_URL:
     if env_status != 'production':
-        print("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+        print("BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
     else:
-        print("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+        print("Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY:
     if env_status != 'production':
-        print("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+        print("BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
     else:
-        print("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+        print("Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
-print(f"🔗 Configuración API:")
+print(f"Configuracion API:")
 print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL or 'No configurada'}")
 if BELGRANO_AHORRO_API_KEY:
     print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
@@ -92,7 +92,7 @@ try:
         api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
         print("Cliente API de Belgrano Ahorro inicializado")
     else:
-        print("⚠️ Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
+        print("Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
         api_client = None
 except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
@@ -185,9 +185,9 @@ with app.app_context():
     # Diagnóstico: listar rutas DevOps registradas
     try:
         devops_rules = [str(r.rule) for r in app.url_map.iter_rules() if str(r.rule).startswith('/devops')]
-        print(f"🧭 belgrano_tickets.app rutas DevOps: {devops_rules}")
+        print(f"belgrano_tickets.app rutas DevOps: {devops_rules}")
     except Exception as _e_list_devops:
-        print(f"⚠️ No se pudieron listar rutas DevOps en belgrano_tickets.app: {_e_list_devops}")
+        print(f"No se pudieron listar rutas DevOps en belgrano_tickets.app: {_e_list_devops}")
 
     # Fallback: si no hay rutas /devops, registrar endpoints mínimos
     try:
@@ -1270,7 +1270,7 @@ with app.app_context():
             
             print("✅ Fallback DevOps completo registrado en belgrano_tickets.app")
     except Exception as _e_devops_fb:
-        print(f"⚠️ Error registrando fallback DevOps: {_e_devops_fb}")
+        print(f"Error registrando fallback DevOps: {_e_devops_fb}")
 
 login_manager = LoginManager(app)
 
@@ -1331,7 +1331,7 @@ def handle_disconnect():
 @socketio.on_error_default
 def default_error_handler(e):
     """Manejar errores de Socket.IO"""
-    print(f"⚠️ Error de Socket.IO: {e}")
+    print(f"Error de Socket.IO: {e}")
     # No intentar reconectar automáticamente para evitar loops
     return False
 
@@ -1815,7 +1815,7 @@ def recibir_ticket_externo():
             })
             print(f"📡 Evento WebSocket emitido para ticket {ticket.id}")
         except Exception as ws_error:
-            print(f"⚠️ Error emitiendo WebSocket: {ws_error}")
+            print(f"Error emitiendo WebSocket: {ws_error}")
         
         # Mensaje de log más detallado
         tipo_cliente_str = "COMERCIANTE" if tipo_cliente == 'comerciante' else "CLIENTE"
@@ -2050,7 +2050,7 @@ def eliminar_ticket(ticket_id):
     # Crear registro de auditoría antes de eliminar
     try:
         # Aquí podrías guardar un log de la eliminación si es necesario
-        print(f"⚠️ TICKET ELIMINADO por {current_user.username}: {numero_ticket} (ID: {ticket_id})")
+        print(f"TICKET ELIMINADO por {current_user.username}: {numero_ticket} (ID: {ticket_id})")
         
         db.session.delete(ticket)
         db.session.commit()
