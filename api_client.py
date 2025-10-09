@@ -113,38 +113,7 @@ def create_api_client(base_url, api_key):
     Args:
         base_url (str): URL base de la API
         api_key (str): Clave de API
-        
-<<<<<<< HEAD
-        if health.get('status') == 'healthy':
-            logger.info("✅ Conexión con API de Belgrano Ahorro exitosa")
-            return {
-                'status': 'success',
-                'message': 'Conexión exitosa',
-                'health': health
-            }
-        else:
-            logger.warning("⚠️ API de Belgrano Ahorro no está saludable")
-            return {
-                'status': 'warning',
-                'message': 'API no está saludable',
-                'health': health
-            }
-            
-    except Exception as e:
-        logger.error(f"❌ Error conectando con API de Belgrano Ahorro: {e}")
-        return {
-            'status': 'error',
-            'message': f'Error de conexión: {e}',
-            'error': str(e)
-        }
-
-# Crear instancia global del cliente API
-try:
-    api_client = create_api_client()
-except Exception as e:
-    logger.warning(f"No se pudo crear cliente API: {e}")
-    api_client = None
-=======
+    
     Returns:
         BelgranoAhorroAPIClient: Instancia del cliente API
     """
@@ -169,7 +138,7 @@ def test_api_connection(base_url, api_key):
     if client:
         return client.test_connection()
     return False
-
+ 
 # Configuración por defecto usando variables de entorno
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')

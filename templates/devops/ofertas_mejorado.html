@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Ofertas - DevOps</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card { border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('devops.dashboard') }}">
+                <i class="fas fa-cogs"></i> DevOps Panel
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user"></i> {{ session.devops_username }}
+                </span>
+                <a class="nav-link" href="{{ url_for('devops.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tags"></i> Gestión de Ofertas</h2>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#agregarOfertaModal">
+                        <i class="fas fa-plus"></i> Agregar Oferta
+                    </button>
+                    <a href="{{ url_for('devops.dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Lista de Ofertas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Ofertas Activas ({{ ofertas|length }} total)</h5>
+                </div>
+                <div class="card-body">
+                    {% if ofertas %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Producto</th>
+                                    <th>Descuento</th>
+                                    <th>Válida Desde</th>
+                                    <th>Válida Hasta</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for oferta in ofertas %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ oferta.titulo }}</strong>
+                                        <br><small class="text-muted">{{ oferta.descripcion }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ oferta.producto_nombre or oferta.producto_id }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ oferta.descuento }}%</span>
+                                    </td>
+                                    <td>{{ oferta.fecha_inicio }}</td>
+                                    <td>{{ oferta.fecha_fin }}</td>
+                                    <td>
+                                        {% if oferta.activa %}
+                                        <span class="badge bg-success">Activa</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactiva</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="editarOferta('{{ oferta.id }}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="eliminarOferta('{{ oferta.id }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay ofertas registradas</h5>
+                        <p class="text-muted">Crea tu primera oferta para comenzar</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Oferta -->
+<div class="modal fade" id="agregarOfertaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus"></i> Agregar Nueva Oferta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('devops.agregar_oferta') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="titulo" class="form-label">Título de la Oferta:</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required
+                                   placeholder="Ej: 20% OFF en Productos de Limpieza">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="descuento" class="form-label">Descuento (%):</label>
+                            <input type="number" class="form-control" id="descuento" name="descuento" 
+                                   min="1" max="100" required placeholder="20">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <label for="descripcion" class="form-label">Descripción:</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required
+                                      placeholder="Describe los detalles de la oferta..."></textarea>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="producto_nombre" class="form-label">Nombre del Producto:</label>
+                            <input type="text" class="form-control" id="producto_nombre" name="producto_nombre" 
+                                   placeholder="Escribir nombre del producto..." required>
+                            <small class="form-text text-muted">Escribe el nombre del producto para mayor flexibilidad</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="producto_id" class="form-label">ID del Producto (Opcional):</label>
+                            <input type="text" class="form-control" id="producto_id" name="producto_id" 
+                                   placeholder="ID del producto si existe...">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="fecha_inicio" class="form-label">Fecha de Inicio:</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_fin" class="form-label">Fecha de Fin:</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Crear Oferta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Oferta -->
+<div class="modal fade" id="editarOfertaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Oferta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editarOfertaForm" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="edit_titulo" class="form-label">Título de la Oferta:</label>
+                            <input type="text" class="form-control" id="edit_titulo" name="titulo" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_descuento" class="form-label">Descuento (%):</label>
+                            <input type="number" class="form-control" id="edit_descuento" name="descuento" 
+                                   min="1" max="100" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <label for="edit_descripcion" class="form-label">Descripción:</label>
+                            <textarea class="form-control" id="edit_descripcion" name="descripcion" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="edit_producto_nombre" class="form-label">Nombre del Producto:</label>
+                            <input type="text" class="form-control" id="edit_producto_nombre" name="producto_nombre" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_producto_id" class="form-label">ID del Producto (Opcional):</label>
+                            <input type="text" class="form-control" id="edit_producto_id" name="producto_id">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="edit_fecha_inicio" class="form-label">Fecha de Inicio:</label>
+                            <input type="date" class="form-control" id="edit_fecha_inicio" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_fecha_fin" class="form-label">Fecha de Fin:</label>
+                            <input type="date" class="form-control" id="edit_fecha_fin" name="fecha_fin" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit_activa" name="activa">
+                                <label class="form-check-label" for="edit_activa">
+                                    Oferta Activa
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Actualizar Oferta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Establecer fechas por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    document.getElementById('fecha_inicio').value = today;
+    document.getElementById('fecha_fin').value = nextWeek;
+});
+
+function editarOferta(ofertaId) {
+    // Aquí cargarías los datos de la oferta desde el servidor
+    // Por ahora, solo abrimos el modal
+    new bootstrap.Modal(document.getElementById('editarOfertaModal')).show();
+    
+    // Actualizar el action del formulario
+    document.getElementById('editarOfertaForm').action = `/devops/ofertas/editar/${ofertaId}`;
+}
+
+function eliminarOferta(ofertaId) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta oferta?')) {
+        // Crear formulario para eliminar
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/devops/ofertas/eliminar/${ofertaId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 3000);
+}
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
