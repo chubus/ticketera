@@ -32,7 +32,7 @@ class BelgranoAhorroClient:
             'User-Agent': 'BelgranoTickets/1.0'
         })
         
-        logger.info(f"🔗 Cliente inicializado para: {self.base_url}")
+        logger.info(f"Cliente inicializado para: {self.base_url}")
     
     def _make_request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict]:
         """
@@ -81,7 +81,7 @@ class BelgranoAhorroClient:
                 logger.info("✅ Conexión exitosa con Belgrano Ahorro")
                 return True
             else:
-                logger.warning(f"⚠️ Respuesta inesperada: {response.status_code}")
+                logger.warning(f"Respuesta inesperada: {response.status_code}")
                 return False
         except Exception as e:
             logger.error(f"❌ Error de conexión: {e}")
@@ -101,7 +101,7 @@ class BelgranoAhorroClient:
             logger.info(f"✅ Obtenidos {len(response)} usuarios")
             return response
         else:
-            logger.warning("⚠️ No se pudieron obtener usuarios")
+            logger.warning("No se pudieron obtener usuarios")
             return []
     
     def get_productos(self) -> List[Dict]:
@@ -118,7 +118,7 @@ class BelgranoAhorroClient:
             logger.info(f"✅ Obtenidos {len(response)} productos")
             return response
         else:
-            logger.warning("⚠️ No se pudieron obtener productos")
+            logger.warning("No se pudieron obtener productos")
             return []
     
     def verificar_usuario(self, email: str, password: str) -> Optional[Dict]:
@@ -144,7 +144,7 @@ class BelgranoAhorroClient:
             logger.info("✅ Usuario verificado exitosamente")
             return response
         else:
-            logger.warning("⚠️ Error al verificar usuario")
+            logger.warning("Error al verificar usuario")
             return None
     
     def get_negocios(self) -> List[Dict]:
@@ -161,7 +161,7 @@ class BelgranoAhorroClient:
             logger.info(f"✅ Obtenidos {len(response)} negocios")
             return response
         else:
-            logger.warning("⚠️ No se pudieron obtener negocios")
+            logger.warning("No se pudieron obtener negocios")
             return []
     
     def get_sucursales(self, negocio_id: str) -> List[Dict]:
@@ -181,7 +181,7 @@ class BelgranoAhorroClient:
             logger.info(f"✅ Obtenidas {len(response)} sucursales")
             return response
         else:
-            logger.warning("⚠️ No se pudieron obtener sucursales")
+            logger.warning("No se pudieron obtener sucursales")
             return []
     
     def get_productos_sucursal(self, negocio_id: str, sucursal_id: str) -> List[Dict]:
@@ -202,7 +202,7 @@ class BelgranoAhorroClient:
             logger.info(f"✅ Obtenidos {len(response)} productos de la sucursal")
             return response
         else:
-            logger.warning("⚠️ No se pudieron obtener productos de la sucursal")
+            logger.warning("No se pudieron obtener productos de la sucursal")
             return []
 
 # Instancia global del cliente
@@ -223,7 +223,7 @@ def test_conexion_completa():
         print(f"✅ Conexión exitosa - {len(productos)} productos disponibles")
         return True
     else:
-        print("⚠️ Conexión básica OK, pero no se pudieron obtener productos")
+        print("Conexion basica OK, pero no se pudieron obtener productos")
         return False
 
 if __name__ == "__main__":

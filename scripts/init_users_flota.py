@@ -20,8 +20,8 @@ def initialize_database():
         
         # Importar módulos necesarios
         from werkzeug.security import generate_password_hash
-        from belgrano_tickets.models import db, User
-        from belgrano_tickets.app import app
+        from models import db, User
+        from app import app
         
         # Crear contexto de aplicación
         with app.app_context():

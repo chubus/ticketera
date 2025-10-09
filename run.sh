@@ -30,7 +30,7 @@ check_dependencies() {
 
 # Función para inicializar la base de datos
 init_database() {
-    echo "🗄️ Inicializando base de datos..."
+    echo "Inicializando base de datos..."
     
     # Verificar que el script de inicialización existe
     SCRIPT_PATH=""
@@ -82,7 +82,7 @@ init_database() {
     elif [ -f "actualizar_db.py" ]; then
         ACTUALIZAR_DB_PATH="actualizar_db.py"
     else
-        echo "⚠️ Script actualizar_db.py no encontrado, saltando..."
+        echo "Script actualizar_db.py no encontrado, saltando..."
         ACTUALIZAR_DB_PATH=""
     fi
     
@@ -91,7 +91,7 @@ init_database() {
         if python3 "$ACTUALIZAR_DB_PATH"; then
             echo "✅ Esquema de base de datos actualizado"
         else
-            echo "⚠️ Error actualizando esquema, continuando..."
+            echo "Error actualizando esquema, continuando..."
         fi
     fi
     
@@ -112,7 +112,7 @@ check_environment() {
     
     for var in "${required_vars[@]}"; do
         if [ -z "${!var}" ]; then
-            echo "⚠️ Variable de entorno $var no está definida"
+            echo "Variable de entorno $var no está definida"
         else
             echo "✅ $var está configurada"
         fi

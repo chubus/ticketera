@@ -1,5 +1,5 @@
 # Dockerfile para Belgrano Tickets con Socket.IO optimizado
-FROM python:3.9-slim
+FROM python:3.9-bullseye
 
 # Establecer variables de entorno
 ENV PYTHONUNBUFFERED=1

@@ -39,7 +39,7 @@ env_db_path = os.environ.get('TICKETS_DB_PATH')
 db_path = env_db_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'belgrano_tickets.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-print(f"🗄️ Ticketera DB_PATH: {db_path}")
+print(f"Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
@@ -47,7 +47,7 @@ try:
 except ImportError:
     try:
         # Fallback para importación desde belgrano_tickets
-        from belgrano_tickets.models import db, User, Ticket
+        from models import db, User, Ticket
     except ImportError:
         # Fallback final: importación absoluta
         import sys
@@ -66,17 +66,17 @@ BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
 env_status = os.environ.get('FLASK_ENV', 'development')
 if not BELGRANO_AHORRO_URL:
     if env_status != 'production':
-        print("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+        print("BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
     else:
-        print("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+        print("Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY:
     if env_status != 'production':
-        print("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+        print("BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
     else:
-        print("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+        print("Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
-print(f"🔗 Configuración API:")
+print(f"Configuracion API:")
 print(f"   BELGRANO_AHORRO_URL: {BELGRANO_AHORRO_URL or 'No configurada'}")
 if BELGRANO_AHORRO_API_KEY:
     print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
@@ -87,61 +87,35 @@ else:
 
 # Importar cliente API
 try:
-    from belgrano_tickets.api_client import create_api_client, test_api_connection
+    from api_client import create_api_client, test_api_connection
     if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
         api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
         print("Cliente API de Belgrano Ahorro inicializado")
     else:
-        print("⚠️ Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
+        print("Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
         api_client = None
 except ImportError as e:
     print(f"No se pudo inicializar el cliente API: {e}")
     api_client = None
 
-# Importar blueprint de DevOps con ruta robusta
+"""Registro único y robusto del blueprint DevOps.
+Evita múltiples registros y rutas duplicadas.
+"""
 try:
-    # Intento directo si el cwd es la raíz del proyecto
     from devops_routes import devops_bp
+except Exception:
+    import sys
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    from devops_routes import devops_bp  # reintento con sys.path ajustado
+
+# Registrar una sola vez si no está ya registrado
+if 'devops' not in [bp.name for bp in app.blueprints.values()]:
     app.register_blueprint(devops_bp)
-    print("Blueprint de DevOps registrado (import directo)")
-except Exception as e:
-    try:
-        # Añadir la raíz del proyecto al sys.path y reintentar
-        import sys
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
-        from devops_routes import devops_bp as devops_bp_root
-        app.register_blueprint(devops_bp_root)
-        print("Blueprint de DevOps registrado (import con sys.path raíz)")
-    except Exception as e2:
-        # Fallback: cargar por ruta absoluta con importlib
-        try:
-            import importlib.util
-            devops_path = os.path.join(project_root, 'devops_routes.py')
-            spec = importlib.util.spec_from_file_location('devops_routes', devops_path)
-            module = importlib.util.module_from_spec(spec)
-            assert spec and spec.loader
-            spec.loader.exec_module(module)
-            devops_bp_dynamic = getattr(module, 'devops_bp', None)
-            if devops_bp_dynamic is not None:
-                app.register_blueprint(devops_bp_dynamic)
-                print("Blueprint de DevOps registrado (importlib por ruta)")
-            else:
-                print("No se encontró devops_bp en devops_routes.py (importlib)")
-        except Exception as e3:
-            print(f"❌ No se pudo registrar el blueprint de DevOps: {e3}")
-            # Verificar si el archivo existe
-            if os.path.exists(devops_path):
-                print(f"✅ Archivo devops_routes.py existe en: {devops_path}")
-            else:
-                print(f"❌ Archivo devops_routes.py NO existe en: {devops_path}")
-                # Listar archivos en el directorio
-                try:
-                    files = os.listdir(project_root)
-                    print(f"📁 Archivos en {project_root}: {files}")
-                except:
-                    print("❌ No se puede listar archivos del directorio")
+    print("Blueprint de DevOps registrado")
+else:
+    print("Blueprint de DevOps ya estaba registrado; se omite registro duplicado")
 
 # Inicializar db con la app
 db.init_app(app)
@@ -211,9 +185,9 @@ with app.app_context():
     # Diagnóstico: listar rutas DevOps registradas
     try:
         devops_rules = [str(r.rule) for r in app.url_map.iter_rules() if str(r.rule).startswith('/devops')]
-        print(f"🧭 belgrano_tickets.app rutas DevOps: {devops_rules}")
+        print(f"belgrano_tickets.app rutas DevOps: {devops_rules}")
     except Exception as _e_list_devops:
-        print(f"⚠️ No se pudieron listar rutas DevOps en belgrano_tickets.app: {_e_list_devops}")
+        print(f"No se pudieron listar rutas DevOps en belgrano_tickets.app: {_e_list_devops}")
 
     # Fallback: si no hay rutas /devops, registrar endpoints mínimos
     try:
@@ -618,6 +592,16 @@ with app.app_context():
                 if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
+                # Importar cliente API
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from belgrano_client import belgrano_client
+                except Exception as e:
+                    logger.error(f"Error importing belgrano_client: {e}")
+                    belgrano_client = None
+                
                 # Manejar POST para crear negocio
                 if request.method == 'POST':
                     try:
@@ -634,38 +618,87 @@ with app.app_context():
                                 flash('Nombre es requerido', 'error')
                                 return redirect('/devops/negocios')
                         
-                        # Usar persistencia real
-                        try:
-                            import sys
-                            import os
-                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                            from devops_persistence import get_devops_db
-                            
-                            db = get_devops_db()
-                            
-                            datos_negocio = {
-                                'nombre': nombre,
-                                'descripcion': descripcion or '',
-                                'direccion': direccion or '',
-                                'telefono': telefono or '',
-                                'email': email or '',
-                                'activo': True
-                            }
-                            
-                            nuevo_negocio = db.crear_negocio(datos_negocio)
-                            
-                        except Exception as db_error:
-                            logger.error(f"Error de base de datos: {db_error}")
-                            # Fallback a simulación si hay error de DB
-                            nuevo_negocio = {
-                                'id': 999,
-                                'nombre': nombre,
-                                'descripcion': descripcion or '',
-                                'direccion': direccion or '',
-                                'telefono': telefono or '',
-                                'email': email or '',
-                                'activo': True
-                            }
+                        # Usar API de Belgrano Ahorro
+                        if belgrano_client:
+                            try:
+                                datos_negocio = {
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                                resultado = belgrano_client.create_business(datos_negocio)
+                                
+                                if 'error' in resultado:
+                                    logger.error(f"Error creando negocio via API: {resultado['error']}")
+                                    raise Exception(f"API Error: {resultado['error']}")
+                                
+                                nuevo_negocio = {
+                                    'id': resultado['data']['id'],
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                            except Exception as api_error:
+                                logger.error(f"Error en API: {api_error}")
+                                # Fallback a persistencia local
+                                import sys
+                                import os
+                                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                                from devops_persistence import get_devops_db
+                                
+                                db = get_devops_db()
+                                
+                                datos_negocio = {
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                                nuevo_negocio = db.crear_negocio(datos_negocio)
+                        else:
+                            # Fallback a persistencia local
+                            try:
+                                import sys
+                                import os
+                                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                                from devops_persistence import get_devops_db
+                                
+                                db = get_devops_db()
+                                
+                                datos_negocio = {
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
+                                
+                                nuevo_negocio = db.crear_negocio(datos_negocio)
+                                
+                            except Exception as db_error:
+                                logger.error(f"Error de base de datos: {db_error}")
+                                # Fallback a simulación si hay error de DB
+                                nuevo_negocio = {
+                                    'id': 999,
+                                    'nombre': nombre,
+                                    'descripcion': descripcion or '',
+                                    'direccion': direccion or '',
+                                    'telefono': telefono or '',
+                                    'email': email or '',
+                                    'activo': True
+                                }
                         
                         # Si es una petición AJAX, devolver JSON
                         if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
@@ -1237,7 +1270,7 @@ with app.app_context():
             
             print("✅ Fallback DevOps completo registrado en belgrano_tickets.app")
     except Exception as _e_devops_fb:
-        print(f"⚠️ Error registrando fallback DevOps: {_e_devops_fb}")
+        print(f"Error registrando fallback DevOps: {_e_devops_fb}")
 
 login_manager = LoginManager(app)
 
@@ -1298,7 +1331,7 @@ def handle_disconnect():
 @socketio.on_error_default
 def default_error_handler(e):
     """Manejar errores de Socket.IO"""
-    print(f"⚠️ Error de Socket.IO: {e}")
+    print(f"Error de Socket.IO: {e}")
     # No intentar reconectar automáticamente para evitar loops
     return False
 
@@ -1354,6 +1387,9 @@ def login():
         
         # Validaciones básicas
         if not email or not password:
+            # Si es una petición AJAX, devolver JSON
+            if request.headers.get('Content-Type') == 'application/json' or request.is_json:
+                return jsonify({'error': 'Campos requeridos: email y password'}), 400
             flash('Por favor complete todos los campos', 'warning')
             return render_template('login.html')
         
@@ -1461,6 +1497,80 @@ def health_check():
             'ahorro_api': ahorro_api_status,
             'total_tickets': total_tickets,
             'total_usuarios': total_usuarios,
+            'version': '2.0.0'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/status')
+def status_check():
+    """Status detallado de la aplicación"""
+    try:
+        # Verificar que la base de datos esté funcionando
+        total_tickets = Ticket.query.count()
+        total_usuarios = User.query.count()
+        
+        # Obtener tickets por estado
+        tickets_pendientes = Ticket.query.filter_by(estado='pendiente').count()
+        tickets_en_proceso = Ticket.query.filter_by(estado='en_proceso').count()
+        tickets_completados = Ticket.query.filter_by(estado='completado').count()
+        
+        # Verificar conexión con API de Belgrano Ahorro
+        ahorro_api_status = "unknown"
+        if api_client:
+            try:
+                health = api_client.health_check()
+                ahorro_api_status = health.get('status', 'unknown')
+            except:
+                ahorro_api_status = "disconnected"
+        
+        return jsonify({
+            'status': 'operational',
+            'service': 'Belgrano Tickets',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'ahorro_api': ahorro_api_status,
+            'statistics': {
+                'total_tickets': total_tickets,
+                'total_usuarios': total_usuarios,
+                'tickets_pendientes': tickets_pendientes,
+                'tickets_en_proceso': tickets_en_proceso,
+                'tickets_completados': tickets_completados
+            },
+            'version': '2.0.0'
+        }), 200
+    except Exception as e:
+        logger.error(f"Error en status check: {e}")
+        return jsonify({
+            'status': 'error',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e)
+        }), 500
+
+@app.route('/ping')
+def ping_check():
+    """Ping simple para verificar conectividad"""
+    return jsonify({
+        'pong': True,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/health')
+def api_health_check():
+    """Health check específico para API"""
+    try:
+        # Verificar que la base de datos esté funcionando
+        total_tickets = Ticket.query.count()
+        
+        return jsonify({
+            'status': 'healthy',
+            'service': 'Belgrano Tickets API',
+            'timestamp': datetime.now().isoformat(),
+            'database': 'connected',
+            'total_tickets': total_tickets,
             'version': '2.0.0'
         }), 200
     except Exception as e:
@@ -1705,7 +1815,7 @@ def recibir_ticket_externo():
             })
             print(f"📡 Evento WebSocket emitido para ticket {ticket.id}")
         except Exception as ws_error:
-            print(f"⚠️ Error emitiendo WebSocket: {ws_error}")
+            print(f"Error emitiendo WebSocket: {ws_error}")
         
         # Mensaje de log más detallado
         tipo_cliente_str = "COMERCIANTE" if tipo_cliente == 'comerciante' else "CLIENTE"
@@ -1940,7 +2050,7 @@ def eliminar_ticket(ticket_id):
     # Crear registro de auditoría antes de eliminar
     try:
         # Aquí podrías guardar un log de la eliminación si es necesario
-        print(f"⚠️ TICKET ELIMINADO por {current_user.username}: {numero_ticket} (ID: {ticket_id})")
+        print(f"TICKET ELIMINADO por {current_user.username}: {numero_ticket} (ID: {ticket_id})")
         
         db.session.delete(ticket)
         db.session.commit()

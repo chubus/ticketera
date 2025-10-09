@@ -113,7 +113,42 @@ def create_api_client(base_url, api_key):
     Args:
         base_url (str): URL base de la API
         api_key (str): Clave de API
+<<<<<<< HEAD
     
+=======
+        
+<<<<<<< HEAD
+        if health.get('status') == 'healthy':
+            logger.info("Conexion con API de Belgrano Ahorro exitosa")
+            return {
+                'status': 'success',
+                'message': 'Conexión exitosa',
+                'health': health
+            }
+        else:
+            logger.warning("API de Belgrano Ahorro no está saludable")
+            return {
+                'status': 'warning',
+                'message': 'API no está saludable',
+                'health': health
+            }
+            
+    except Exception as e:
+        logger.error(f"Error conectando con API de Belgrano Ahorro: {e}")
+        return {
+            'status': 'error',
+            'message': f'Error de conexión: {e}',
+            'error': str(e)
+        }
+
+# Crear instancia global del cliente API
+try:
+    api_client = create_api_client()
+except Exception as e:
+    logger.warning(f"No se pudo crear cliente API: {e}")
+    api_client = None
+=======
+>>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
     Returns:
         BelgranoAhorroAPIClient: Instancia del cliente API
     """
@@ -150,15 +185,15 @@ IS_PRODUCTION = FLASK_ENV == 'production'
 # Validar variables de entorno críticas
 if not BELGRANO_AHORRO_URL or BELGRANO_AHORRO_URL == 'https://belgranoahorro-hp30.onrender.com':
     if not IS_PRODUCTION:
-        logger.info("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
+        logger.info("BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
     else:
-        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_URL no está definida")
+        logger.warning("Variable de entorno BELGRANO_AHORRO_URL no está definida")
 
 if not BELGRANO_AHORRO_API_KEY or BELGRANO_AHORRO_API_KEY == 'belgrano_ahorro_api_key_2025':
     if not IS_PRODUCTION:
-        logger.info("ℹ️ BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
+        logger.info("BELGRANO_AHORRO_API_KEY no configurada (normal en desarrollo)")
     else:
-        logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
+        logger.warning("Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
 # Cliente global (se inicializa si las variables están disponibles)
 api_client = None

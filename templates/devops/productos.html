@@ -243,10 +243,14 @@
                             <div class="col-md-4 mb-3">
                                 <label for="negocio_id" class="form-label">Negocio</label>
                                 <select class="form-select" id="negocio_id" name="negocio_id" required>
+<<<<<<< HEAD
                                     <option value="">Seleccionar negocio</option>
                                     {% for negocio in negocios %}
                                     <option value="{{ negocio.id }}">#{{ negocio.id }} - {{ negocio.nombre }}</option>
                                     {% endfor %}
+=======
+                                    <option value="">Cargando negocios...</option>
+>>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -373,7 +377,49 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+<<<<<<< HEAD
         function editarProducto(id, nombre, descripcion, precio, categoria, negocio_id, stock, activo) {
+=======
+        // Cargar negocios al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarNegocios();
+        });
+
+        function cargarNegocios() {
+            fetch('/devops/negocios?ajax=true&format=json&api=true&json=true', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' && data.data && data.data.negocios) {
+                    const negocios = data.data.negocios;
+                    const selectNegocio = document.getElementById('negocio_id');
+                    const selectEditNegocio = document.getElementById('edit_negocio_id');
+                    
+                    // Limpiar opciones
+                    selectNegocio.innerHTML = '<option value="">Seleccionar negocio</option>';
+                    if (selectEditNegocio) {
+                        selectEditNegocio.innerHTML = '<option value="">Seleccionar negocio</option>';
+                    }
+                    
+                    // Agregar negocios
+                    negocios.forEach(negocio => {
+                        const option = `<option value="${negocio.id}">${negocio.nombre}</option>`;
+                        selectNegocio.innerHTML += option;
+                        if (selectEditNegocio) {
+                            selectEditNegocio.innerHTML += option;
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando negocios:', error);
+                document.getElementById('negocio_id').innerHTML = '<option value="">Error cargando negocios</option>';
+            });
+        }
+
+        function editarProducto(id, nombre, descripcion, precio, categoria, negocio, stock, activo) {
+>>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
             document.getElementById('edit_nombre').value = nombre;
             document.getElementById('edit_descripcion').value = descripcion;
             document.getElementById('edit_precio').value = precio;
