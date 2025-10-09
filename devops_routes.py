@@ -13,16 +13,22 @@ from datetime import datetime
 import logging
 from urllib.parse import urljoin
 <<<<<<< HEAD
+<<<<<<< HEAD
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
 =======
 from flask import Blueprint, request, jsonify, redirect, url_for, session, make_response, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+from flask import Blueprint, request, jsonify, redirect, url_for, session, make_response, render_template
+from werkzeug.security import generate_password_hash, check_password_hash
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Configuración de API
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
@@ -36,6 +42,8 @@ devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
 def build_api_url(endpoint):
     """Construir URL completa de API"""
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 # Configuración de API y credenciales DevOps
 BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY')
@@ -425,7 +433,10 @@ def build_api_url(endpoint):
     if not BELGRANO_AHORRO_URL:
         logger.warning("BELGRANO_AHORRO_URL no está configurada")
         return None
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
     return urljoin(BELGRANO_AHORRO_URL, f'/api/{endpoint}')
 
 # Función para sincronizar cambios
@@ -434,9 +445,12 @@ def sincronizar_cambio_inmediato(tipo_cambio, datos):
     try:
         logger.info(f"Sincronizando cambio: {tipo_cambio}")
 <<<<<<< HEAD
+<<<<<<< HEAD
         # Implementación de sincronización
         return True
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
         
         if not devops_api_client:
             logger.warning("Cliente API no disponible para sincronización")
@@ -451,7 +465,10 @@ def sincronizar_cambio_inmediato(tipo_cambio, datos):
             logger.error(f"Error en sincronización de {tipo_cambio}")
             return False
             
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
     except Exception as e:
         logger.error(f"Error en sincronización: {e}")
         return False
@@ -461,6 +478,7 @@ def sincronizar_cambio_inmediato(tipo_cambio, datos):
 # =================================================================
 
 @devops_bp.route('/')
+<<<<<<< HEAD
 <<<<<<< HEAD
 def devops_home():
     """Panel principal de DevOps - Información del sistema"""
@@ -549,6 +567,8 @@ def devops_health():
 
 @devops_bp.route('/status')
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 @devops_login_required
 def devops_home():
     """Panel principal de DevOps - Información del sistema"""
@@ -869,7 +889,10 @@ def devops_health():
 
 @devops_bp.route('/status')
 @devops_login_required
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 def devops_status():
     """Estado detallado del sistema"""
     try:
@@ -908,10 +931,13 @@ def devops_status():
 
 @devops_bp.route('/info')
 <<<<<<< HEAD
+<<<<<<< HEAD
 def devops_info():
     """Información completa del sistema DevOps"""
     return jsonify({
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 @devops_login_required
 def devops_info():
     """Información completa del sistema DevOps"""
@@ -920,7 +946,10 @@ def devops_info():
             'status': 'success',
             'message': 'Información del sistema DevOps',
             'data': {
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
         'service': 'DevOps System v2.0',
         'description': 'Sistema de gestión DevOps para Belgrano Tickets',
         'features': [
@@ -953,8 +982,11 @@ def devops_info():
         },
         'timestamp': datetime.now().isoformat()
 <<<<<<< HEAD
+<<<<<<< HEAD
     })
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
             }
         })
     except Exception as e:
@@ -967,12 +999,16 @@ def devops_info():
 # ================================================================
 # AUTENTICACIÓN (YA MANEJADA ARRIBA CON SISTEMA PROPIO)
 # ================================================================
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 
 # =================================================================
 # GESTIÓN DE OFERTAS
 # =================================================================
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 @devops_bp.route('/ofertas')
 def gestion_ofertas():
@@ -1191,6 +1227,8 @@ def ver_configuracion():
             'message': f'Error obteniendo configuración: {str(e)}'
         }), 500
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 @devops_bp.route('/ofertas', methods=['GET', 'POST'])
 @devops_login_required
 def gestion_ofertas():
@@ -1585,7 +1623,10 @@ def gestion_negocios():
             return jsonify({'status': 'error', 'message': 'Error interno', 'data': []}), 500
 
     return render_template('devops/negocios.html', negocios=negocios)
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
 
 # =================================================================
 # MANEJO DE ERRORES
@@ -1597,10 +1638,14 @@ def devops_not_found(error):
     return jsonify({
         'status': 'error',
 <<<<<<< HEAD
+<<<<<<< HEAD
         'message': 'Endpoint de DevOps no encontrado',
 =======
         'message': 'Endpoint DevOps no encontrado',
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+        'message': 'Endpoint DevOps no encontrado',
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
         'available_endpoints': [
             '/devops/',
             '/devops/health',
@@ -1623,8 +1668,11 @@ def devops_internal_error(error):
         'message': 'Error interno del servidor DevOps',
         'timestamp': datetime.now().isoformat()
 <<<<<<< HEAD
+<<<<<<< HEAD
     }), 500
 =======
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
     }), 500
 
 # Crear aplicación Flask para ejecución directa
@@ -1645,4 +1693,7 @@ if __name__ == "__main__":
         print("\n⏹️ DevOps detenido")
     except Exception as e:
         print(f"❌ Error iniciando DevOps: {e}")
+<<<<<<< HEAD
 >>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
+=======
+>>>>>>> 615c446ca786e32db17288a825db5038473698d9
