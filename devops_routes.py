@@ -43,36 +43,40 @@ if not BELGRANO_AHORRO_API_KEY:
     else:
         logger.warning("⚠️ Variable de entorno BELGRANO_AHORRO_API_KEY no está definida")
 
-# Importar cliente API y gestor DevOps
+# Importar cliente API de forma robusta (soporta ejecución desde paquetes distintos)
+devops_api_client = None
 try:
     from belgrano_tickets.api_client import create_api_client, api_client as global_api_client
-    if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+except Exception:
+    try:
+        from api_client import create_api_client, api_client as global_api_client  # type: ignore
+    except Exception:
+        try:
+            from belgrano_client_gateway import BelgranoClientGateway as create_api_client  # type: ignore
+        except Exception as e:
+            logger.error(f"No se pudo inicializar el cliente API: {e}")
+            create_api_client = None  # type: ignore
+
+if create_api_client and BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+    try:
         devops_api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
         logger.info("Cliente API de Belgrano Ahorro inicializado para DevOps")
-    else:
+    except Exception as e:
+        logger.error(f"Error creando cliente API de DevOps: {e}")
         devops_api_client = None
-        if env_status == 'production':
-            logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
-        else:
-            logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
-except ImportError as e:
-    logger.error(f"No se pudo inicializar el cliente API: {e}")
-    devops_api_client = None
+else:
+    if env_status == 'production':
+        logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
+    else:
+        logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
 
-# Importar gestor DevOps mejorado
+# Importar solo gestor DevOps unificado (evita errores por módulos antiguos)
 try:
-    from devops_belgrano_manager_enhanced import devops_manager
-    logger.info("✅ Gestor DevOps mejorado inicializado")
-except ImportError as e:
-    logger.error(f"❌ No se pudo importar devops_belgrano_manager_enhanced: {e}")
-    # Fallback al gestor original
-    try:
-        from devops_belgrano_manager import DevOpsBelgranoManager
-        devops_manager = DevOpsBelgranoManager()
-        logger.info("✅ Gestor DevOps original inicializado como fallback")
-    except ImportError as e2:
-        logger.error(f"❌ No se pudo importar ningún gestor DevOps: {e2}")
-        devops_manager = None
+    from devops_belgrano_manager_unified import devops_manager_unified as devops_manager
+    logger.info("✅ Gestor DevOps unificado inicializado")
+except Exception as e:
+    logger.error(f"❌ No se pudo importar devops_belgrano_manager_unified: {e}")
+    devops_manager = None
 
 # Crear blueprint con prefijo
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
