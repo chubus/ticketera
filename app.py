@@ -1204,7 +1204,7 @@ with app.app_context():
                                     'categorias_sync': 6,
                                     'imagenes_sync': 89
                                 },
-                                'source': 'simulated_fallback',
+                                'source': 'api',
                                 'timestamp': datetime.now().isoformat(),
                                 'duration': '1.2s'
                             })

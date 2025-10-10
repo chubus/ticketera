@@ -146,7 +146,7 @@ def test_api_connection(base_url=None, api_key=None):
     return False
 
 # Configuración por defecto usando variables de entorno
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-aliq.onrender.com')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
 
 # Detectar entorno
@@ -154,7 +154,7 @@ FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
 IS_PRODUCTION = FLASK_ENV == 'production'
 
 # Validar variables de entorno críticas
-if not BELGRANO_AHORRO_URL or BELGRANO_AHORRO_URL == 'https://belgranoahorro-hp30.onrender.com':
+if not BELGRANO_AHORRO_URL or BELGRANO_AHORRO_URL == 'https://belgranoahorro-aliq.onrender.com':
     if not IS_PRODUCTION:
         logger.info("ℹ️ BELGRANO_AHORRO_URL no configurada (normal en desarrollo)")
     else:
