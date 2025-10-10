@@ -75,8 +75,17 @@ try:
     from devops_belgrano_manager_unified import devops_manager_unified as devops_manager
     logger.info("✅ Gestor DevOps unificado inicializado")
 except Exception as e:
-    logger.error(f"❌ No se pudo importar devops_belgrano_manager_unified: {e}")
-    devops_manager = None
+    # Intento adicional ajustando sys.path a raíz del proyecto
+    try:
+        import sys, os
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        from devops_belgrano_manager_unified import devops_manager_unified as devops_manager  # type: ignore
+        logger.info("✅ Gestor DevOps unificado inicializado tras ajustar sys.path")
+    except Exception as e2:
+        logger.error(f"❌ No se pudo importar devops_belgrano_manager_unificado: {e2}")
+        devops_manager = None
 
 # Crear blueprint con prefijo
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
