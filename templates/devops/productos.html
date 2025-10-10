@@ -243,18 +243,10 @@
                             <div class="col-md-4 mb-3">
                                 <label for="negocio_id" class="form-label">Negocio</label>
                                 <select class="form-select" id="negocio_id" name="negocio_id" required>
-<<<<<<< HEAD
-<<<<<<< HEAD
                                     <option value="">Seleccionar negocio</option>
                                     {% for negocio in negocios %}
                                     <option value="{{ negocio.id }}">#{{ negocio.id }} - {{ negocio.nombre }}</option>
                                     {% endfor %}
-=======
-                                    <option value="">Cargando negocios...</option>
->>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
-=======
-                                    <option value="">Cargando negocios...</option>
->>>>>>> 615c446ca786e32db17288a825db5038473698d9
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -381,12 +373,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-<<<<<<< HEAD
-<<<<<<< HEAD
         function editarProducto(id, nombre, descripcion, precio, categoria, negocio_id, stock, activo) {
-=======
-=======
->>>>>>> 615c446ca786e32db17288a825db5038473698d9
         // Cargar negocios al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             cargarNegocios();
@@ -426,7 +413,6 @@
         }
 
         function editarProducto(id, nombre, descripcion, precio, categoria, negocio, stock, activo) {
->>>>>>> 4f153f9df9e6f05c23230eeb299bb9ad39dc2deb
             document.getElementById('edit_nombre').value = nombre;
             document.getElementById('edit_descripcion').value = descripcion;
             document.getElementById('edit_precio').value = precio;
