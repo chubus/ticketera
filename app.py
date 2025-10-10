@@ -534,27 +534,7 @@ with app.app_context():
                             
                         except Exception as db_error:
                             logger.error(f"Error obteniendo ofertas de DB: {db_error}")
-                            # Fallback a datos simulados
-                            lista_ofertas = [
-                                {
-                                    'id': 1,
-                                    'titulo': 'Oferta Especial 50%',
-                                    'descripcion': 'Descuento del 50% en productos seleccionados',
-                                    'productos': ['Arroz', 'Aceite', 'Leche'],
-                                    'hasta_agotar_stock': True,
-                                    'activa': True,
-                                    'fecha_creacion': '2025-01-19T10:00:00Z'
-                                },
-                                {
-                                    'id': 2,
-                                    'titulo': 'Oferta 2x1',
-                                    'descripcion': 'Lleva 2 productos y paga solo 1',
-                                    'productos': ['Pan', 'Manteca'],
-                                    'hasta_agotar_stock': False,
-                                    'activa': True,
-                                    'fecha_creacion': '2025-01-20T10:00:00Z'
-                                }
-                            ]
+                            return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
                         
                         return jsonify({
                             'status': 'success',
@@ -563,7 +543,7 @@ with app.app_context():
                                 'total': len(lista_ofertas),
                                 'timestamp': datetime.now().isoformat()
                             },
-                            'source': 'simulated',
+                            'source': 'api',
                             'message': f'Ofertas obtenidas correctamente ({len(lista_ofertas)} encontradas)'
                         })
                     except Exception as e:
