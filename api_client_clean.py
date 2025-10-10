@@ -180,3 +180,4 @@ else:
         logger.warning("Variables de entorno no configuradas para cliente API global")
     else:
         logger.info("Cliente API no inicializado (variables de entorno no configuradas)")
+
