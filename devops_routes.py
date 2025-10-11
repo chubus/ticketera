@@ -84,7 +84,7 @@ except Exception as e:
         from devops_belgrano_manager_unified import devops_manager_unified as devops_manager  # type: ignore
         logger.info("✅ Gestor DevOps unificado inicializado tras ajustar sys.path")
     except Exception as e2:
-        logger.error(f"❌ No se pudo importar devops_belgrano_manager_unificado: {e2}")
+        logger.error(f"❌ No se pudo importar devops_belgrano_manager_unified: {e2}")
         devops_manager = None
 
 # Crear blueprint con prefijo
