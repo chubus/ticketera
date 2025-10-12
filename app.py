@@ -1466,7 +1466,8 @@ def health_check():
             try:
                 health = api_client.health_check()
                 ahorro_api_status = health.get('status', 'unknown')
-            except:
+            except Exception as e:
+                logger.warning(f"Error en health check: {e}")
                 ahorro_api_status = "disconnected"
         
         return jsonify({
@@ -1504,7 +1505,8 @@ def status_check():
             try:
                 health = api_client.health_check()
                 ahorro_api_status = health.get('status', 'unknown')
-            except:
+            except Exception as e:
+                logger.warning(f"Error en health check: {e}")
                 ahorro_api_status = "disconnected"
         
         return jsonify({
@@ -2409,18 +2411,7 @@ def test_ahorro_api():
             'timestamp': datetime.now().isoformat()
         }), 500
 
-# Ruta principal de la aplicación
-@app.route('/')
-def index():
-    """Página principal de la aplicación"""
-    # Inicializar usuarios si es necesario
-    try:
-        with app.app_context():
-            inicializar_usuarios_automaticamente()
-    except Exception as e:
-        logger.warning(f"Error inicializando usuarios: {e}")
-    
-    return render_template('admin_panel.html')
+# Ruta principal ya definida arriba como home()
 
 # Registrar blueprint de DevOps (eliminando duplicado)
 # Este bloque se eliminó porque ya se registra arriba en la línea 58
