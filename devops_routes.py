@@ -186,17 +186,29 @@ def devops_health():
                 health_status['checks']['api_connection'] = 'error'
                 health_status['api_error'] = str(e)
             
-            return jsonify({
-                'status': 'success',
-                'data': health_status
-            })
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'status': 'success',
+                    'data': health_status
+                })
+            else:
+                flash('Estado del sistema verificado', 'success')
+                return render_template('devops/health.html', 
+                                     health_status=health_status,
+                                     status='success')
             
         except Exception as e:
             logger.error(f"Error en health check: {e}")
-            return jsonify({
-                'status': 'error',
-                'message': f'Error en health check: {str(e)}'
-            }), 500
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Error en health check: {str(e)}'
+                }), 500
+            else:
+                flash(f'Error en health check: {str(e)}', 'error')
+                return render_template('devops/health.html', 
+                                     health_status={},
+                                     status='error')
     
     # Si no es AJAX, devolver template HTML
     return render_template('devops/health.html')
@@ -227,66 +239,93 @@ def devops_status():
             }
         }
         
-        return jsonify({
-            'status': 'success',
-            'data': status
-        })
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'success',
+                'data': status
+            })
+        else:
+            flash('Estado del sistema obtenido', 'success')
+            return render_template('devops/status.html', 
+                                 status_data=status,
+                                 status='success')
         
     except Exception as e:
         logger.error(f"Error obteniendo status: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Error obteniendo status: {str(e)}'
-        }), 500
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'error',
+                'message': f'Error obteniendo status: {str(e)}'
+            }), 500
+        else:
+            flash(f'Error obteniendo status: {str(e)}', 'error')
+            return render_template('devops/status.html', 
+                                 status_data={},
+                                 status='error')
 
 @devops_bp.route('/info')
 @devops_login_required
 def devops_info():
     """Información completa del sistema DevOps"""
     try:
-        return jsonify({
-            'status': 'success',
-            'message': 'Información del sistema DevOps',
-            'data': {
-                'service': 'DevOps System v2.0',
-                'description': 'Sistema de gestión DevOps para Belgrano Tickets',
-                'features': [
-                    'Monitoreo de salud del sistema',
-                    'Gestión de ofertas y negocios',
-                    'Sincronización con API externa',
-                    'Logging y debugging',
-                    'Panel de administración'
-                ],
-                'endpoints': {
-                    'monitoring': {
-                        'GET': '/devops/health - Health check',
-                        'GET': '/devops/status - Estado del sistema',
-                        'GET': '/devops/info - Información del servicio'
-                    },
-                    'management': {
-                        'GET': '/devops/ofertas - Gestión de ofertas',
-                        'GET': '/devops/negocios - Gestión de negocios',
-                        'POST': '/devops/sync - Sincronización manual'
-                    },
-                    'utilities': {
-                        'GET': '/devops/logs - Ver logs del sistema',
-                        'GET': '/devops/config - Configuración actual'
-                    }
+        info_data = {
+            'service': 'DevOps System v2.0',
+            'description': 'Sistema de gestión DevOps para Belgrano Tickets',
+            'features': [
+                'Monitoreo de salud del sistema',
+                'Gestión de ofertas y negocios',
+                'Sincronización con API externa',
+                'Logging y debugging',
+                'Panel de administración'
+            ],
+            'endpoints': {
+                'monitoring': {
+                    'GET': '/devops/health - Health check',
+                    'GET': '/devops/status - Estado del sistema',
+                    'GET': '/devops/info - Información del servicio'
                 },
-                'documentation': {
-                    'api_docs': '/devops/docs',
-                    'health_endpoint': '/devops/health',
-                    'status_endpoint': '/devops/status'
+                'management': {
+                    'GET': '/devops/ofertas - Gestión de ofertas',
+                    'GET': '/devops/negocios - Gestión de negocios',
+                    'POST': '/devops/sync - Sincronización manual'
                 },
-                'timestamp': datetime.now().isoformat()
-            }
-        })
+                'utilities': {
+                    'GET': '/devops/logs - Ver logs del sistema',
+                    'GET': '/devops/config - Configuración actual'
+                }
+            },
+            'documentation': {
+                'api_docs': '/devops/docs',
+                'health_endpoint': '/devops/health',
+                'status_endpoint': '/devops/status'
+            },
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'success',
+                'message': 'Información del sistema DevOps',
+                'data': info_data
+            })
+        else:
+            flash('Información del sistema cargada', 'success')
+            return render_template('devops/info.html', 
+                                 info_data=info_data,
+                                 status='success')
+        
     except Exception as e:
         logger.error(f"Error obteniendo información: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Error obteniendo información: {str(e)}'
-        }), 500
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'error',
+                'message': f'Error obteniendo información: {str(e)}'
+            }), 500
+        else:
+            flash(f'Error obteniendo información: {str(e)}', 'error')
+            return render_template('devops/info.html', 
+                                 info_data={},
+                                 status='error')
 
 # =================================================================
 # GESTIÓN DE OFERTAS
@@ -338,7 +377,7 @@ def gestion_ofertas():
         
         return redirect(url_for('devops.gestion_ofertas'))
     
-    # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+    # Manejar requests AJAX/API
     if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
         request.args.get('ajax') == 'true' and 
         request.args.get('format') == 'json' and 
@@ -372,15 +411,19 @@ def gestion_ofertas():
                 'data': []
             }), 500
     
-    # Si no es AJAX, devolver template HTML solo con datos de API
+    # Manejar requests desde navegador
     try:
         if not devops_manager:
-            return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+            flash('Servicio DevOps temporalmente no disponible', 'error')
+            return render_template('devops/ofertas.html', ofertas=[])
+        
         ofertas = devops_manager.get_ofertas()
+        flash(f'Ofertas cargadas: {len(ofertas)} encontradas', 'success')
         return render_template('devops/ofertas.html', ofertas=ofertas)
     except Exception as e:
         logger.error(f"Error cargando datos para ofertas: {e}")
-        return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+        flash(f'Error cargando ofertas: {str(e)}', 'error')
+        return render_template('devops/ofertas.html', ofertas=[])
 
 @devops_bp.route('/negocios', methods=['GET', 'POST'])
 @devops_login_required
@@ -427,7 +470,7 @@ def gestion_negocios():
         
         return redirect(url_for('devops.gestion_negocios'))
     
-    # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+    # Manejar requests AJAX/API
     if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
         request.args.get('ajax') == 'true' and 
         request.args.get('format') == 'json' and 
@@ -462,15 +505,19 @@ def gestion_negocios():
                 'source': 'error'
             }), 500
     
-    # Si no es AJAX, devolver template HTML solo con datos de API
+    # Manejar requests desde navegador
     try:
         if not devops_manager:
-            return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+            flash('Servicio DevOps temporalmente no disponible', 'error')
+            return render_template('devops/negocios.html', negocios=[])
+        
         negocios = devops_manager.get_negocios()
+        flash(f'Negocios cargados: {len(negocios)} encontrados', 'success')
         return render_template('devops/negocios.html', negocios=negocios)
     except Exception as e:
         logger.error(f"Error cargando datos para negocios: {e}")
-        return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+        flash(f'Error cargando negocios: {str(e)}', 'error')
+        return render_template('devops/negocios.html', negocios=[])
 
 @devops_bp.route('/productos', methods=['GET', 'POST'])
 @devops_login_required
@@ -525,7 +572,7 @@ def gestion_productos():
         
         return redirect(url_for('devops.gestion_productos'))
     
-    # Solo devolver JSON si se solicita explícitamente con todos los parámetros
+    # Manejar requests AJAX/API
     if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
         request.args.get('ajax') == 'true' and 
         request.args.get('format') == 'json' and 
@@ -560,17 +607,21 @@ def gestion_productos():
                 'source': 'error'
             }), 500
     
-    # Si no es AJAX, devolver template HTML solo con datos de API
+    # Manejar requests desde navegador
     try:
         if not devops_manager:
-            return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+            flash('Servicio DevOps temporalmente no disponible', 'error')
+            return render_template('devops/productos.html', productos=[], negocios=[], categorias=[])
+        
         productos = devops_manager.get_productos()
         negocios = devops_manager.get_negocios() if devops_manager else []
         categorias = []
+        flash(f'Productos cargados: {len(productos)} encontrados', 'success')
         return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
     except Exception as e:
         logger.error(f"Error cargando datos para productos: {e}")
-        return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+        flash(f'Error cargando productos: {str(e)}', 'error')
+        return render_template('devops/productos.html', productos=[], negocios=[], categorias=[])
 
 # =================================================================
 # SINCRONIZACIÓN Y UTILIDADES
@@ -582,7 +633,6 @@ def sincronizacion_manual():
     """Forzar sincronización manual"""
     from flask import request, make_response
     
-    # Siempre devolver JSON para este endpoint
     try:
         sync_results = {
             'timestamp': datetime.now().isoformat(),
@@ -627,18 +677,30 @@ def sincronizacion_manual():
         else:
             sync_results['overall_status'] = 'error'
         
-        return jsonify({
-            'status': 'success',
-            'message': 'Sincronización completada',
-            'data': sync_results
-        })
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'success',
+                'message': 'Sincronización completada',
+                'data': sync_results
+            })
+        else:
+            flash('Sincronización completada', 'success')
+            return render_template('devops/sync.html', 
+                                 sync_results=sync_results,
+                                 status='success')
         
     except Exception as e:
         logger.error(f"Error en sincronización manual: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Error en sincronización: {str(e)}'
-        }), 500
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'error',
+                'message': f'Error en sincronización: {str(e)}'
+            }), 500
+        else:
+            flash(f'Error en sincronización: {str(e)}', 'error')
+            return render_template('devops/sync.html', 
+                                 sync_results={},
+                                 status='error')
 
 @devops_bp.route('/system-status')
 @devops_login_required
@@ -647,26 +709,45 @@ def system_status():
     try:
         if devops_manager:
             status = devops_manager.get_system_status()
-            return jsonify({
-                'status': 'success',
-                'data': status
-            })
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'status': 'success',
+                    'data': status
+                })
+            else:
+                flash('Estado del sistema obtenido', 'success')
+                return render_template('devops/system_status.html', 
+                                     status_data=status,
+                                     status='success')
         else:
-            return jsonify({
-                'status': 'error',
-                'message': 'Gestor DevOps no disponible',
-                'data': {
-                    'timestamp': datetime.now().isoformat(),
-                    'fallback_mode': True,
-                    'api_configured': False
-                }
-            }), 503
+            fallback_data = {
+                'timestamp': datetime.now().isoformat(),
+                'fallback_mode': True,
+                'api_configured': False
+            }
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Gestor DevOps no disponible',
+                    'data': fallback_data
+                }), 503
+            else:
+                flash('Gestor DevOps no disponible', 'error')
+                return render_template('devops/system_status.html', 
+                                     status_data=fallback_data,
+                                     status='error')
     except Exception as e:
         logger.error(f"Error obteniendo estado del sistema: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Error interno: {str(e)}'
-        }), 500
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'status': 'error',
+                'message': f'Error interno: {str(e)}'
+            }), 500
+        else:
+            flash(f'Error interno: {str(e)}', 'error')
+            return render_template('devops/system_status.html', 
+                                 status_data={},
+                                 status='error')
 
 # =================================================================
 # MANEJO DE ERRORES
@@ -675,8 +756,7 @@ def system_status():
 @devops_bp.errorhandler(404)
 def devops_not_found(error):
     """Manejar errores 404 en DevOps"""
-    return jsonify({
-        'status': 'error',
+    error_data = {
         'message': 'Endpoint de DevOps no encontrado',
         'available_endpoints': [
             '/devops/',
@@ -689,13 +769,34 @@ def devops_not_found(error):
             '/devops/system-status'
         ],
         'timestamp': datetime.now().isoformat()
-    }), 404
+    }
+    
+    if request.headers.get('Accept') == 'application/json':
+        return jsonify({
+            'status': 'error',
+            **error_data
+        }), 404
+    else:
+        flash('Endpoint no encontrado', 'error')
+        return render_template('devops/error.html', 
+                             error_data=error_data,
+                             status='404'), 404
 
 @devops_bp.errorhandler(500)
 def devops_internal_error(error):
     """Manejar errores 500 en DevOps"""
-    return jsonify({
-        'status': 'error',
+    error_data = {
         'message': 'Error interno del servidor DevOps',
         'timestamp': datetime.now().isoformat()
-    }), 500
+    }
+    
+    if request.headers.get('Accept') == 'application/json':
+        return jsonify({
+            'status': 'error',
+            **error_data
+        }), 500
+    else:
+        flash('Error interno del servidor', 'error')
+        return render_template('devops/error.html', 
+                             error_data=error_data,
+                             status='500'), 500

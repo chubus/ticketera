@@ -340,7 +340,11 @@ with app.app_context():
                         return redirect('/devops/')
                     else:
                         print(f"❌ Login DevOps falló: {username}")
-                        return jsonify({'status': 'error', 'message': 'Credenciales incorrectas'}), 401
+                        if request.headers.get('Accept') == 'application/json':
+                            return jsonify({'status': 'error', 'message': 'Credenciales incorrectas'}), 401
+                        else:
+                            flash('Credenciales incorrectas', 'error')
+                            return redirect('/devops/login')
                 else:
                     # Mostrar formulario de login de DevOps
                     print("🔧 Mostrando formulario de login DevOps (fallback)")
@@ -387,23 +391,41 @@ with app.app_context():
             # Agregar todos los endpoints de DevOps al fallback
             @app.route('/devops/health')
             def _devops_fallback_health():
-                from flask import session, jsonify
+                from flask import session, jsonify, render_template, flash
                 if not session.get('devops_authenticated'):
-                    return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
+                    if request.headers.get('Accept') == 'application/json':
+                        return jsonify({'error': 'No autorizado'}), 401
+                    else:
+                        flash('No autorizado', 'error')
+                        return redirect('/devops/login')
+                
+                health_data = {
                     'status': 'success',
                     'message': 'Sistema DevOps funcionando correctamente',
                     'timestamp': '2025-01-19T01:00:00Z',
                     'version': '2.0',
                     'mode': 'fallback'
-                })
+                }
+                
+                if request.headers.get('Accept') == 'application/json':
+                    return jsonify(health_data)
+                else:
+                    flash('Sistema DevOps funcionando correctamente', 'success')
+                    return render_template('devops/health.html', 
+                                         health_status=health_data,
+                                         status='success')
             
             @app.route('/devops/status')
             def _devops_fallback_status():
-                from flask import session, jsonify
+                from flask import session, jsonify, render_template, flash
                 if not session.get('devops_authenticated'):
-                    return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
+                    if request.headers.get('Accept') == 'application/json':
+                        return jsonify({'error': 'No autorizado'}), 401
+                    else:
+                        flash('No autorizado', 'error')
+                        return redirect('/devops/login')
+                
+                status_data = {
                     'status': 'success',
                     'system': 'DevOps System',
                     'state': 'active',
@@ -413,14 +435,27 @@ with app.app_context():
                         'monitoring': 'active'
                     },
                     'mode': 'fallback'
-                })
+                }
+                
+                if request.headers.get('Accept') == 'application/json':
+                    return jsonify(status_data)
+                else:
+                    flash('Estado del sistema obtenido', 'success')
+                    return render_template('devops/status.html', 
+                                         status_data=status_data,
+                                         status='success')
             
             @app.route('/devops/info')
             def _devops_fallback_info():
-                from flask import session, jsonify
+                from flask import session, jsonify, render_template, flash
                 if not session.get('devops_authenticated'):
-                    return jsonify({'error': 'No autorizado'}), 401
-                return jsonify({
+                    if request.headers.get('Accept') == 'application/json':
+                        return jsonify({'error': 'No autorizado'}), 401
+                    else:
+                        flash('No autorizado', 'error')
+                        return redirect('/devops/login')
+                
+                info_data = {
                     'status': 'success',
                     'service': 'DevOps System v2.0',
                     'description': 'Sistema de gestión DevOps para Belgrano Tickets',
@@ -432,7 +467,15 @@ with app.app_context():
                         'Sincronización de datos'
                     ],
                     'mode': 'fallback'
-                })
+                }
+                
+                if request.headers.get('Accept') == 'application/json':
+                    return jsonify(info_data)
+                else:
+                    flash('Información del sistema cargada', 'success')
+                    return render_template('devops/info.html', 
+                                         info_data=info_data,
+                                         status='success')
             
             @app.route('/devops/ofertas', methods=['GET', 'POST'])
             def _devops_fallback_ofertas():
