@@ -64,11 +64,11 @@ if create_api_client and BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
     except Exception as e:
         logger.error(f"Error creando cliente API de DevOps: {e}")
         devops_api_client = None
-else:
-    if env_status == 'production':
-        logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
     else:
-        logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
+        if env_status == 'production':
+            logger.warning("Variables de entorno no configuradas para cliente API de DevOps")
+        else:
+            logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
 
 # Importar solo gestor DevOps unificado (evita errores por módulos antiguos)
 try:
