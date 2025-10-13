@@ -13,6 +13,7 @@ from datetime import datetime
 import logging
 from urllib.parse import urljoin
 from flask import Blueprint, request, jsonify, redirect, url_for, session, make_response, render_template, flash
+import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Configuración de logging
@@ -89,6 +90,189 @@ except Exception as e:
 
 # Crear blueprint con prefijo
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
+
+# =============================
+# Fallback de persistencia local (cuando devops_manager no está disponible)
+# =============================
+
+def _find_ahorro_db_path() -> str:
+    """Ubicar ruta de belgrano_ahorro.db similar al sincronizador."""
+    possible_paths = [
+        'belgrano_ahorro.db',
+        '../belgrano_ahorro.db',
+        '../../belgrano_ahorro.db',
+        os.path.join(os.path.dirname(__file__), '..', 'belgrano_ahorro.db'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'belgrano_ahorro.db')
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    # Último recurso: raíz del proyecto
+    return 'belgrano_ahorro.db'
+
+def _fallback_insert_negocio(negocio_data: dict) -> int:
+    db_path = _find_ahorro_db_path()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS negocios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                descripcion TEXT,
+                direccion TEXT,
+                telefono TEXT,
+                email TEXT,
+                activo BOOLEAN DEFAULT 1,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        cursor.execute(
+            'INSERT INTO negocios (nombre, descripcion, direccion, telefono, email, activo) VALUES (?, ?, ?, ?, ?, ?)',
+            (
+                negocio_data.get('nombre', ''),
+                negocio_data.get('descripcion', ''),
+                negocio_data.get('direccion', ''),
+                negocio_data.get('telefono', ''),
+                negocio_data.get('email', ''),
+                1 if negocio_data.get('activo', True) else 0,
+            ),
+        )
+        conn.commit()
+        return cursor.lastrowid
+
+def _fallback_insert_producto(producto_data: dict) -> int:
+    db_path = _find_ahorro_db_path()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        # Esquema real requiere 'store' (NOT NULL) y 'precio'
+        # Insertamos mínimos requeridos y campos opcionales comunes
+        store_value = (producto_data.get('store')
+                       or producto_data.get('negocio')
+                       or producto_data.get('categoria')
+                       or 'general')
+        cursor.execute(
+            'INSERT INTO productos (nombre, store, precio, categoria, stock, stock_minimo, negocio_id, activo, imagen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                producto_data.get('nombre', ''),
+                str(store_value),
+                float(producto_data.get('precio', 0) or 0),
+                producto_data.get('categoria', ''),
+                int(producto_data.get('stock', 0) or 0),
+                int(producto_data.get('stock_minimo', 0) or 0),
+                int(producto_data.get('negocio') or producto_data.get('negocio_id') or 0),
+                1 if producto_data.get('activo', True) else 0,
+                producto_data.get('imagen', ''),
+            ),
+        )
+        conn.commit()
+        return cursor.lastrowid
+
+def _fallback_insert_oferta(oferta_data: dict) -> int:
+    db_path = _find_ahorro_db_path()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ofertas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titulo TEXT NOT NULL,
+                descripcion TEXT,
+                productos TEXT,
+                hasta_agotar_stock BOOLEAN DEFAULT 0,
+                activa BOOLEAN DEFAULT 1,
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        productos_raw = oferta_data.get('productos')
+        # Acepta lista o string; guarda como JSON
+        if isinstance(productos_raw, str):
+            productos_json = productos_raw
+        else:
+            try:
+                productos_json = json.dumps(productos_raw or [])
+            except Exception:
+                productos_json = '[]'
+        cursor.execute(
+            'INSERT INTO ofertas (titulo, descripcion, productos, hasta_agotar_stock, activa) VALUES (?, ?, ?, ?, ?)',
+            (
+                oferta_data.get('titulo', ''),
+                oferta_data.get('descripcion', ''),
+                productos_json,
+                1 if oferta_data.get('hasta_agotar_stock', False) else 0,
+                1 if oferta_data.get('activa', True) else 0,
+            ),
+        )
+        conn.commit()
+        return cursor.lastrowid
+
+def _fallback_get_negocios() -> list:
+    db_path = _find_ahorro_db_path()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, nombre, descripcion, direccion, telefono, email, activo, fecha_creacion, fecha_actualizacion FROM negocios ORDER BY fecha_creacion DESC')
+        rows = cursor.fetchall()
+        negocios = []
+        for r in rows:
+            negocios.append({
+                'id': r[0],
+                'nombre': r[1],
+                'descripcion': r[2],
+                'direccion': r[3],
+                'telefono': r[4],
+                'email': r[5],
+                'activo': bool(r[6]),
+                'fecha_creacion': r[7],
+                'fecha_actualizacion': r[8],
+            })
+        return negocios
+
+def _fallback_get_productos() -> list:
+    db_path = _find_ahorro_db_path()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, nombre, descripcion, precio, categoria, stock, stock_minimo, negocio_id, activo, fecha_creacion, fecha_actualizacion FROM productos ORDER BY fecha_creacion DESC')
+        rows = cursor.fetchall()
+        productos = []
+        for r in rows:
+            productos.append({
+                'id': r[0],
+                'nombre': r[1],
+                'descripcion': r[2],
+                'precio': r[3],
+                'categoria': r[4],
+                'stock': r[5],
+                'stock_minimo': r[6],
+                'negocio_id': r[7],
+                'activo': bool(r[8]),
+                'fecha_creacion': r[9],
+                'fecha_actualizacion': r[10],
+            })
+        return productos
+
+def _fallback_get_ofertas() -> list:
+    db_path = _find_ahorro_db_path()
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, titulo, descripcion, productos, hasta_agotar_stock, activa, fecha_creacion, fecha_actualizacion FROM ofertas ORDER BY fecha_creacion DESC')
+        rows = cursor.fetchall()
+        ofertas = []
+        for r in rows:
+            try:
+                productos_list = json.loads(r[3]) if r[3] else []
+            except Exception:
+                productos_list = []
+            ofertas.append({
+                'id': r[0],
+                'titulo': r[1],
+                'descripcion': r[2],
+                'productos': productos_list,
+                'hasta_agotar_stock': bool(r[4]),
+                'activa': bool(r[5]),
+                'fecha_creacion': r[6],
+                'fecha_actualizacion': r[7],
+            })
+        return ofertas
 
 # =============================
 # AUTENTICACIÓN DEVOPS
@@ -366,10 +550,13 @@ def gestion_ofertas():
                     logger.info(f"Oferta creada desde DevOps: {titulo}")
                 else:
                     logger.error(f"Error al crear oferta en API: {message}")
-                    return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+                    # Fallback local
+                    _fallback_insert_oferta(oferta_data)
+                    flash('API DevOps no disponible. Oferta creada localmente.', 'warning')
             else:
                 logger.error("Gestor DevOps no disponible para crear oferta")
-                return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+                _fallback_insert_oferta(oferta_data)
+                flash('Gestor DevOps no disponible. Oferta creada localmente.', 'warning')
                 
         except Exception as e:
             logger.error(f"Error creando oferta desde DevOps: {e}")
@@ -384,13 +571,14 @@ def gestion_ofertas():
         request.args.get('api') == 'true' and
         request.args.get('json') == 'true'):
         try:
-            # Obtener datos reales usando el gestor DevOps
+            # Obtener datos reales usando el gestor DevOps o fallback DB
             if devops_manager:
                 if getattr(devops_manager, 'fallback_mode', False):
-                    return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
-                ofertas = devops_manager.get_ofertas()
+                    ofertas = _fallback_get_ofertas()
+                else:
+                    ofertas = devops_manager.get_ofertas()
             else:
-                return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
+                ofertas = _fallback_get_ofertas()
             
             return jsonify({
                 'status': 'success',
@@ -414,10 +602,10 @@ def gestion_ofertas():
     # Manejar requests desde navegador
     try:
         if not devops_manager:
-            flash('Servicio DevOps temporalmente no disponible', 'error')
-            return render_template('devops/ofertas.html', ofertas=[])
-        
-        ofertas = devops_manager.get_ofertas()
+            ofertas = _fallback_get_ofertas()
+            flash(f'Ofertas cargadas desde base local: {len(ofertas)}', 'warning')
+        else:
+            ofertas = devops_manager.get_ofertas()
         flash(f'Ofertas cargadas: {len(ofertas)} encontradas', 'success')
         return render_template('devops/ofertas.html', ofertas=ofertas)
     except Exception as e:
@@ -459,10 +647,13 @@ def gestion_negocios():
                     logger.info(f"Negocio creado desde DevOps: {nombre}")
                 else:
                     logger.error(f"Error al crear negocio en API: {message}")
-                    return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+                    # Fallback local
+                    nuevo_id = _fallback_insert_negocio(negocio_data)
+                    flash(f'API DevOps no disponible. Negocio creado localmente (ID {nuevo_id}).', 'warning')
             else:
                 logger.error("Gestor DevOps no disponible para crear negocio")
-                return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+                nuevo_id = _fallback_insert_negocio(negocio_data)
+                flash(f'Gestor DevOps no disponible. Negocio creado localmente (ID {nuevo_id}).', 'warning')
                 
         except Exception as e:
             logger.error(f"Error creando negocio desde DevOps: {e}")
@@ -479,13 +670,14 @@ def gestion_negocios():
         try:
             from datetime import datetime
             
-            # Obtener datos reales usando el gestor DevOps
+            # Obtener datos reales usando el gestor DevOps o fallback DB
             if devops_manager:
                 if getattr(devops_manager, 'fallback_mode', False):
-                    return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
-                negocios = devops_manager.get_negocios()
+                    negocios = _fallback_get_negocios()
+                else:
+                    negocios = devops_manager.get_negocios()
             else:
-                return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
+                negocios = _fallback_get_negocios()
             
             return jsonify({
                 'status': 'success',
@@ -508,10 +700,10 @@ def gestion_negocios():
     # Manejar requests desde navegador
     try:
         if not devops_manager:
-            flash('Servicio DevOps temporalmente no disponible', 'error')
-            return render_template('devops/negocios.html', negocios=[])
-        
-        negocios = devops_manager.get_negocios()
+            negocios = _fallback_get_negocios()
+            flash(f'Negocios cargados desde base local: {len(negocios)}', 'warning')
+        else:
+            negocios = devops_manager.get_negocios()
         flash(f'Negocios cargados: {len(negocios)} encontrados', 'success')
         return render_template('devops/negocios.html', negocios=negocios)
     except Exception as e:
@@ -561,10 +753,13 @@ def gestion_productos():
                     logger.info(f"Producto creado desde DevOps: {nombre}")
                 else:
                     logger.error(f"Error al crear producto en API: {message}")
-                    return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+                    # Fallback local
+                    nuevo_id = _fallback_insert_producto(producto_data)
+                    flash(f'API DevOps no disponible. Producto creado localmente (ID {nuevo_id}).', 'warning')
             else:
                 logger.error("Gestor DevOps no disponible para crear producto")
-                return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible'}), 503
+                nuevo_id = _fallback_insert_producto(producto_data)
+                flash(f'Gestor DevOps no disponible. Producto creado localmente (ID {nuevo_id}).', 'warning')
                 
         except Exception as e:
             logger.error(f"Error creando producto desde DevOps: {e}")
@@ -581,13 +776,14 @@ def gestion_productos():
         try:
             from datetime import datetime
             
-            # Obtener datos reales usando el gestor DevOps
+            # Obtener datos reales usando el gestor DevOps o fallback DB
             if devops_manager:
                 if getattr(devops_manager, 'fallback_mode', False):
-                    return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
-                productos = devops_manager.get_productos()
+                    productos = _fallback_get_productos()
+                else:
+                    productos = devops_manager.get_productos()
             else:
-                return jsonify({'status': 'error', 'message': 'Servicio DevOps temporalmente no disponible', 'data': []}), 503
+                productos = _fallback_get_productos()
             
             return jsonify({
                 'status': 'success',
@@ -610,11 +806,12 @@ def gestion_productos():
     # Manejar requests desde navegador
     try:
         if not devops_manager:
-            flash('Servicio DevOps temporalmente no disponible', 'error')
-            return render_template('devops/productos.html', productos=[], negocios=[], categorias=[])
-        
-        productos = devops_manager.get_productos()
-        negocios = devops_manager.get_negocios() if devops_manager else []
+            productos = _fallback_get_productos()
+            negocios = _fallback_get_negocios()
+            flash(f'Productos cargados desde base local: {len(productos)}', 'warning')
+        else:
+            productos = devops_manager.get_productos()
+            negocios = devops_manager.get_negocios() if devops_manager else []
         categorias = []
         flash(f'Productos cargados: {len(productos)} encontrados', 'success')
         return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
