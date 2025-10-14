@@ -196,7 +196,7 @@ with app.app_context():
             @app.route('/devops/')
             def _devops_fallback_home():
                 from flask import session, redirect, make_response
-                print("🔧 Usando fallback DevOps home", jsonify)
+                print("🔧 Usando fallback DevOps home")
                 
                 # Verificar autenticación
                 if not session.get('devops_authenticated'):
@@ -318,7 +318,7 @@ with app.app_context():
             @app.route('/devops/login', methods=['GET', 'POST'])
             def _devops_fallback_login():
                 from flask import request, session, redirect, make_response
-                print("🔧 Usando fallback de DevOps login", jsonify)
+                print("🔧 Usando fallback de DevOps login")
 
                 if request.method == 'POST':
                     username = request.form.get('username', '').strip()
@@ -341,7 +341,6 @@ with app.app_context():
                     else:
                         print(f"❌ Login DevOps falló: {username}")
                         if request.headers.get('Accept') == 'application/json':
-
                             return jsonify({'status': 'error', 'message': 'Credenciales incorrectas'}), 401
                         else:
                             flash('Credenciales incorrectas', 'error')
@@ -393,9 +392,8 @@ with app.app_context():
             @app.route('/devops/health')
             def _devops_fallback_health():
                 from flask import session, jsonify, render_template, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     if request.headers.get('Accept') == 'application/json':
-
                         return jsonify({'error': 'No autorizado'}), 401
                     else:
                         flash('No autorizado', 'error')
@@ -410,8 +408,6 @@ with app.app_context():
                 }
                 
                 if request.headers.get('Accept') == 'application/json':
-
-                
                     return jsonify(health_data)
                 else:
                     flash('Sistema DevOps funcionando correctamente', 'success')
@@ -422,9 +418,8 @@ with app.app_context():
             @app.route('/devops/status')
             def _devops_fallback_status():
                 from flask import session, jsonify, render_template, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     if request.headers.get('Accept') == 'application/json':
-
                         return jsonify({'error': 'No autorizado'}), 401
                     else:
                         flash('No autorizado', 'error')
@@ -443,8 +438,6 @@ with app.app_context():
                 }
                 
                 if request.headers.get('Accept') == 'application/json':
-
-                
                     return jsonify(status_data)
                 else:
                     flash('Estado del sistema obtenido', 'success')
@@ -455,9 +448,8 @@ with app.app_context():
             @app.route('/devops/info')
             def _devops_fallback_info():
                 from flask import session, jsonify, render_template, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     if request.headers.get('Accept') == 'application/json':
-
                         return jsonify({'error': 'No autorizado'}), 401
                     else:
                         flash('No autorizado', 'error')
@@ -478,8 +470,6 @@ with app.app_context():
                 }
                 
                 if request.headers.get('Accept') == 'application/json':
-
-                
                     return jsonify(info_data)
                 else:
                     flash('Información del sistema cargada', 'success')
@@ -490,7 +480,7 @@ with app.app_context():
             @app.route('/devops/ofertas', methods=['GET', 'POST'])
             def _devops_fallback_ofertas():
                 from flask import session, jsonify, request, render_template, redirect, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Manejar POST para crear oferta
@@ -622,7 +612,7 @@ with app.app_context():
             @app.route('/devops/negocios', methods=['GET', 'POST'])
             def _devops_fallback_negocios():
                 from flask import session, jsonify, request, render_template, redirect, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Importar cliente API
@@ -803,7 +793,7 @@ with app.app_context():
             @app.route('/devops/sucursales', methods=['GET', 'POST'])
             def _devops_fallback_sucursales():
                 from flask import session, jsonify, request, render_template, redirect, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
 
                 # Manejar POST para crear sucursal
@@ -897,7 +887,7 @@ with app.app_context():
             @app.route('/devops/productos', methods=['GET', 'POST'])
             def _devops_fallback_productos():
                 from flask import session, jsonify, request, render_template, redirect, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Manejar POST para crear producto
@@ -1010,7 +1000,7 @@ with app.app_context():
             @app.route('/devops/precios', methods=['GET', 'POST'])
             def _devops_fallback_precios():
                 from flask import session, jsonify, request, render_template, redirect, flash
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Actualizar precio vía POST
@@ -1074,7 +1064,7 @@ with app.app_context():
             @app.route('/devops/estadisticas')
             def _devops_fallback_estadisticas():
                 from flask import session, jsonify
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Usar datos reales de la base de datos
@@ -1101,7 +1091,7 @@ with app.app_context():
             @app.route('/devops/pagina-principal')
             def _devops_fallback_pagina_principal():
                 from flask import session, jsonify
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Usar datos reales de la base de datos
@@ -1128,7 +1118,7 @@ with app.app_context():
             @app.route('/devops/logs')
             def _devops_fallback_logs():
                 from flask import session, jsonify, request, render_template
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Solo devolver JSON si se solicita explícitamente con todos los parámetros
@@ -1163,7 +1153,7 @@ with app.app_context():
             @app.route('/devops/config')
             def _devops_fallback_config():
                 from flask import session, jsonify, request, render_template
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Solo devolver JSON si se solicita explícitamente con todos los parámetros
@@ -1191,7 +1181,7 @@ with app.app_context():
             def _devops_fallback_sync():
                 from flask import session, jsonify, request, render_template
                 from datetime import datetime
-                if not session.get('devops_authenticated', jsonify):
+                if not session.get('devops_authenticated'):
                     return jsonify({'error': 'No autorizado'}), 401
                 
                 # Solo devolver JSON si se solicita explícitamente con todos los parámetros
@@ -1278,7 +1268,7 @@ with app.app_context():
                 from datetime import datetime
                 
                 # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-                if (request.headers.get('X-Requested-With', jsonify) == 'XMLHttpRequest' and 
+                if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
                     request.args.get('ajax') == 'true' and 
                     request.args.get('format') == 'json' and 
                     request.args.get('api') == 'true' and
@@ -1297,7 +1287,7 @@ with app.app_context():
             @app.route('/devops/logout', methods=['GET', 'POST'])
             def _devops_fallback_logout():
                 from flask import session, redirect
-                session.pop('devops_authenticated', None, jsonify)
+                session.pop('devops_authenticated', None)
                 print("🔧 Logout DevOps (fallback)")
                 return redirect('/devops/login')
             
@@ -2467,16 +2457,6 @@ def test_ahorro_api():
 # Ruta principal ya definida arriba como home()
 
 # Registrar blueprint de DevOps (eliminando duplicado)
-# Este bloque se eliminó porque ya se registra arriba en la línea 58
-
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        # Inicializar usuarios automáticamente
-        inicializar_usuarios_automaticamente()
-    print("Iniciando aplicación de tickets en puerto 5001...")
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
-
 # Este bloque se eliminó porque ya se registra arriba en la línea 58
 
 if __name__ == "__main__":
