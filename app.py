@@ -117,12 +117,30 @@ if 'devops' not in [bp.name for bp in app.blueprints.values()]:
 else:
     print("Blueprint de DevOps ya estaba registrado; se omite registro duplicado")
 
+# Registrar APIs REST de DevOps (/api/devops/*)
+try:
+    from belgrano_tickets.api_devops_rest import api_devops_bp
+    if 'api_devops' not in [bp.name for bp in app.blueprints.values()]:
+        app.register_blueprint(api_devops_bp)
+        print("Blueprint API DevOps registrado en /api/devops")
+    else:
+        print("Blueprint API DevOps ya estaba registrado; se omite registro duplicado")
+except Exception as e:
+    print(f"No se pudo registrar el blueprint API DevOps: {e}")
+
 # Inicializar db con la app
 db.init_app(app)
 
-# Crear contexto de aplicación para inicializar la base de datos
+# Crear contexto de aplicación para inicializar la base de datos y tablas DevOps
 with app.app_context():
     db.create_all()
+    try:
+        # Asegurar tablas locales usadas por DevOpsPersistence
+        from devops_persistence import get_devops_db
+        _ = get_devops_db()  # init_database() se ejecuta dentro
+        print("Tablas DevOps verificadas/creadas correctamente")
+    except Exception as e:
+        print(f"Error asegurando tablas DevOps: {e}")
     
     # Inicializar usuarios automáticamente si no existen
     def inicializar_usuarios_automaticamente():
