@@ -1005,8 +1005,6 @@ def devops_internal_error(error):
     }
     
     if request.headers.get('Accept') == 'application/json':
-
-    
         return jsonify({
             'status': 'error',
             **error_data
@@ -1016,34 +1014,6 @@ def devops_internal_error(error):
         return render_template('devops/error.html', 
                              error_data=error_data,
                              status='500'), 500
-                },
-                'source': 'api',
-                'message': f'Productos obtenidos correctamente ({len(productos)} encontrados)'
-            })
-        except Exception as e:
-            return jsonify({
-                'status': 'error',
-                'message': f'Error obteniendo productos: {str(e)}',
-                'data': [],
-                'source': 'error'
-            }), 500
-    
-    # Manejar requests desde navegador
-    try:
-        if not devops_manager:
-            productos = _fallback_get_productos()
-            negocios = _fallback_get_negocios()
-            flash(f'Productos cargados desde base local: {len(productos)}', 'warning')
-        else:
-            productos = devops_manager.get_productos()
-            negocios = devops_manager.get_negocios() if devops_manager else []
-        categorias = []
-        flash(f'Productos cargados: {len(productos)} encontrados', 'success')
-        return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
-    except Exception as e:
-        logger.error(f"Error cargando datos para productos: {e}")
-        flash(f'Error cargando productos: {str(e)}', 'error')
-        return render_template('devops/productos.html', productos=[], negocios=[], categorias=[])
 
 # =================================================================
 # SINCRONIZACIÓN Y UTILIDADES
