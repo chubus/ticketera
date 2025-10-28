@@ -15,6 +15,14 @@ import hashlib
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configuración y variables de entorno seguras (no bloqueantes)
+try:
+    from config import load_env_defaults, validate_env_non_blocking
+    load_env_defaults()
+    validate_env_non_blocking()
+except Exception as e:
+    print(f"WARNING: Config no disponible: {e}")
+
 # Inicialización Flask y extensiones
 app = Flask(__name__)
 # Secret key y cookies configurables por entorno

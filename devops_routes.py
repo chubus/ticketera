@@ -1019,8 +1019,6 @@ def devops_internal_error(error):
 # SINCRONIZACIÓN Y UTILIDADES
 # =================================================================
 
-@devops_bp.route('/sync', methods=['GET', 'POST'])
-@devops_login_required
 def sincronizacion_manual():
     """Forzar sincronización manual"""
     from flask import request, make_response
@@ -1097,61 +1095,6 @@ def sincronizacion_manual():
                                  sync_results={},
                                  status='error')
 
-@devops_bp.route('/system-status')
-@devops_login_required
-def system_status():
-    """Estado completo del sistema DevOps"""
-    try:
-        if devops_manager:
-            status = devops_manager.get_system_status()
-            if request.headers.get('Accept') == 'application/json':
-
-                return jsonify({
-                    'status': 'success',
-                    'data': status
-                })
-            else:
-                flash('Estado del sistema obtenido', 'success')
-                return render_template('devops/system_status.html', 
-                                     status_data=status,
-                                     status='success')
-        else:
-            fallback_data = {
-                'timestamp': datetime.now().isoformat(),
-                'fallback_mode': True,
-                'api_configured': False
-            }
-            if request.headers.get('Accept') == 'application/json':
-
-                return jsonify({
-                    'status': 'error',
-                    'message': 'Gestor DevOps no disponible',
-                    'data': fallback_data
-                }), 503
-            else:
-                flash('Gestor DevOps no disponible', 'error')
-                return render_template('devops/system_status.html', 
-                                     status_data=fallback_data,
-                                     status='error')
-    except Exception as e:
-        logger.error(f"Error obteniendo estado del sistema: {e}")
-        if request.headers.get('Accept') == 'application/json':
-
-            return jsonify({
-                'status': 'error',
-                'message': f'Error interno: {str(e)}'
-            }), 500
-        else:
-            flash(f'Error interno: {str(e)}', 'error')
-            return render_template('devops/system_status.html', 
-                                 status_data={},
-                                 status='error')
-
-# =================================================================
-# MANEJO DE ERRORES
-# =================================================================
-
-@devops_bp.errorhandler(404)
 def devops_not_found(error):
     """Manejar errores 404 en DevOps"""
     error_data = {
