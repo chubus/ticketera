@@ -41,11 +41,12 @@ app.config.update(
     SOCKETIO_CORS_ALLOWED_ORIGINS="*"
 )
 
-# Configuración de base de datos - usar variable de entorno si existe, si no, ruta absoluta
+# Configuración de base de datos - en producción usar DATABASE_URL; en dev usar sqlite local
 import os
+env_db_url = os.environ.get('DATABASE_URL')
 env_db_path = os.environ.get('TICKETS_DB_PATH')
 db_path = env_db_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'belgrano_tickets.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_DATABASE_URI'] = env_db_url or f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 print(f"Ticketera DB_PATH: {db_path}")
 

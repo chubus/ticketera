@@ -9,12 +9,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Valores por defecto seguros para desarrollo
-BELGRANO_AHORRO_API_KEY = os.getenv("BELGRANO_AHORRO_API_KEY", "dev_key_placeholder")
-DEVOPS_API_KEY = os.getenv("DEVOPS_API_KEY", "devops_key_placeholder")
+# Valores por defecto solo para desarrollo (en producción deben venir por entorno)
+BELGRANO_AHORRO_API_KEY = os.getenv("BELGRANO_AHORRO_API_KEY") or ("dev_key_placeholder" if os.getenv('FLASK_ENV','development')!='production' else None)
+DEVOPS_API_KEY = os.getenv("DEVOPS_API_KEY") or ("devops_key_placeholder" if os.getenv('FLASK_ENV','development')!='production' else None)
 
-BELGRANO_AHORRO_URL = os.getenv("BELGRANO_AHORRO_URL", "https://belgranoahorro-hp30.onrender.com")
-DEVOPS_API_URL = os.getenv("DEVOPS_API_URL", os.getenv("TICKETERA_URL", "http://localhost:5002"))
+BELGRANO_AHORRO_URL = os.getenv("BELGRANO_AHORRO_URL") or ("https://belgranoahorro-hp30.onrender.com" if os.getenv('FLASK_ENV','development')!='production' else None)
+DEVOPS_API_URL = os.getenv("DEVOPS_API_URL") or os.getenv("TICKETERA_URL") or ("http://localhost:5002" if os.getenv('FLASK_ENV','development')!='production' else None)
 
 
 def load_env_defaults() -> None:
@@ -30,6 +30,9 @@ def load_env_defaults() -> None:
     }
 
     for key, value in defaults.items():
+        if value is None:
+            # En producción no seteamos defaults
+            continue
         if not os.getenv(key):
             os.environ[key] = value
             logger.warning(f"ENV {key} no configurada, usando valor por defecto: {value}")

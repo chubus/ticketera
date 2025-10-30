@@ -1,3 +1,7 @@
+from app import app, socketio  # noqa: F401
+
+__all__ = ["app", "socketio"]
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """

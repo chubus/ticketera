@@ -5,6 +5,8 @@ Cliente HTTP para consumir la API de Belgrano Ahorro
 """
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import json
 import logging
 from datetime import datetime
@@ -26,11 +28,23 @@ class BelgranoAhorroAPIClient:
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
         self.session = requests.Session()
+        # Configurar cabeceras
         self.session.headers.update({
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}',
             'X-API-Key': api_key
         })
+        # Configurar reintentos y timeouts robustos
+        retry_strategy = Retry(
+            total=int(os.environ.get('API_RETRY_TOTAL', '3')),
+            backoff_factor=float(os.environ.get('API_RETRY_BACKOFF', '0.5')),
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=("GET", "POST", "PUT", "DELETE", "PATCH")
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
+        self.request_timeout = int(os.environ.get('API_REQUEST_TIMEOUT', '30'))
         
         logger.info(f"Cliente API inicializado para: {self.base_url}")
     
@@ -49,7 +63,7 @@ class BelgranoAhorroAPIClient:
         url = f"{self.base_url}/api/{endpoint.lstrip('/')}"
         
         try:
-            response = self.session.request(method, url, timeout=30, **kwargs)
+            response = self.session.request(method, url, timeout=self.request_timeout, **kwargs)
             response.raise_for_status()
             
             if response.content:
