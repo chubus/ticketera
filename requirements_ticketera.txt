@@ -11,3 +11,5 @@ gevent==23.9.1
 requests==2.32.3
 SQLAlchemy==2.0.28
 gunicorn
+# Driver PostgreSQL para producción (psycopg2-binary es más fácil de instalar que psycopg2)
+psycopg2-binary==2.9.9

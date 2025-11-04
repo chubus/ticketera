@@ -73,21 +73,38 @@ if create_api_client and BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
             logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
 
 # Importar solo gestor DevOps unificado (evita errores por módulos antiguos)
+devops_manager = None
 try:
-    from devops_belgrano_manager_unified import devops_manager_unified as devops_manager
-    logger.info("✅ Gestor DevOps unificado inicializado")
-except Exception as e:
-    # Intento adicional ajustando sys.path a raíz del proyecto
+    # Intentar import desde el paquete devops (estructura correcta)
+    from devops.manager_unified import devops_manager_unified as devops_manager
+    logger.info("✅ Gestor DevOps unificado inicializado (paquete devops)")
+except ImportError:
     try:
-        import sys, os
+        # Fallback: import absoluto desde raíz del proyecto
+        import sys
+        import os
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if project_root not in sys.path:
             sys.path.insert(0, project_root)
-        from devops_belgrano_manager_unified import devops_manager_unified as devops_manager  # type: ignore
-        logger.info("✅ Gestor DevOps unificado inicializado tras ajustar sys.path")
-    except Exception as e2:
-        logger.error(f"❌ No se pudo importar devops_belgrano_manager_unified: {e2}")
-        devops_manager = None
+        from devops.manager_unified import devops_manager_unified as devops_manager
+        logger.info("✅ Gestor DevOps unificado inicializado (ajustando sys.path)")
+    except ImportError:
+        try:
+            # Fallback: import directo desde devops/manager_unified.py
+            import sys
+            import os
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            devops_dir = os.path.join(project_root, 'devops')
+            if devops_dir not in sys.path:
+                sys.path.insert(0, devops_dir)
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+            from manager_unified import devops_manager_unified as devops_manager
+            logger.info("✅ Gestor DevOps unificado inicializado (import directo)")
+        except Exception as e3:
+            logger.warning(f"⚠️ No se pudo importar devops.manager_unified: {e3}")
+            logger.warning("⚠️ El gestor DevOps no estará disponible. Las operaciones CRUD pueden fallar.")
+            devops_manager = None
 
 # Crear blueprint con prefijo
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')

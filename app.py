@@ -17,11 +17,24 @@ logger = logging.getLogger(__name__)
 
 # Configuración y variables de entorno seguras (no bloqueantes)
 try:
-    from config import load_env_defaults, validate_env_non_blocking
+    # Intentar import desde el mismo paquete
+    from .config import load_env_defaults, validate_env_non_blocking
     load_env_defaults()
     validate_env_non_blocking()
-except Exception as e:
-    print(f"WARNING: Config no disponible: {e}")
+except ImportError:
+    try:
+        # Fallback: import absoluto desde belgrano_tickets
+        from belgrano_tickets.config import load_env_defaults, validate_env_non_blocking
+        load_env_defaults()
+        validate_env_non_blocking()
+    except ImportError:
+        try:
+            # Fallback final: import directo
+            from config import load_env_defaults, validate_env_non_blocking
+            load_env_defaults()
+            validate_env_non_blocking()
+        except Exception as e:
+            print(f"WARNING: Config no disponible: {e}")
 
 # Inicialización Flask y extensiones
 app = Flask(__name__)
@@ -52,17 +65,22 @@ print(f"Ticketera DB_PATH: {db_path}")
 
 # Importar db desde models
 try:
-    from models import db, User, Ticket
+    # Intentar import relativo primero
+    from .models import db, User, Ticket
 except ImportError:
     try:
-        # Fallback para importación desde belgrano_tickets
-        from models import db, User, Ticket
+        # Fallback: import absoluto
+        from belgrano_tickets.models import db, User, Ticket
     except ImportError:
-        # Fallback final: importación absoluta
-        import sys
-        import os
-        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from models import db, User, Ticket
+        try:
+            # Fallback final: import directo
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from models import db, User, Ticket
+        except ImportError as e:
+            print(f"ERROR: No se pudo importar models: {e}")
+            raise
 
 # ==========================================
 # CONFIGURACIÓN DE COMUNICACIÓN API
@@ -95,47 +113,100 @@ else:
 # ==========================================
 
 # Importar cliente API
+api_client = None
 try:
-    from api_client import create_api_client, test_api_connection
+    # Intentar import relativo primero
+    from .api_client import create_api_client, test_api_connection
     if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
         api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
         print("Cliente API de Belgrano Ahorro inicializado")
     else:
         print("Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
         api_client = None
-except ImportError as e:
-    print(f"No se pudo inicializar el cliente API: {e}")
-    api_client = None
+except ImportError:
+    try:
+        # Fallback: import absoluto
+        from belgrano_tickets.api_client import create_api_client, test_api_connection
+        if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+            api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+            print("Cliente API de Belgrano Ahorro inicializado")
+        else:
+            print("Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
+            api_client = None
+    except ImportError:
+        try:
+            # Fallback final: import directo
+            from api_client import create_api_client, test_api_connection
+            if BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
+                api_client = create_api_client(BELGRANO_AHORRO_URL, BELGRANO_AHORRO_API_KEY)
+                print("Cliente API de Belgrano Ahorro inicializado")
+            else:
+                print("Variables de entorno BELGRANO_AHORRO_URL o BELGRANO_AHORRO_API_KEY no configuradas")
+                api_client = None
+        except ImportError as e:
+            print(f"No se pudo inicializar el cliente API: {e}")
+            api_client = None
 
 """Registro único y robusto del blueprint DevOps.
 Evita múltiples registros y rutas duplicadas.
 """
 try:
-    from devops_routes import devops_bp
-except Exception:
-    import sys
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if project_root not in sys.path:
-        sys.path.insert(0, project_root)
-    from devops_routes import devops_bp  # reintento con sys.path ajustado
+    # Intentar import relativo primero
+    from .devops_routes import devops_bp
+except ImportError:
+    try:
+        # Fallback: import absoluto
+        from belgrano_tickets.devops_routes import devops_bp
+    except ImportError:
+        try:
+            # Fallback final: import directo
+            import sys
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+            from devops_routes import devops_bp  # reintento con sys.path ajustado
+        except Exception as e:
+            print(f"Error importando devops_routes: {e}")
+            devops_bp = None
 
 # Registrar una sola vez si no está ya registrado
-if 'devops' not in [bp.name for bp in app.blueprints.values()]:
+if devops_bp and 'devops' not in [bp.name for bp in app.blueprints.values()]:
     app.register_blueprint(devops_bp)
     print("Blueprint de DevOps registrado")
-else:
+elif devops_bp:
     print("Blueprint de DevOps ya estaba registrado; se omite registro duplicado")
+else:
+    print("⚠️ Blueprint de DevOps no disponible (no se pudo importar)")
 
 # Registrar APIs REST de DevOps (/api/devops/*)
 try:
-    from belgrano_tickets.api_devops_rest import api_devops_bp
+    # Intentar import relativo primero
+    from .api_devops_rest import api_devops_bp
     if 'api_devops' not in [bp.name for bp in app.blueprints.values()]:
         app.register_blueprint(api_devops_bp)
         print("Blueprint API DevOps registrado en /api/devops")
     else:
         print("Blueprint API DevOps ya estaba registrado; se omite registro duplicado")
-except Exception as e:
-    print(f"No se pudo registrar el blueprint API DevOps: {e}")
+except ImportError:
+    try:
+        # Fallback: import absoluto
+        from belgrano_tickets.api_devops_rest import api_devops_bp
+        if 'api_devops' not in [bp.name for bp in app.blueprints.values()]:
+            app.register_blueprint(api_devops_bp)
+            print("Blueprint API DevOps registrado en /api/devops")
+        else:
+            print("Blueprint API DevOps ya estaba registrado; se omite registro duplicado")
+    except ImportError:
+        try:
+            # Fallback final: import directo
+            from api_devops_rest import api_devops_bp
+            if 'api_devops' not in [bp.name for bp in app.blueprints.values()]:
+                app.register_blueprint(api_devops_bp)
+                print("Blueprint API DevOps registrado en /api/devops")
+            else:
+                print("Blueprint API DevOps ya estaba registrado; se omite registro duplicado")
+        except Exception as e:
+            print(f"No se pudo registrar el blueprint API DevOps: {e}")
 
 # Inicializar db con la app
 db.init_app(app)
