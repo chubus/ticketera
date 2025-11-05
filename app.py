@@ -56,12 +56,54 @@ app.config.update(
 
 # Configuración de base de datos - en producción usar DATABASE_URL; en dev usar sqlite local
 import os
+import re
+
+def is_valid_database_url(url):
+    """Validar que DATABASE_URL sea válida y no tenga placeholders"""
+    if not url or not isinstance(url, str):
+        return False
+    
+    # Detectar placeholders inválidos literales (como "HOST", "USER", "PASSWORD" en mayúsculas)
+    # Estos son típicamente placeholders que no fueron reemplazados
+    invalid_placeholders = ['HOST', 'USER', 'PASSWORD', 'DBNAME', 'PORT']
+    url_upper = url.upper()
+    if any(placeholder in url_upper for placeholder in invalid_placeholders):
+        # Verificar si es un placeholder literal o un valor real
+        # Si contiene "HOST" como palabra completa, es probablemente un placeholder
+        if re.search(r'[:@]HOST[:\/]', url_upper) or url_upper.endswith('@HOST'):
+            return False
+    
+    # Verificar que sea una URL válida de base de datos
+    valid_schemes = ['postgresql://', 'postgres://', 'sqlite:///', 'mysql://']
+    if not any(url.startswith(scheme) for scheme in valid_schemes):
+        return False
+    
+    # Verificar que no sea solo el esquema sin datos
+    if url.count('://') == 1 and len(url.split('://')[1].strip()) < 3:
+        return False
+    
+    return True
+
 env_db_url = os.environ.get('DATABASE_URL')
 env_db_path = os.environ.get('TICKETS_DB_PATH')
 db_path = env_db_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'belgrano_tickets.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = env_db_url or f'sqlite:///{db_path}'
+
+# Validar DATABASE_URL antes de usarla
+if env_db_url and is_valid_database_url(env_db_url):
+    app.config['SQLALCHEMY_DATABASE_URI'] = env_db_url
+    print(f"✅ Usando DATABASE_URL de PostgreSQL")
+else:
+    # Fallback a SQLite si DATABASE_URL no es válida
+    sqlite_uri = f'sqlite:///{db_path}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = sqlite_uri
+    if env_db_url:
+        print(f"⚠️ DATABASE_URL inválida o contiene placeholders: {env_db_url[:50]}...")
+        print(f"   Usando SQLite como fallback: {db_path}")
+    else:
+        print(f"ℹ️ DATABASE_URL no configurada, usando SQLite: {db_path}")
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-print(f"Ticketera DB_PATH: {db_path}")
+print(f"Ticketera DB_URI: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
 
 # Importar db desde models
 try:
@@ -213,14 +255,30 @@ db.init_app(app)
 
 # Crear contexto de aplicación para inicializar la base de datos y tablas DevOps
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("✅ Tablas de base de datos creadas/verificadas correctamente")
+    except Exception as db_error:
+        print(f"⚠️ Error al crear tablas de base de datos: {db_error}")
+        print(f"   La aplicación continuará pero algunas funciones pueden no estar disponibles")
+        # No hacer raise para que la app pueda iniciar aunque la DB falle
+        # Esto es útil en entornos donde la DB puede no estar lista inmediatamente
+    
     try:
         # Asegurar tablas locales usadas por DevOpsPersistence
-        from devops_persistence import get_devops_db
+        try:
+            from .devops_persistence import get_devops_db
+        except ImportError:
+            try:
+                from belgrano_tickets.devops_persistence import get_devops_db
+            except ImportError:
+                from devops_persistence import get_devops_db
+        
         _ = get_devops_db()  # init_database() se ejecuta dentro
-        print("Tablas DevOps verificadas/creadas correctamente")
+        print("✅ Tablas DevOps verificadas/creadas correctamente")
     except Exception as e:
-        print(f"Error asegurando tablas DevOps: {e}")
+        print(f"⚠️ Error asegurando tablas DevOps: {e}")
+        print(f"   La aplicación continuará pero las funciones DevOps pueden no estar disponibles")
     
     # Inicializar usuarios automáticamente si no existen
     def inicializar_usuarios_automaticamente():

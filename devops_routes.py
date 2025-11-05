@@ -74,35 +74,56 @@ if create_api_client and BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
 
 # Importar solo gestor DevOps unificado (evita errores por módulos antiguos)
 devops_manager = None
+import sys
+import os
+
+# Asegurar que la raíz del proyecto esté en sys.path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 try:
     # Intentar import desde el paquete devops (estructura correcta)
     from devops.manager_unified import devops_manager_unified as devops_manager
     logger.info("✅ Gestor DevOps unificado inicializado (paquete devops)")
-except ImportError:
+except ImportError as e1:
     try:
-        # Fallback: import absoluto desde raíz del proyecto
-        import sys
-        import os
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
-        from devops.manager_unified import devops_manager_unified as devops_manager
-        logger.info("✅ Gestor DevOps unificado inicializado (ajustando sys.path)")
-    except ImportError:
+        # Fallback: verificar que devops/__init__.py existe
+        devops_dir = os.path.join(project_root, 'devops')
+        devops_init = os.path.join(devops_dir, '__init__.py')
+        manager_file = os.path.join(devops_dir, 'manager_unified.py')
+        
+        if os.path.exists(manager_file):
+            # Si el archivo existe pero el import falla, intentar import directo
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("devops.manager_unified", manager_file)
+            if spec and spec.loader:
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                devops_manager = getattr(module, 'devops_manager_unified', None)
+                if devops_manager:
+                    logger.info("✅ Gestor DevOps unificado inicializado (importlib directo)")
+                else:
+                    raise ImportError("devops_manager_unified no encontrado en módulo")
+            else:
+                raise ImportError("No se pudo crear spec desde manager_unified.py")
+        else:
+            raise ImportError(f"Archivo manager_unified.py no encontrado en {devops_dir}")
+    except Exception as e2:
         try:
-            # Fallback: import directo desde devops/manager_unified.py
-            import sys
-            import os
-            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            # Último fallback: import directo desde devops_dir
             devops_dir = os.path.join(project_root, 'devops')
             if devops_dir not in sys.path:
                 sys.path.insert(0, devops_dir)
-            if project_root not in sys.path:
-                sys.path.insert(0, project_root)
             from manager_unified import devops_manager_unified as devops_manager
-            logger.info("✅ Gestor DevOps unificado inicializado (import directo)")
+            logger.info("✅ Gestor DevOps unificado inicializado (import directo desde directorio)")
         except Exception as e3:
-            logger.warning(f"⚠️ No se pudo importar devops.manager_unified: {e3}")
+            logger.warning(f"⚠️ No se pudo importar devops.manager_unified")
+            logger.warning(f"   Error 1: {e1}")
+            logger.warning(f"   Error 2: {e2}")
+            logger.warning(f"   Error 3: {e3}")
+            logger.warning(f"   project_root: {project_root}")
+            logger.warning(f"   devops_dir: {os.path.join(project_root, 'devops')}")
             logger.warning("⚠️ El gestor DevOps no estará disponible. Las operaciones CRUD pueden fallar.")
             devops_manager = None
 
