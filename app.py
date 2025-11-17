@@ -1943,6 +1943,20 @@ def recibir_ticket_externo():
             print(f"❌ Campos requeridos faltantes: {missing_fields}")
             return jsonify({'error': f'Campos requeridos faltantes: {missing_fields}'}), 400
         
+        # Validar y loguear productos recibidos
+        productos_recibidos = data.get('productos', [])
+        if not productos_recibidos:
+            print("⚠️ ADVERTENCIA: No se recibieron productos en el ticket")
+        else:
+            print(f"✅ Productos recibidos: {len(productos_recibidos)} items")
+            for idx, producto in enumerate(productos_recibidos[:5], 1):  # Mostrar primeros 5
+                if isinstance(producto, dict):
+                    print(f"   {idx}. {producto.get('nombre', 'Sin nombre')} x{producto.get('cantidad', 0)} - ${producto.get('precio', 0)} - Subtotal: ${producto.get('subtotal', 0)}")
+                else:
+                    print(f"   {idx}. {producto} (formato no esperado)")
+            if len(productos_recibidos) > 5:
+                print(f"   ... y {len(productos_recibidos) - 5} productos más")
+        
         # Determinar prioridad basada en tipo de cliente
         prioridad = data.get('prioridad', 'normal')
         tipo_cliente = data.get('tipo_cliente', 'cliente')
@@ -1957,6 +1971,15 @@ def recibir_ticket_externo():
             existente = Ticket.query.filter_by(numero=numero_ticket).first()
             if existente:
                 print(f"✅ Ticket existente encontrado: {numero_ticket} (ID: {existente.id})")
+                # Parsear productos del ticket existente
+                productos_existente = []
+                try:
+                    if existente.productos:
+                        productos_existente = json.loads(existente.productos) if isinstance(existente.productos, str) else existente.productos
+                except Exception as e:
+                    print(f"⚠️ Error parseando productos del ticket existente: {e}")
+                    productos_existente = []
+                
                 return jsonify({
                     'exito': True, 
                     'ticket_id': existente.id, 
@@ -1966,8 +1989,45 @@ def recibir_ticket_externo():
                     'repartidor_asignado': existente.repartidor_nombre,
                     'fecha_creacion': existente.fecha_creacion.isoformat() if existente.fecha_creacion else None,
                     'cliente_nombre': existente.cliente_nombre,
-                    'total': existente.total
+                    'total': existente.total,
+                    'productos': productos_existente  # Incluir productos en la respuesta
                 }), 200
+        
+        # Procesar productos recibidos
+        productos_data = data.get('productos', [])
+        if not isinstance(productos_data, list):
+            print(f"⚠️ ADVERTENCIA: productos no es una lista, es {type(productos_data)}. Convirtiendo...")
+            if isinstance(productos_data, str):
+                try:
+                    productos_data = json.loads(productos_data)
+                except:
+                    productos_data = []
+            else:
+                productos_data = []
+        
+        # Validar estructura de productos
+        productos_validos = []
+        for idx, producto in enumerate(productos_data, 1):
+            if isinstance(producto, dict):
+                # Asegurar que tenga los campos mínimos
+                producto_validado = {
+                    'id': str(producto.get('id', f'producto_{idx}')),
+                    'nombre': producto.get('nombre', 'Producto sin nombre'),
+                    'precio': float(producto.get('precio', 0)),
+                    'cantidad': int(producto.get('cantidad', 0)),
+                    'subtotal': float(producto.get('subtotal', producto.get('precio', 0) * producto.get('cantidad', 0))),
+                    'sucursal': producto.get('sucursal', 'Sucursal no especificada'),
+                    'negocio': producto.get('negocio', 'Negocio no especificado'),
+                    'categoria': producto.get('categoria', 'Sin categoría'),
+                    'descripcion': producto.get('descripcion', 'Sin descripción'),
+                    'stock': int(producto.get('stock', 0)),
+                    'destacado': bool(producto.get('destacado', False))
+                }
+                productos_validos.append(producto_validado)
+            else:
+                print(f"⚠️ Producto {idx} no es un diccionario, saltando...")
+        
+        print(f"✅ {len(productos_validos)} productos validados correctamente")
         
         # Crear el ticket con los datos recibidos
         ticket = Ticket(
@@ -1976,7 +2036,7 @@ def recibir_ticket_externo():
             cliente_direccion=data.get('cliente_direccion', data.get('direccion', 'Sin dirección')),
             cliente_telefono=data.get('cliente_telefono', data.get('telefono', 'Sin teléfono')),
             cliente_email=data.get('cliente_email', data.get('email', 'sin@email.com')),
-            productos=json.dumps(data.get('productos', [])),
+            productos=json.dumps(productos_validos),  # Guardar productos validados como JSON string
             total=data.get('total', 0),
             estado=data.get('estado', 'pendiente'),
             prioridad=prioridad,
@@ -1995,6 +2055,14 @@ def recibir_ticket_externo():
         
         # Emitir evento WebSocket para actualización en tiempo real
         try:
+            # Parsear productos para el evento WebSocket
+            productos_ws = []
+            try:
+                if ticket.productos:
+                    productos_ws = json.loads(ticket.productos) if isinstance(ticket.productos, str) else ticket.productos
+            except:
+                productos_ws = []
+            
             socketio.emit('nuevo_ticket', {
                 'ticket_id': ticket.id, 
                 'numero': ticket.numero,
@@ -2002,15 +2070,27 @@ def recibir_ticket_externo():
                 'estado': ticket.estado,
                 'repartidor': ticket.repartidor_nombre,
                 'prioridad': ticket.prioridad,
-                'tipo_cliente': tipo_cliente
+                'tipo_cliente': tipo_cliente,
+                'productos': productos_ws,  # Incluir productos en el evento WebSocket
+                'total': ticket.total
             })
-            print(f"📡 Evento WebSocket emitido para ticket {ticket.id}")
+            print(f"📡 Evento WebSocket emitido para ticket {ticket.id} con {len(productos_ws)} productos")
         except Exception as ws_error:
             print(f"Error emitiendo WebSocket: {ws_error}")
         
         # Mensaje de log más detallado
         tipo_cliente_str = "COMERCIANTE" if tipo_cliente == 'comerciante' else "CLIENTE"
         print(f"✅ Ticket recibido exitosamente: {ticket.numero} - {ticket.cliente_nombre} ({tipo_cliente_str}) - Prioridad: {ticket.prioridad}")
+        print(f"   📦 Productos guardados: {len(productos_validos)} items - Total: ${ticket.total}")
+        
+        # Parsear productos para incluirlos en la respuesta
+        productos_respuesta = []
+        try:
+            if ticket.productos:
+                productos_respuesta = json.loads(ticket.productos) if isinstance(ticket.productos, str) else ticket.productos
+        except Exception as e:
+            print(f"⚠️ Error parseando productos para respuesta: {e}")
+            productos_respuesta = []
         
         return jsonify({
             'exito': True, 
@@ -2020,7 +2100,8 @@ def recibir_ticket_externo():
             'repartidor_asignado': ticket.repartidor_nombre,
             'fecha_creacion': ticket.fecha_creacion.isoformat() if ticket.fecha_creacion else None,
             'cliente_nombre': ticket.cliente_nombre,
-            'total': ticket.total
+            'total': ticket.total,
+            'productos': productos_respuesta  # Incluir productos en la respuesta
         })
         
     except Exception as e:
