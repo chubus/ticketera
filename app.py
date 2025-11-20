@@ -10,6 +10,7 @@ import logging
 import hmac
 import binascii
 import hashlib
+from typing import Any, Dict, List, Optional
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -151,6 +152,55 @@ if BELGRANO_AHORRO_API_KEY:
     print(f"   API_KEY: {BELGRANO_AHORRO_API_KEY[:10]}...")
 else:
     print("   API_KEY: No configurada")
+
+# ==========================================
+# HELPERS DE AUTENTICACIÓN PARA ENDPOINTS API
+# ==========================================
+
+def _get_valid_api_keys() -> set:
+    """
+    Devuelve el conjunto de API keys válidas configuradas para la Ticketera.
+    Se contemplan claves de Belgrano Ahorro, Ticketera y DevOps.
+    """
+    candidate_keys = {
+        os.environ.get('BELGRANO_AHORRO_API_KEY'),
+        os.environ.get('TICKETERA_API_KEY'),
+        os.environ.get('TICKETS_API_KEY'),
+        os.environ.get('DEVOPS_API_KEY'),
+        BELGRANO_AHORRO_API_KEY,
+    }
+    return {key.strip() for key in candidate_keys if key}
+
+
+def _extract_api_key_from_headers() -> str:
+    """Obtiene el API Key enviado por encabezado estándar."""
+    header_key = request.headers.get('X-API-Key')
+    if header_key:
+        return header_key.strip()
+
+    authorization = request.headers.get('Authorization', '')
+    if authorization.lower().startswith('bearer '):
+        return authorization.split(' ', 1)[1].strip()
+
+    return ''
+
+
+def _validate_api_request() -> Optional[tuple]:
+    """
+    Valida el API Key para endpoints protegidos.
+    Retorna None cuando es válido o (json, status) cuando debe abortarse.
+    """
+    valid_keys = _get_valid_api_keys()
+    # Si no hay claves configuradas, no bloquear (entorno local).
+    if not valid_keys:
+        return None
+
+    provided_key = _extract_api_key_from_headers()
+    if provided_key in valid_keys:
+        return None
+
+    logger.warning(f"❌ API Key inválida o ausente para {request.path}")
+    return jsonify({'error': 'API key inválida'}), 401
 
 # ==========================================
 
@@ -1914,6 +1964,106 @@ def panel():
     else:
         return 'Acceso no permitido', 403
 
+# ==========================================
+# HELPERS DE SERIALIZACIÓN / ACTUALIZACIÓN DE TICKETS
+# ==========================================
+
+def _safe_parse_productos(productos_payload: Any) -> List[Dict[str, Any]]:
+    """
+    Normaliza el payload de productos recibido (list, str JSON, dict) a una lista de dicts.
+    """
+    if isinstance(productos_payload, list):
+        return [p for p in productos_payload if isinstance(p, dict)]
+
+    if isinstance(productos_payload, dict):
+        return [productos_payload]
+
+    if isinstance(productos_payload, str):
+        try:
+            parsed = json.loads(productos_payload)
+            if isinstance(parsed, list):
+                return [p for p in parsed if isinstance(p, dict)]
+            if isinstance(parsed, dict):
+                return [parsed]
+        except json.JSONDecodeError:
+            pass
+
+    return []
+
+
+def _serialize_ticket(ticket: Ticket) -> Dict[str, Any]:
+    """
+    Serializa un objeto Ticket a dict para las APIs REST.
+    """
+    productos = []
+    if ticket.productos:
+        try:
+            productos = json.loads(ticket.productos) if isinstance(ticket.productos, str) else ticket.productos
+        except Exception:
+            productos = []
+
+    return {
+        'id': ticket.id,
+        'numero': ticket.numero,
+        'numero_pedido': ticket.numero,
+        'cliente_nombre': ticket.cliente_nombre,
+        'cliente_direccion': ticket.cliente_direccion,
+        'cliente_telefono': ticket.cliente_telefono,
+        'cliente_email': ticket.cliente_email,
+        'productos': productos,
+        'total': float(ticket.total) if ticket.total is not None else 0.0,
+        'estado': ticket.estado,
+        'prioridad': ticket.prioridad,
+        'indicaciones': ticket.indicaciones,
+        'repartidor': ticket.repartidor_nombre,
+        'asignado_a': ticket.asignado_a,
+        'fecha_creacion': ticket.fecha_creacion.isoformat() if ticket.fecha_creacion else None,
+        'fecha_asignacion': ticket.fecha_asignacion.isoformat() if ticket.fecha_asignacion else None,
+        'fecha_entrega': ticket.fecha_entrega.isoformat() if ticket.fecha_entrega else None,
+    }
+
+
+def _apply_ticket_updates(ticket: Ticket, data: Dict[str, Any]) -> None:
+    """
+    Actualiza un ticket existente con los campos permitidos provenientes de la API.
+    """
+    simple_fields = [
+        'cliente_nombre',
+        'cliente_direccion',
+        'cliente_telefono',
+        'cliente_email',
+        'estado',
+        'prioridad',
+        'indicaciones',
+    ]
+
+    for field in simple_fields:
+        if field in data and data[field] is not None:
+            setattr(ticket, field, data[field])
+
+    if 'total' in data and data['total'] is not None:
+        try:
+            ticket.total = float(data['total'])
+        except (TypeError, ValueError):
+            pass
+
+    if 'productos' in data and data['productos'] is not None:
+        productos_normalizados = _safe_parse_productos(data['productos'])
+        ticket.productos = json.dumps(productos_normalizados)
+
+    if 'repartidor' in data or 'repartidor_nombre' in data:
+        nuevo_repartidor = data.get('repartidor_nombre', data.get('repartidor'))
+        ticket.repartidor_nombre = nuevo_repartidor
+        ticket.fecha_asignacion = datetime.utcnow() if nuevo_repartidor else None
+
+    # Actualizar fechas según estado
+    if 'estado' in data and data['estado']:
+        if data['estado'] in ('entregado', 'completado'):
+            ticket.fecha_entrega = datetime.utcnow()
+        elif data['estado'] in ('pendiente', 'en-preparacion', 'en_proceso'):
+            ticket.fecha_entrega = None
+
+
 # Endpoint REST para recibir tickets desde la app principal
 @app.route('/api/tickets/recibir', methods=['POST'])
 def recibir_ticket_externo():
@@ -1921,11 +2071,9 @@ def recibir_ticket_externo():
     Endpoint para recibir tickets desde la aplicación principal de Belgrano Ahorro con manejo robusto de errores
     """
     try:
-        # Autenticación por API Key
-        api_key_header = request.headers.get('X-API-Key')
-        if not api_key_header or api_key_header != BELGRANO_AHORRO_API_KEY:
-            print(f"❌ API Key inválida: {api_key_header}")
-            return jsonify({'error': 'API key inválida'}), 401
+        auth_error = _validate_api_request()
+        if auth_error:
+            return auth_error
 
         data = request.get_json()
         print(f"📥 Datos recibidos en Ticketera desde {request.remote_addr}:")
@@ -2144,12 +2292,105 @@ def asignar_repartidor_automatico(ticket):
     
     return None
 
-@app.route('/api/tickets', methods=['POST'])
-def recibir_ticket():
+@app.route('/api/tickets', methods=['GET', 'POST'])
+def api_tickets():
     """
-    Endpoint alternativo para recibir tickets (mantener compatibilidad)
+    Endpoint REST principal:
+    - POST: recibir nuevos tickets (compatibilidad con clientes existentes)
+    - GET: obtener listado paginado/filtrado de tickets para integraciones (DevOps, panel externo)
     """
-    return recibir_ticket_externo()
+    if request.method == 'POST':
+        return recibir_ticket_externo()
+
+    auth_error = _validate_api_request()
+    if auth_error:
+        return auth_error
+
+    try:
+        estado = request.args.get('estado')
+        limite_param = request.args.get('limit', '200')
+        try:
+            limite = max(1, min(int(limite_param), 1000))
+        except ValueError:
+            limite = 200
+
+        query = Ticket.query.order_by(Ticket.fecha_creacion.desc())
+        if estado and estado not in ('todos', 'all'):
+            query = query.filter_by(estado=estado)
+
+        tickets = query.limit(limite).all()
+
+        return jsonify({
+            'status': 'success',
+            'total': len(tickets),
+            'data': [_serialize_ticket(ticket) for ticket in tickets]
+        })
+    except Exception as e:
+        logger.error(f"Error obteniendo tickets vía API: {e}")
+        return jsonify({'error': 'Error interno obteniendo tickets'}), 500
+
+
+@app.route('/api/tickets/<int:ticket_id>', methods=['GET', 'PUT', 'DELETE'])
+def api_ticket_detalle(ticket_id: int):
+    """
+    Permite obtener, actualizar o eliminar un ticket específico vía API.
+    """
+    auth_error = _validate_api_request()
+    if auth_error:
+        return auth_error
+
+    ticket = Ticket.query.filter_by(id=ticket_id).first()
+    if not ticket:
+        return jsonify({'error': 'Ticket no encontrado'}), 404
+
+    if request.method == 'GET':
+        return jsonify({'status': 'success', 'data': _serialize_ticket(ticket)})
+
+    if request.method == 'PUT':
+        try:
+            payload = request.get_json() or {}
+        except Exception:
+            return jsonify({'error': 'JSON inválido'}), 400
+
+        try:
+            _apply_ticket_updates(ticket, payload)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error actualizando ticket {ticket_id}: {e}")
+            return jsonify({'error': 'Error actualizando ticket'}), 500
+
+        # Emitir actualización en tiempo real
+        try:
+            socketio.emit('ticket_actualizado', {
+                'ticket_id': ticket.id,
+                'estado': ticket.estado,
+                'prioridad': ticket.prioridad
+            })
+        except Exception as ws_error:
+            logger.warning(f"No se pudo emitir evento WebSocket para ticket {ticket_id}: {ws_error}")
+
+        return jsonify({'status': 'success', 'data': _serialize_ticket(ticket)})
+
+    # DELETE
+    try:
+        numero_ticket = ticket.numero
+        db.session.delete(ticket)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error eliminando ticket {ticket_id}: {e}")
+        return jsonify({'error': 'Error eliminando ticket'}), 500
+
+    try:
+        socketio.emit('ticket_eliminado', {
+            'ticket_id': ticket_id,
+            'numero': numero_ticket
+        })
+    except Exception as ws_error:
+        logger.warning(f"No se pudo emitir evento de eliminación para ticket {ticket_id}: {ws_error}")
+
+    return jsonify({'status': 'success', 'message': f'Ticket {numero_ticket} eliminado'})
 
 @app.route('/ticket/<int:ticket_id>/estado', methods=['POST'])
 @login_required
