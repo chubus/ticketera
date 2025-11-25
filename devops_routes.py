@@ -12,9 +12,20 @@ from functools import wraps
 from datetime import datetime
 import logging
 from urllib.parse import urljoin
-from flask import Blueprint, request, jsonify, redirect, url_for, session, make_response, render_template, flash
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash, session, abort, make_response, current_app
+from flask_login import login_required, current_user
+from werkzeug.utils import secure_filename
+import logging
+import os
+import sys
+import json
 import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
+import traceback
+from datetime import datetime, timedelta
+from functools import wraps
+import hashlib
+import time
+import uuid
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -759,11 +770,38 @@ def gestion_negocios():
         flash(f'Error cargando negocios: {str(e)}', 'error')
         return render_template('devops/negocios.html', negocios=[])
 
+def save_uploaded_image(file, entity_type='product'):
+    """Guarda un archivo subido y devuelve la ruta relativa"""
+    if not file or file.filename == '':
+        return None
+        
+    # Validar extensión
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
+    if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+        return None
+    
+    # Crear directorio si no existe
+    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', entity_type)
+    os.makedirs(upload_folder, exist_ok=True)
+    
+    # Generar nombre único para el archivo
+    filename = secure_filename(file.filename)
+    unique_filename = f"{uuid.uuid4().hex}_{filename}"
+    filepath = os.path.join(upload_folder, unique_filename)
+    
+    try:
+        file.save(filepath)
+        # Devolver ruta relativa para guardar en la base de datos
+        return f"/static/uploads/{entity_type}/{unique_filename}"
+    except Exception as e:
+        current_app.logger.error(f"Error guardando archivo {filename}: {str(e)}")
+        return None
+
 @devops_bp.route('/productos', methods=['GET', 'POST'])
 @devops_login_required
 def gestion_productos():
     """Gestión completa de productos"""
-    from flask import request, make_response, render_template, flash, redirect, url_for
+    from flask import request, make_response, render_template, flash, redirect, url_for, current_app
     
     # Manejar POST requests (crear producto, jsonify)
     if request.method == 'POST':
@@ -783,6 +821,13 @@ def gestion_productos():
                 flash('El precio debe ser un número válido', 'error')
                 return redirect(url_for('devops.gestion_productos'))
             
+            # Procesar imagen si se subió
+            imagen_url = ''
+            if 'imagen' in request.files:
+                file = request.files['imagen']
+                if file and file.filename != '':
+                    imagen_url = save_uploaded_image(file, 'productos')
+            
             # Crear producto usando el gestor DevOps
             producto_data = {
                 'nombre': nombre,
@@ -790,7 +835,7 @@ def gestion_productos():
                 'categoria': categoria,
                 'negocio': negocio,
                 'descripcion': request.form.get('descripcion', ''),
-                'imagen': request.form.get('imagen', ''),
+                'imagen': imagen_url or request.form.get('current_imagen', ''),
                 'activo': True
             }
             
@@ -860,7 +905,15 @@ def gestion_productos():
         else:
             productos = devops_manager.get_productos()
             negocios = devops_manager.get_negocios() if devops_manager else []
-        categorias = []
+        
+        # Obtener categorías únicas de los productos
+        categorias = sorted(list(set(p.get('categoria', '') for p in productos if p.get('categoria'))))
+        
+        # Asegurar que los productos tengan una URL de imagen completa
+        for producto in productos:
+            if producto.get('imagen') and not producto['imagen'].startswith(('http://', 'https://', '/static/')):
+                producto['imagen'] = url_for('static', filename=f"uploads/productos/{os.path.basename(producto['imagen'])}")
+        
         flash(f'Productos cargados: {len(productos)} encontrados', 'success')
         return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
     except Exception as e:

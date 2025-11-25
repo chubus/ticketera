@@ -1,9 +1,11 @@
 import os
-from flask import Flask, render_template, redirect, url_for, request, flash, abort, jsonify, session
+from flask import Flask, render_template, redirect, url_for, request, flash, abort, jsonify, session, send_from_directory
 from flask_login import LoginManager, UserMixin, current_user, login_user, logout_user, login_required
 from flask_socketio import SocketIO
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import os
 from datetime import datetime
 import json
 import logging
@@ -54,6 +56,11 @@ app.config.update(
     SOCKETIO_ASYNC_MODE='threading',
     SOCKETIO_CORS_ALLOWED_ORIGINS="*"
 )
+
+# Configuración de carga de archivos
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 
 # Configuración de base de datos - en producción usar DATABASE_URL; en dev usar sqlite local
 import os
@@ -2300,7 +2307,7 @@ def api_tickets():
     - GET: obtener listado paginado/filtrado de tickets para integraciones (DevOps, panel externo)
     """
     if request.method == 'POST':
-        return recibir_ticket_externo()
+    return recibir_ticket_externo()
 
     auth_error = _validate_api_request()
     if auth_error:
@@ -2947,15 +2954,12 @@ def test_ahorro_api():
 # Registrar blueprint de DevOps (eliminando duplicado)
 # Este bloque se eliminó porque ya se registra arriba en la línea 58
 
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        # Inicializar usuarios automáticamente
-        inicializar_usuarios_automaticamente()
-    print("Iniciando aplicación de tickets en puerto 5001...")
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+# Registrar el blueprint de imágenes
+from .image_routes import image_bp
+app.register_blueprint(image_bp, url_prefix='/api')
 
-# Este bloque se eliminó porque ya se registra arriba en la línea 58
+# Crear directorio de uploads si no existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 if __name__ == "__main__":
     with app.app_context():

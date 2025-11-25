@@ -173,8 +173,11 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <button class="btn btn-sm btn-warning btn-action" 
-                                                    onclick="editarProducto({{ producto.id }}, '{{ producto.nombre }}', '{{ producto.descripcion }}', {{ producto.precio }}, '{{ producto.categoria }}', '{{ producto.negocio_id }}', {{ producto.stock }}, {{ producto.activo|lower }})">
+                                            {% set descripcion_escaped = producto.descripcion|e|replace("'", "\\'")
+                                            %}{% set categoria_escaped = producto.categoria|e|replace("'", "\\'")
+                                            %}{% set imagen_escaped = (producto.imagen|default('', true))|e|replace("'", "\\'")
+                                            %}<button class="btn btn-sm btn-warning btn-action" 
+                                                    onclick="editarProducto({{ producto.id }}, '{{ producto.nombre|e }}', '{{ descripcion_escaped }}', {{ producto.precio }}, '{{ categoria_escaped }}', '{{ producto.negocio_id }}', {{ producto.stock }}, {{ producto.activo|lower }}{% if imagen_escaped %}, '{{ imagen_escaped }}'{% endif %})">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="btn btn-sm btn-danger btn-action" 
@@ -201,7 +204,7 @@
                     <h5 class="modal-title"><i class="fas fa-plus"></i> Agregar Nuevo Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST" action="/devops/productos">
+                <form method="POST" action="/devops/productos" enctype="multipart/form-data">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -254,6 +257,11 @@
                                 <input type="number" class="form-control" id="stock" name="stock" min="0" value="0" required>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label">Imagen del Producto</label>
+                            <input class="form-control" type="file" id="imagen" name="imagen" accept="image/*">
+                            <div class="form-text">Formatos aceptados: JPG, PNG, WEBP (Máx. 2MB)</div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -274,7 +282,7 @@
                     <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editarProductoForm" method="POST">
+                <form id="editarProductoForm" method="POST" enctype="multipart/form-data">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -335,6 +343,14 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label for="edit_imagen" class="form-label">Imagen del Producto</label>
+                            <div class="mb-2" id="current-image-container">
+                                <!-- Current image will be shown here -->
+                            </div>
+                            <input class="form-control" type="file" id="edit_imagen" name="imagen" accept="image/*">
+                            <div class="form-text">Dejar en blanco para mantener la imagen actual. Formatos: JPG, PNG, WEBP (Máx. 2MB)</div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -373,11 +389,61 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function editarProducto(id, nombre, descripcion, precio, categoria, negocio_id, stock, activo) {
+        function editarProducto(id, nombre, descripcion, precio, categoria, negocio_id, stock, activo, imagen = '') {
+            // Set form action to update the specific product
+            document.getElementById('editarProductoForm').action = `/devops/productos/${id}`;
+            
+            // Set current image if exists
+            const imageContainer = document.getElementById('current-image-container');
+            if (imagen) {
+                imageContainer.innerHTML = `
+                    <p class="mb-1">Imagen actual:</p>
+                    <img src="${imagen}" alt="${nombre}" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                    <input type="hidden" name="current_imagen" value="${imagen}">
+                `;
+            } else {
+                imageContainer.innerHTML = '<p class="text-muted">No hay imagen actual</p>';
+            }
         // Cargar negocios al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             cargarNegocios();
+            
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
         });
+
+        function editarProducto(id, nombre, descripcion, precio, categoria, negocio_id, stock, activo, imagen = '') {
+            // Set form action to update the specific product
+            document.getElementById('editarProductoForm').action = `/devops/productos/${id}`;
+            
+            // Set current image if exists
+            const imageContainer = document.getElementById('current-image-container');
+            if (imagen) {
+                imageContainer.innerHTML = `
+                    <p class="mb-1">Imagen actual:</p>
+                    <img src="${imagen}" alt="${nombre}" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                    <input type="hidden" name="current_imagen" value="${imagen}">
+                `;
+            } else {
+                imageContainer.innerHTML = '<p class="text-muted">No hay imagen actual</p>';
+            }
+            
+            // Set other form values
+            document.getElementById('edit_nombre').value = nombre || '';
+            document.getElementById('edit_descripcion').value = descripcion || '';
+            document.getElementById('edit_precio').value = precio || 0;
+            document.getElementById('edit_categoria').value = categoria || '';
+            document.getElementById('edit_negocio_id').value = negocio_id || '';
+            document.getElementById('edit_stock').value = stock || 0;
+            document.getElementById('edit_activo').checked = activo === true || activo === 'true' || activo === 1 || activo === '1';
+            
+            // Show the edit modal
+            const editarModal = new bootstrap.Modal(document.getElementById('editarProductoModal'));
+            editarModal.show();
+        }
 
         function cargarNegocios() {
             fetch('/devops/negocios?ajax=true&format=json&api=true&json=true', {
@@ -410,27 +476,6 @@
                 console.error('Error cargando negocios:', error);
                 document.getElementById('negocio_id').innerHTML = '<option value="">Error cargando negocios</option>';
             });
-        }
-
-        function editarProducto(id, nombre, descripcion, precio, categoria, negocio, stock, activo) {
-            document.getElementById('edit_nombre').value = nombre;
-            document.getElementById('edit_descripcion').value = descripcion;
-            document.getElementById('edit_precio').value = precio;
-            document.getElementById('edit_categoria').value = categoria;
-            document.getElementById('edit_negocio_id').value = negocio_id;
-            document.getElementById('edit_stock').value = stock;
-            document.getElementById('edit_activo').checked = activo;
-            
-            document.getElementById('editarProductoForm').action = `/devops/productos/editar/${id}`;
-            
-            new bootstrap.Modal(document.getElementById('editarProductoModal')).show();
-        }
-
-        function eliminarProducto(id, nombre) {
-            document.getElementById('productoEliminarNombre').textContent = nombre;
-            document.getElementById('eliminarProductoForm').action = `/devops/productos/eliminar/${id}`;
-            
-            new bootstrap.Modal(document.getElementById('eliminarProductoModal')).show();
         }
     </script>
 </body>
