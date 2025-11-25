@@ -2307,7 +2307,7 @@ def api_tickets():
     - GET: obtener listado paginado/filtrado de tickets para integraciones (DevOps, panel externo)
     """
     if request.method == 'POST':
-    return recibir_ticket_externo()
+        return recibir_ticket_externo()
 
     auth_error = _validate_api_request()
     if auth_error:
