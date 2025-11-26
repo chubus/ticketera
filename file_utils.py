@@ -33,7 +33,31 @@ def save_uploaded_file(file, entity_type):
     
     # Save the file
     file_path = os.path.join(upload_dir, filename)
-    file.save(file_path)
+    
+    try:
+        from PIL import Image, ImageOps
+        
+        # Abrir imagen
+        img = Image.open(file)
+        
+        # Convertir a RGB si es necesario (para guardar como JPEG)
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+            
+        # Redimensionar manteniendo aspect ratio (max 800x800)
+        img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+        
+        # Guardar optimizada
+        img.save(file_path, quality=85, optimize=True)
+        
+    except ImportError:
+        # Fallback si Pillow no está instalado
+        file.seek(0)
+        file.save(file_path)
+    except Exception as e:
+        # Fallback en caso de error de procesamiento
+        file.seek(0)
+        file.save(file_path)
     
     return filename
 
