@@ -12,29 +12,16 @@ from functools import wraps
 from datetime import datetime
 import logging
 from urllib.parse import urljoin
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash, session, abort, make_response, current_app
-from flask_login import login_required, current_user
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-import logging
-import os
-import sys
-import json
+from flask import Blueprint, request, jsonify, redirect, url_for, session, make_response, render_template, flash
 import sqlite3
-import traceback
-from datetime import datetime, timedelta
-from functools import wraps
-import hashlib
-import time
-import uuid
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuración de API y credenciales DevOps
-# URL por defecto alineada con la app principal
-BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-hp30.onrender.com')
+BELGRANO_AHORRO_URL = os.environ.get('BELGRANO_AHORRO_URL', 'https://belgranoahorro-aliq.onrender.com')
 BELGRANO_AHORRO_API_KEY = os.environ.get('BELGRANO_AHORRO_API_KEY', 'belgrano_ahorro_api_key_2025')
 API_TIMEOUT_SECS = 10
 
@@ -85,59 +72,21 @@ if create_api_client and BELGRANO_AHORRO_URL and BELGRANO_AHORRO_API_KEY:
             logger.info("Cliente API de DevOps no inicializado (variables no configuradas)")
 
 # Importar solo gestor DevOps unificado (evita errores por módulos antiguos)
-devops_manager = None
-import sys
-import os
-
-# Asegurar que la raíz del proyecto esté en sys.path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 try:
-    # Intentar import desde el paquete devops (estructura correcta)
-    from devops.manager_unified import devops_manager_unified as devops_manager
-    logger.info("✅ Gestor DevOps unificado inicializado (paquete devops)")
-except ImportError as e1:
+    from devops_belgrano_manager_unified import devops_manager_unified as devops_manager
+    logger.info("✅ Gestor DevOps unificado inicializado")
+except Exception as e:
+    # Intento adicional ajustando sys.path a raíz del proyecto
     try:
-        # Fallback: verificar que devops/__init__.py existe
-        devops_dir = os.path.join(project_root, 'devops')
-        devops_init = os.path.join(devops_dir, '__init__.py')
-        manager_file = os.path.join(devops_dir, 'manager_unified.py')
-        
-        if os.path.exists(manager_file):
-            # Si el archivo existe pero el import falla, intentar import directo
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("devops.manager_unified", manager_file)
-            if spec and spec.loader:
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                devops_manager = getattr(module, 'devops_manager_unified', None)
-                if devops_manager:
-                    logger.info("✅ Gestor DevOps unificado inicializado (importlib directo)")
-                else:
-                    raise ImportError("devops_manager_unified no encontrado en módulo")
-            else:
-                raise ImportError("No se pudo crear spec desde manager_unified.py")
-        else:
-            raise ImportError(f"Archivo manager_unified.py no encontrado en {devops_dir}")
+        import sys, os
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        from devops_belgrano_manager_unified import devops_manager_unified as devops_manager  # type: ignore
+        logger.info("✅ Gestor DevOps unificado inicializado tras ajustar sys.path")
     except Exception as e2:
-        try:
-            # Último fallback: import directo desde devops_dir
-            devops_dir = os.path.join(project_root, 'devops')
-            if devops_dir not in sys.path:
-                sys.path.insert(0, devops_dir)
-            from manager_unified import devops_manager_unified as devops_manager
-            logger.info("✅ Gestor DevOps unificado inicializado (import directo desde directorio)")
-        except Exception as e3:
-            logger.warning(f"⚠️ No se pudo importar devops.manager_unified")
-            logger.warning(f"   Error 1: {e1}")
-            logger.warning(f"   Error 2: {e2}")
-            logger.warning(f"   Error 3: {e3}")
-            logger.warning(f"   project_root: {project_root}")
-            logger.warning(f"   devops_dir: {os.path.join(project_root, 'devops')}")
-            logger.warning("⚠️ El gestor DevOps no estará disponible. Las operaciones CRUD pueden fallar.")
-            devops_manager = None
+        logger.error(f"❌ No se pudo importar devops_belgrano_manager_unified: {e2}")
+        devops_manager = None
 
 # Crear blueprint con prefijo
 devops_bp = Blueprint('devops', __name__, url_prefix='/devops')
@@ -384,7 +333,7 @@ def devops_health():
     from flask import request, make_response
     
     # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-    if (request.headers.get('X-Requested-With', '') == 'XMLHttpRequest' and 
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 
         request.args.get('ajax') == 'true' and 
         request.args.get('format') == 'json' and 
         request.args.get('api') == 'true' and
@@ -422,8 +371,6 @@ def devops_health():
                 health_status['api_error'] = str(e)
             
             if request.headers.get('Accept') == 'application/json':
-
-            
                 return jsonify({
                     'status': 'success',
                     'data': health_status
@@ -437,7 +384,6 @@ def devops_health():
         except Exception as e:
             logger.error(f"Error en health check: {e}")
             if request.headers.get('Accept') == 'application/json':
-
                 return jsonify({
                     'status': 'error',
                     'message': f'Error en health check: {str(e)}'
@@ -478,8 +424,6 @@ def devops_status():
         }
         
         if request.headers.get('Accept') == 'application/json':
-
-        
             return jsonify({
                 'status': 'success',
                 'data': status
@@ -493,7 +437,6 @@ def devops_status():
     except Exception as e:
         logger.error(f"Error obteniendo status: {e}")
         if request.headers.get('Accept') == 'application/json':
-
             return jsonify({
                 'status': 'error',
                 'message': f'Error obteniendo status: {str(e)}'
@@ -544,8 +487,6 @@ def devops_info():
         }
         
         if request.headers.get('Accept') == 'application/json':
-
-        
             return jsonify({
                 'status': 'success',
                 'message': 'Información del sistema DevOps',
@@ -560,7 +501,6 @@ def devops_info():
     except Exception as e:
         logger.error(f"Error obteniendo información: {e}")
         if request.headers.get('Accept') == 'application/json':
-
             return jsonify({
                 'status': 'error',
                 'message': f'Error obteniendo información: {str(e)}'
@@ -581,7 +521,7 @@ def gestion_ofertas():
     """Gestión completa de ofertas"""
     from flask import request, make_response, render_template, flash, redirect, url_for
     
-    # Manejar POST requests (crear oferta, jsonify)
+    # Manejar POST requests (crear oferta)
     if request.method == 'POST':
         try:
             titulo = request.form.get('titulo', '').strip()
@@ -679,7 +619,7 @@ def gestion_negocios():
     """Gestión completa de negocios"""
     from flask import request, make_response, render_template, flash, redirect, url_for
     
-    # Manejar POST requests (crear negocio, jsonify)
+    # Manejar POST requests (crear negocio)
     if request.method == 'POST':
         try:
             nombre = request.form.get('nombre', '').strip()
@@ -771,40 +711,13 @@ def gestion_negocios():
         flash(f'Error cargando negocios: {str(e)}', 'error')
         return render_template('devops/negocios.html', negocios=[])
 
-def save_uploaded_image(file, entity_type='product'):
-    """Guarda un archivo subido y devuelve la ruta relativa"""
-    if not file or file.filename == '':
-        return None
-        
-    # Validar extensión
-    allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
-    if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-        return None
-    
-    # Crear directorio si no existe
-    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', entity_type)
-    os.makedirs(upload_folder, exist_ok=True)
-    
-    # Generar nombre único para el archivo
-    filename = secure_filename(file.filename)
-    unique_filename = f"{uuid.uuid4().hex}_{filename}"
-    filepath = os.path.join(upload_folder, unique_filename)
-    
-    try:
-        file.save(filepath)
-        # Devolver ruta relativa para guardar en la base de datos
-        return f"/static/uploads/{entity_type}/{unique_filename}"
-    except Exception as e:
-        current_app.logger.error(f"Error guardando archivo {filename}: {str(e)}")
-        return None
-
 @devops_bp.route('/productos', methods=['GET', 'POST'])
 @devops_login_required
 def gestion_productos():
     """Gestión completa de productos"""
-    from flask import request, make_response, render_template, flash, redirect, url_for, current_app
+    from flask import request, make_response, render_template, flash, redirect, url_for
     
-    # Manejar POST requests (crear producto, jsonify)
+    # Manejar POST requests (crear producto)
     if request.method == 'POST':
         try:
             nombre = request.form.get('nombre', '').strip()
@@ -822,13 +735,6 @@ def gestion_productos():
                 flash('El precio debe ser un número válido', 'error')
                 return redirect(url_for('devops.gestion_productos'))
             
-            # Procesar imagen si se subió
-            imagen_url = ''
-            if 'imagen' in request.files:
-                file = request.files['imagen']
-                if file and file.filename != '':
-                    imagen_url = save_uploaded_image(file, 'productos')
-            
             # Crear producto usando el gestor DevOps
             producto_data = {
                 'nombre': nombre,
@@ -836,7 +742,7 @@ def gestion_productos():
                 'categoria': categoria,
                 'negocio': negocio,
                 'descripcion': request.form.get('descripcion', ''),
-                'imagen': imagen_url or request.form.get('current_imagen', ''),
+                'imagen': request.form.get('imagen', ''),
                 'activo': True
             }
             
@@ -906,15 +812,7 @@ def gestion_productos():
         else:
             productos = devops_manager.get_productos()
             negocios = devops_manager.get_negocios() if devops_manager else []
-        
-        # Obtener categorías únicas de los productos
-        categorias = sorted(list(set(p.get('categoria', '') for p in productos if p.get('categoria'))))
-        
-        # Asegurar que los productos tengan una URL de imagen completa
-        for producto in productos:
-            if producto.get('imagen') and not producto['imagen'].startswith(('http://', 'https://', '/static/')):
-                producto['imagen'] = url_for('static', filename=f"uploads/productos/{os.path.basename(producto['imagen'])}")
-        
+        categorias = []
         flash(f'Productos cargados: {len(productos)} encontrados', 'success')
         return render_template('devops/productos.html', productos=productos, negocios=negocios, categorias=categorias)
     except Exception as e:
@@ -977,8 +875,6 @@ def sincronizacion_manual():
             sync_results['overall_status'] = 'error'
         
         if request.headers.get('Accept') == 'application/json':
-
-        
             return jsonify({
                 'status': 'success',
                 'message': 'Sincronización completada',
@@ -993,7 +889,6 @@ def sincronizacion_manual():
     except Exception as e:
         logger.error(f"Error en sincronización manual: {e}")
         if request.headers.get('Accept') == 'application/json':
-
             return jsonify({
                 'status': 'error',
                 'message': f'Error en sincronización: {str(e)}'
@@ -1012,7 +907,6 @@ def system_status():
         if devops_manager:
             status = devops_manager.get_system_status()
             if request.headers.get('Accept') == 'application/json':
-
                 return jsonify({
                     'status': 'success',
                     'data': status
@@ -1029,7 +923,6 @@ def system_status():
                 'api_configured': False
             }
             if request.headers.get('Accept') == 'application/json':
-
                 return jsonify({
                     'status': 'error',
                     'message': 'Gestor DevOps no disponible',
@@ -1043,7 +936,6 @@ def system_status():
     except Exception as e:
         logger.error(f"Error obteniendo estado del sistema: {e}")
         if request.headers.get('Accept') == 'application/json':
-
             return jsonify({
                 'status': 'error',
                 'message': f'Error interno: {str(e)}'
@@ -1077,8 +969,6 @@ def devops_not_found(error):
     }
     
     if request.headers.get('Accept') == 'application/json':
-
-    
         return jsonify({
             'status': 'error',
             **error_data
@@ -1098,137 +988,6 @@ def devops_internal_error(error):
     }
     
     if request.headers.get('Accept') == 'application/json':
-        return jsonify({
-            'status': 'error',
-            **error_data
-        }), 500
-    else:
-        flash('Error interno del servidor', 'error')
-        return render_template('devops/error.html', 
-                             error_data=error_data,
-                             status='500'), 500
-
-# =================================================================
-# SINCRONIZACIÓN Y UTILIDADES
-# =================================================================
-
-def sincronizacion_manual():
-    """Forzar sincronización manual"""
-    from flask import request, make_response
-    
-    try:
-        sync_results = {
-            'timestamp': datetime.now().isoformat(),
-            'ofertas': {'status': 'pending'},
-            'negocios': {'status': 'pending'},
-            'overall_status': 'running'
-        }
-        
-        # Sincronizar ofertas
-        try:
-            if devops_manager:
-                ofertas = devops_manager.get_ofertas()
-                sync_results['ofertas'] = {
-                    'status': 'success',
-                    'count': len(ofertas),
-                    'message': f'{len(ofertas)} ofertas obtenidas'
-                }
-            else:
-                sync_results['ofertas'] = {'status': 'error', 'error': 'Gestor DevOps no disponible'}
-        except Exception as e:
-            sync_results['ofertas'] = {'status': 'error', 'error': str(e)}
-        
-        # Sincronizar negocios
-        try:
-            if devops_manager:
-                negocios = devops_manager.get_negocios()
-                sync_results['negocios'] = {
-                    'status': 'success',
-                    'count': len(negocios),
-                    'message': f'{len(negocios)} negocios obtenidos'
-                }
-            else:
-                sync_results['negocios'] = {'status': 'error', 'error': 'Gestor DevOps no disponible'}
-        except Exception as e:
-            sync_results['negocios'] = {'status': 'error', 'error': str(e)}
-        
-        # Determinar estado general
-        if all(item['status'] == 'success' for item in [sync_results['ofertas'], sync_results['negocios']]):
-            sync_results['overall_status'] = 'success'
-        elif any(item['status'] == 'success' for item in [sync_results['ofertas'], sync_results['negocios']]):
-            sync_results['overall_status'] = 'partial'
-        else:
-            sync_results['overall_status'] = 'error'
-        
-        if request.headers.get('Accept') == 'application/json':
-
-        
-            return jsonify({
-                'status': 'success',
-                'message': 'Sincronización completada',
-                'data': sync_results
-            })
-        else:
-            flash('Sincronización completada', 'success')
-            return render_template('devops/sync.html', 
-                                 sync_results=sync_results,
-                                 status='success')
-        
-    except Exception as e:
-        logger.error(f"Error en sincronización manual: {e}")
-        if request.headers.get('Accept') == 'application/json':
-
-            return jsonify({
-                'status': 'error',
-                'message': f'Error en sincronización: {str(e)}'
-            }), 500
-        else:
-            flash(f'Error en sincronización: {str(e)}', 'error')
-            return render_template('devops/sync.html', 
-                                 sync_results={},
-                                 status='error')
-
-def devops_not_found(error):
-    """Manejar errores 404 en DevOps"""
-    error_data = {
-        'message': 'Endpoint de DevOps no encontrado',
-        'available_endpoints': [
-            '/devops/',
-            '/devops/health',
-            '/devops/status',
-            '/devops/info',
-            '/devops/ofertas',
-            '/devops/negocios',
-            '/devops/sync',
-            '/devops/system-status'
-        ],
-        'timestamp': datetime.now().isoformat()
-    }
-    
-    if request.headers.get('Accept') == 'application/json':
-
-    
-        return jsonify({
-            'status': 'error',
-            **error_data
-        }), 404
-    else:
-        flash('Endpoint no encontrado', 'error')
-        return render_template('devops/error.html', 
-                             error_data=error_data,
-                             status='404'), 404
-
-@devops_bp.errorhandler(500)
-def devops_internal_error(error):
-    """Manejar errores 500 en DevOps"""
-    error_data = {
-        'message': 'Error interno del servidor DevOps',
-        'timestamp': datetime.now().isoformat()
-    }
-    
-    if request.headers.get('Accept') == 'application/json':
-
-    
         return jsonify({
             'status': 'error',
             **error_data
