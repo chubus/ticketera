@@ -2956,10 +2956,7 @@ def test_ahorro_api():
 
 # Registrar el blueprint de imágenes
 try:
-    try:
     from .image_routes import image_bp
-except ImportError:
-    from image_routes import image_bp
 except ImportError:
     from image_routes import image_bp
 app.register_blueprint(image_bp, url_prefix='/api')
