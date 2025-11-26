@@ -2955,7 +2955,13 @@ def test_ahorro_api():
 # Este bloque se eliminó porque ya se registra arriba en la línea 58
 
 # Registrar el blueprint de imágenes
-from .image_routes import image_bp
+try:
+    try:
+    from .image_routes import image_bp
+except ImportError:
+    from image_routes import image_bp
+except ImportError:
+    from image_routes import image_bp
 app.register_blueprint(image_bp, url_prefix='/api')
 
 # Crear directorio de uploads si no existe

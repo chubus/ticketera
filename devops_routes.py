@@ -15,6 +15,7 @@ from urllib.parse import urljoin
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash, session, abort, make_response, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 import os
 import sys
