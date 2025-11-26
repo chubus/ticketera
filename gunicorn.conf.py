@@ -26,4 +26,5 @@ limit_request_fields = 100
 limit_request_field_size = 8190
 
 # Configuración de procesos
-worker_tmp_dir = "/dev/shm"
+import tempfile
+worker_tmp_dir = "/dev/shm" if os.path.exists("/dev/shm") else tempfile.gettempdir()

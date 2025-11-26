@@ -384,7 +384,7 @@ def devops_health():
     from flask import request, make_response
     
     # Solo devolver JSON si se solicita explícitamente con todos los parámetros
-    if (request.headers.get('X-Requested-With', jsonify) == 'XMLHttpRequest' and 
+    if (request.headers.get('X-Requested-With', '') == 'XMLHttpRequest' and 
         request.args.get('ajax') == 'true' and 
         request.args.get('format') == 'json' and 
         request.args.get('api') == 'true' and

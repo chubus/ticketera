@@ -1,8 +1,20 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_from_directory
 import os
 from werkzeug.utils import secure_filename
 from functools import wraps
-from .file_utils import save_uploaded_file, get_upload_path
+try:
+    # Intentar import relativo primero (funciona cuando se ejecuta como paquete)
+    from .file_utils import save_uploaded_file, get_upload_path
+except ImportError:
+    try:
+        # Intentar import absoluto (funciona cuando belgrano_tickets está en path)
+        from belgrano_tickets.file_utils import save_uploaded_file, get_upload_path
+    except ImportError:
+        # Fallback: agregar directorio actual al path e importar directo
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from file_utils import save_uploaded_file, get_upload_path
 import sqlite3
 
 # Create blueprint for image routes
