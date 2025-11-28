@@ -1525,17 +1525,10 @@ with app.app_context():
 
 login_manager = LoginManager(app)
 
-# Configuración robusta de SocketIO para evitar invalid session
+# Inicializar SocketIO
 socketio = SocketIO(
-    app, 
-    async_mode='threading',
+    app,
     cors_allowed_origins="*",
-    ping_timeout=30,  # Reducido para evitar timeouts
-    ping_interval=10,  # Reducido para mejor estabilidad
-    max_http_buffer_size=1e6,
-    logger=False,
-    engineio_logger=False,
-    allow_upgrades=True,
     transports=['polling', 'websocket'],
     # Configuraciones para estabilidad
     always_connect=False,  # Deshabilitado para evitar problemas
@@ -2188,6 +2181,32 @@ def recibir_ticket_externo():
                 print(f"⚠️ Producto {idx} no es un diccionario, saltando...")
         
         print(f"✅ {len(productos_validos)} productos validados correctamente")
+logger.info("SocketIO inicializado correctamente")
+
+# Inicializar Cloudinary
+try:
+    import sys
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    from cloudinary_config import init_cloudinary
+    cloudinary_configured = init_cloudinary()
+    if cloudinary_configured:
+        logger.info("[INIT] ✅ Cloudinary configurado correctamente")
+    else:
+        logger.warning("[INIT] ⚠️ Cloudinary no está configurado - las imágenes pueden no funcionar")
+except ImportError:
+    logger.warning("[INIT] ⚠️ cloudinary_config no disponible - las imágenes pueden no funcionar")
+except Exception as e:
+    logger.error(f"[INIT] ❌ Error inicializando Cloudinary: {e}")
+
+# Configurar CORS
+try:
+    from flask_cors import CORS
+    CORS(app)
+    logger.info("[INIT] ✅ CORS configurado correctamente")
+except ImportError:
+    logger.warning("[INIT] ⚠️ Flask-CORS no está instalado - instalar con: pip install Flask-CORS")
         
         # Crear el ticket con los datos recibidos
         ticket = Ticket(
@@ -2973,6 +2992,95 @@ app.register_blueprint(image_bp, url_prefix='/api')
 
 # Crear directorio de uploads si no existe
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# =================================================================
+# ENDPOINTS UNIFICADOS DE CLOUDINARY
+# =================================================================
+
+@app.route('/api/upload-image', methods=['POST'])
+def upload_image():
+    """
+    Endpoint unificado para subir imágenes a Cloudinary.
+    
+    Acepta:
+    - multipart/form-data
+    - Campo obligatorio: file
+    - Campo opcional: folder (por defecto "belgrano-ahorro")
+    
+    Retorna:
+    - secure_url: URL pública de la imagen en Cloudinary
+    - public_id: ID público de la imagen
+    """
+    try:
+        # Verificar que se envió un archivo
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        
+        # Verificar que el archivo tenga nombre
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Obtener folder opcional
+        folder = request.form.get('folder', 'belgrano-ahorro')
+        
+        # Importar cloudinary
+        try:
+            import cloudinary.uploader
+        except ImportError:
+            return jsonify({"error": "Cloudinary not installed"}), 500
+        
+        # Subir a Cloudinary
+        result = cloudinary.uploader.upload(
+            file,
+            folder=folder,
+            resource_type='auto'
+        )
+        
+        logger.info(f"✅ Imagen subida a Cloudinary: {result['secure_url']}")
+        
+        return jsonify({
+            "secure_url": result["secure_url"],
+            "public_id": result["public_id"]
+        })
+    
+    except Exception as e:
+        logger.error(f"❌ Error subiendo imagen a Cloudinary: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/ping-cloudinary', methods=['GET'])
+def ping_cloudinary():
+    """
+    Endpoint para verificar la conexión con Cloudinary.
+    
+    Retorna:
+    - status: "ok" si la conexión es exitosa
+    - error: mensaje de error si falla
+    """
+    try:
+        import cloudinary.api
+        cloudinary.api.ping()
+        
+        # Obtener configuración
+        import sys
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        from cloudinary_config import get_cloudinary_status
+        status = get_cloudinary_status()
+        
+        return jsonify({
+            "status": "ok",
+            "configured": status['configured'],
+            "cloud_name": status['cloud_name']
+        })
+    except ImportError:
+        return jsonify({"error": "Cloudinary not installed"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     with app.app_context():
