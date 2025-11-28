@@ -1579,6 +1579,31 @@ def default_error_handler(e):
     # No intentar reconectar automáticamente para evitar loops
     return False
 
+# Inicializar Cloudinary
+try:
+    import sys
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    from cloudinary_config import init_cloudinary
+    cloudinary_configured = init_cloudinary()
+    if cloudinary_configured:
+        logger.info("[INIT] ✅ Cloudinary configurado correctamente")
+    else:
+        logger.warning("[INIT] ⚠️ Cloudinary no está configurado - las imágenes pueden no funcionar")
+except ImportError:
+    logger.warning("[INIT] ⚠️ cloudinary_config no disponible - las imágenes pueden no funcionar")
+except Exception as e:
+    logger.error(f"[INIT] ❌ Error inicializando Cloudinary: {e}")
+
+# Configurar CORS
+try:
+    from flask_cors import CORS
+    CORS(app)
+    logger.info("[INIT] ✅ CORS configurado correctamente")
+except ImportError:
+    logger.warning("[INIT] ⚠️ Flask-CORS no está instalado - instalar con: pip install Flask-CORS")
+
 @socketio.on('ping')
 def handle_ping():
     """Manejar ping para mantener conexión activa"""
@@ -2181,32 +2206,6 @@ def recibir_ticket_externo():
                 print(f"⚠️ Producto {idx} no es un diccionario, saltando...")
         
         print(f"✅ {len(productos_validos)} productos validados correctamente")
-logger.info("SocketIO inicializado correctamente")
-
-# Inicializar Cloudinary
-try:
-    import sys
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if project_root not in sys.path:
-        sys.path.insert(0, project_root)
-    from cloudinary_config import init_cloudinary
-    cloudinary_configured = init_cloudinary()
-    if cloudinary_configured:
-        logger.info("[INIT] ✅ Cloudinary configurado correctamente")
-    else:
-        logger.warning("[INIT] ⚠️ Cloudinary no está configurado - las imágenes pueden no funcionar")
-except ImportError:
-    logger.warning("[INIT] ⚠️ cloudinary_config no disponible - las imágenes pueden no funcionar")
-except Exception as e:
-    logger.error(f"[INIT] ❌ Error inicializando Cloudinary: {e}")
-
-# Configurar CORS
-try:
-    from flask_cors import CORS
-    CORS(app)
-    logger.info("[INIT] ✅ CORS configurado correctamente")
-except ImportError:
-    logger.warning("[INIT] ⚠️ Flask-CORS no está instalado - instalar con: pip install Flask-CORS")
         
         # Crear el ticket con los datos recibidos
         ticket = Ticket(
