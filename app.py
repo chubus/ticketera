@@ -1528,6 +1528,7 @@ login_manager = LoginManager(app)
 # Inicializar SocketIO
 socketio = SocketIO(
     app,
+    async_mode='gevent',  # Usar gevent para Python 3.13
     cors_allowed_origins="*",
     transports=['polling', 'websocket'],
     # Configuraciones para estabilidad
@@ -1542,6 +1543,7 @@ socketio = SocketIO(
     # Configuración para manejar sesiones inválidas
     client_timeout=30  # Reducido
 )
+
 
 # Filtro personalizado para JSON
 @app.template_filter('from_json')

@@ -762,32 +762,6 @@ def gestion_productos():
                 return redirect(url_for('devops.gestion_productos'))
             
             # Crear producto usando el gestor DevOps
-            # Crear producto usando el gestor DevOps
-            producto_data = {
-                'nombre': nombre,
-                'precio': precio_float,
-                'categoria': categoria,
-                'negocio': negocio,
-                'descripcion': request.form.get('descripcion', ''),
-                'imagen': request.form.get('imagen', ''),
-                'activo': True
-            }
-
-            # Procesar imagen si se subió
-            if 'imagen' in request.files:
-                file = request.files['imagen']
-                if file and file.filename:
-                    if save_uploaded_file:
-                        image_url, error = save_uploaded_file(file, 'product', 0)
-                        if image_url:
-                            # CORRECCIÓN: Guardar URL en image_url, no en imagen
-                            producto_data['image_url'] = image_url
-                            producto_data['imagen'] = file.filename
-                            logger.info(f"✅ Imagen subida para nuevo producto: {image_url}")
-                        else:
-                            logger.error(f"❌ Error subiendo imagen: {error}")
-                            flash(f'Error subiendo imagen: {error}', 'warning')
-                    else:
                         logger.error("❌ save_uploaded_file no disponible")
                         flash('Sistema de subida de imágenes no disponible', 'warning')
             

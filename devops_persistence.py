@@ -75,6 +75,7 @@ class DevOpsPersistence:
                         activo BOOLEAN DEFAULT 1,
                         fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        image_url TEXT,
                         FOREIGN KEY (negocio_id) REFERENCES negocios(id)
                     )
                 ''')
@@ -217,8 +218,8 @@ class DevOpsPersistence:
                 cursor = conn.cursor()
                 
                 cursor.execute('''
-                    INSERT INTO productos (nombre, descripcion, precio, categoria, stock, stock_minimo, negocio_id, activo)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO productos (nombre, descripcion, precio, categoria, stock, stock_minimo, negocio_id, activo, image_url)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     datos['nombre'],
                     datos.get('descripcion', ''),
@@ -227,7 +228,8 @@ class DevOpsPersistence:
                     datos.get('stock', 0),
                     datos.get('stock_minimo', 0),
                     datos.get('negocio_id'),
-                    datos.get('activo', True)
+                    datos.get('activo', True),
+                    datos.get('image_url', '')
                 ))
                 
                 producto_id = cursor.lastrowid
@@ -250,6 +252,10 @@ class DevOpsPersistence:
                         'activo': bool(row[8]),
                         'fecha_creacion': row[9],
                         'fecha_actualizacion': row[10]
+                        'activo': bool(row[8]),
+                        'fecha_creacion': row[9],
+                        'fecha_actualizacion': row[10],
+                        'image_url': row[11] if len(row) > 11 else ''
                     }
                 
         except Exception as e:
@@ -278,6 +284,10 @@ class DevOpsPersistence:
                         'activo': bool(row[8]),
                         'fecha_creacion': row[9],
                         'fecha_actualizacion': row[10]
+                        'activo': bool(row[8]),
+                        'fecha_creacion': row[9],
+                        'fecha_actualizacion': row[10],
+                        'image_url': row[11] if len(row) > 11 else ''
                     })
                 
                 return productos
