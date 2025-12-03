@@ -2117,11 +2117,24 @@ def recibir_ticket_externo():
             return jsonify({'error': 'Datos no recibidos'}), 400
         
         # Validar campos requeridos
-        required_fields = ['numero', 'cliente_nombre', 'total']
+        required_fields = ['numero', 'cliente_nombre']
         missing_fields = [field for field in required_fields if not data.get(field)]
         if missing_fields:
             print(f"❌ Campos requeridos faltantes: {missing_fields}")
             return jsonify({'error': f'Campos requeridos faltantes: {missing_fields}'}), 400
+        
+        # Validar y convertir total a número
+        try:
+            total_recibido = float(data.get('total', 0))
+            if total_recibido <= 0:
+                print(f"⚠️ ADVERTENCIA: Total inválido o cero recibido: {total_recibido}")
+                print(f"   Datos completos recibidos: total={data.get('total')}")
+            else:
+                print(f"✅ Total recibido correctamente: ${total_recibido}")
+        except (TypeError, ValueError) as e:
+            print(f"❌ ERROR: No se pudo convertir total a número: {e}")
+            print(f"   Valor recibido: {data.get('total')} (tipo: {type(data.get('total'))})")
+            total_recibido = 0.0
         
         # Validar y loguear productos recibidos
         productos_recibidos = data.get('productos', [])
@@ -2217,21 +2230,25 @@ def recibir_ticket_externo():
             cliente_telefono=data.get('cliente_telefono', data.get('telefono', 'Sin teléfono')),
             cliente_email=data.get('cliente_email', data.get('email', 'sin@email.com')),
             productos=json.dumps(productos_validos),  # Guardar productos validados como JSON string
-            total=data.get('total', 0),
+            total=total_recibido,  # CORRECCIÓN: Usar total validado
             estado=data.get('estado', 'pendiente'),
             prioridad=prioridad,
             indicaciones=data.get('indicaciones', data.get('notas', ''))
         )
         
+        print(f"✅ Ticket creado con total: ${ticket.total}")
+        
         db.session.add(ticket)
         db.session.commit()
         
         # Asignar automáticamente a un repartidor aleatorio
-        repartidor_asignado = asignar_repartidor_automatico(ticket)
+        repartidor_asignado, user_id_asignado = asignar_repartidor_automatico(ticket)
         if repartidor_asignado:
             ticket.repartidor_nombre = repartidor_asignado
+            ticket.asignado_a = user_id_asignado  # CORRECCIÓN: Asignar ID del usuario de flota
+            ticket.fecha_asignacion = datetime.utcnow()
             db.session.commit()
-            print(f"✅ Ticket asignado automáticamente a {repartidor_asignado}")
+            print(f"✅ Ticket asignado automáticamente a {repartidor_asignado} (Usuario ID: {user_id_asignado})")
         
         # Emitir evento WebSocket para actualización en tiempo real
         try:
@@ -2294,35 +2311,44 @@ def recibir_ticket_externo():
 def asignar_repartidor_automatico(ticket):
     """
     Asigna automáticamente un repartidor aleatorio que no tenga tickets de prioridad máxima
+    Retorna: (nombre_repartidor, user_id) o (None, None)
     """
     import random
     
-    # Lista de repartidores disponibles
-    repartidores = ['Repartidor1', 'Repartidor2', 'Repartidor3', 'Repartidor4', 'Repartidor5']
+    # Obtener todos los usuarios de flota de la base de datos
+    usuarios_flota = User.query.filter_by(role='flota', activo=True).all()
+    
+    if not usuarios_flota:
+        print("⚠️ No se encontraron usuarios de flota activos en la base de datos")
+        return None, None
     
     # Filtrar repartidores que no tengan tickets de prioridad máxima
     repartidores_disponibles = []
     
-    for repartidor in repartidores:
-        # Contar tickets de prioridad máxima para este repartidor
+    for user_flota in usuarios_flota:
+        # Contar tickets de prioridad máxima asignados a este usuario
         tickets_prioridad_maxima = Ticket.query.filter_by(
-            repartidor_nombre=repartidor, 
+            asignado_a=user_flota.id,
             prioridad='alta'
         ).count()
         
         # Si no tiene tickets de prioridad máxima, está disponible
         if tickets_prioridad_maxima == 0:
-            repartidores_disponibles.append(repartidor)
+            repartidores_disponibles.append(user_flota)
     
     # Si no hay repartidores disponibles sin prioridad máxima, usar todos
     if not repartidores_disponibles:
-        repartidores_disponibles = repartidores
+        repartidores_disponibles = usuarios_flota
+        print(f"⚠️ Todos los repartidores tienen tickets de alta prioridad, usando todos para balanceo")
     
     # Seleccionar aleatoriamente
     if repartidores_disponibles:
-        return random.choice(repartidores_disponibles)
+        repartidor_seleccionado = random.choice(repartidores_disponibles)
+        print(f"🎯 Repartidor seleccionado: {repartidor_seleccionado.nombre} (ID: {repartidor_seleccionado.id}, Email: {repartidor_seleccionado.email})")
+        return repartidor_seleccionado.nombre, repartidor_seleccionado.id
     
-    return None
+    print("❌ No se pudo asignar repartidor: No hay usuarios de flota disponibles")
+    return None, None
 
 @app.route('/api/tickets', methods=['GET', 'POST'])
 def api_tickets():

@@ -197,6 +197,13 @@
                         </p>
                         {% endif %}
 
+                        </div>
+                        
+                        <div class="mb-2 p-2 bg-success bg-opacity-10 rounded">
+                            <strong><i class="fas fa-dollar-sign"></i> Total del Pedido:</strong>
+                            <h5 class="mb-0 text-success">${{ "%.2f"|format(ticket.total if ticket.total else 0) }}</h5>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="badge bg-secondary">{{ ticket.estado|title }}</span>
                             <small class="text-muted">{{ ticket.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</small>
