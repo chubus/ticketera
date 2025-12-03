@@ -2,7 +2,7 @@ Flask==3.1.1
 Flask-SocketIO==5.3.6
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
-Werkzeug==3.1.1
+Werkzeug==3.1.6
 Jinja2==3.1.6
 python-socketio==5.11.1
 python-engineio==4.9.1
@@ -12,3 +12,5 @@ SQLAlchemy==2.0.28
 gunicorn
 # Driver PostgreSQL para producción (psycopg2-binary es más fácil de instalar que psycopg2)
 psycopg2-binary==2.9.9
+# Generación de PDFs
+reportlab==4.0.7

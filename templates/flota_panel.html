@@ -219,10 +219,9 @@
                                     onclick="actualizarEstado({{ ticket.id }}, 'entregado')">
                                 <i class="fas fa-check"></i> Entregado
                             </button>
-                            <button class="btn btn-outline-danger btn-sm btn-action" 
-                                    onclick="actualizarEstado({{ ticket.id }}, 'cancelado')">
-                                <i class="fas fa-times"></i> Cancelar
-                            </button>
+                            <a href="/ticket/{{ ticket.id }}/pdf" class="btn btn-outline-danger btn-sm btn-action" download>
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </a>
                         </div>
                     </div>
                 </div>

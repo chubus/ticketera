@@ -2603,6 +2603,58 @@ def detalle_ticket(ticket_id):
     ticket = Ticket.query.get_or_404(ticket_id)
     return render_template('detalle_ticket.html', ticket=ticket)
 
+@app.route('/ticket/<int:ticket_id>/pdf')
+@login_required
+def download_ticket_pdf(ticket_id):
+    """
+    Descarga el PDF de un ticket.
+    
+    Validaciones:
+    - Admin puede descargar cualquier ticket
+    - Repartidor solo puede descargar sus propios tickets
+    """
+    from flask import send_file, abort
+    from pdf_generator import generate_ticket_pdf
+    
+    # Obtener ticket
+    ticket = Ticket.query.get_or_404(ticket_id)
+    
+    # Validar permisos
+    if current_user.role == 'flota':
+        # Repartidor solo puede ver sus propios tickets
+        if ticket.asignado_a != current_user.id:
+            logger.warning(f"Repartidor {current_user.id} intentó acceder al ticket {ticket_id} de otro repartidor")
+            abort(403)
+    elif current_user.role != 'admin':
+        # Otros roles no tienen acceso
+        logger.warning(f"Usuario con role '{current_user.role}' intentó descargar PDF")
+        abort(403)
+    
+    try:
+        # Generar PDF
+        logger.info(f"Generando PDF para ticket {ticket.numero} (ID: {ticket.id})")
+        pdf_buffer = generate_ticket_pdf(ticket)
+        
+        # Nombre del archivo
+        filename = f"ticket_{ticket.numero}.pdf"
+        
+        logger.info(f"PDF generado exitosamente: {filename}")
+        
+        # Enviar archivo
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generando PDF para ticket {ticket_id}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        abort(500)
+
+
 @app.route('/ticket/<int:ticket_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_ticket(ticket_id):
