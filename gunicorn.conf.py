@@ -5,7 +5,7 @@ import os
 # Configuración básica
 bind = "0.0.0.0:{}".format(os.environ.get('PORT', 10000))
 workers = 2
-worker_class = "sync"
+worker_class = "gevent"  # CORRECCIÓN: Usar gevent para WebSockets (Flask-SocketIO)
 timeout = 120
 keepalive = 5
 max_requests = 1000
