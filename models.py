@@ -40,6 +40,10 @@ class Ticket(db.Model):
     fecha_asignacion = db.Column(db.DateTime, nullable=True)
     fecha_entrega = db.Column(db.DateTime, nullable=True)
     notas_repartidor = db.Column(db.Text)
+    # Campos para agrupar tickets de compra múltiple (diferentes negocios)
+    grupo_compra = db.Column(db.String(50), nullable=True)  # ID del grupo de compra (pedido original)
+    negocio_nombre = db.Column(db.String(100), nullable=True)  # Nombre del negocio para este ticket
+    tickets_grupo_total = db.Column(db.Integer, default=1)  # Total de tickets en el grupo de compra
     
     def __repr__(self):
         return f'<Ticket {self.numero}>'

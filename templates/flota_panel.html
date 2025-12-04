@@ -153,10 +153,22 @@
                  data-cliente="{{ ticket.cliente_nombre|lower }} {{ ticket.cliente_email|lower }}">
                 <div class="card ticket-card ticket-{{ ticket.estado }} priority-{{ ticket.prioridad }}">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">
-                            <i class="fas fa-ticket-alt"></i> {{ ticket.numero }}
-                        </h6>
                         <div>
+                            <h6 class="mb-0">
+                                <i class="fas fa-ticket-alt"></i> {{ ticket.numero }}
+                            </h6>
+                            {% if ticket.negocio_nombre %}
+                            <small class="text-primary">
+                                <i class="fas fa-store"></i> {{ ticket.negocio_nombre }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-1 flex-wrap">
+                            {% if ticket.grupo_compra and ticket.tickets_grupo_total and ticket.tickets_grupo_total > 1 %}
+                            <span class="badge status-badge" style="background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);" title="Parte de una compra múltiple - {{ ticket.tickets_grupo_total }} negocios">
+                                <i class="fas fa-layer-group"></i> {{ ticket.tickets_grupo_total }} negocios
+                            </span>
+                            {% endif %}
                             {% if ticket.prioridad == 'alta' %}
                                 <span class="badge bg-danger status-badge">Alta</span>
                             {% elif ticket.prioridad == 'normal' %}

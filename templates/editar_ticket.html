@@ -84,11 +84,9 @@
                                 <label for="repartidor_nombre" class="form-label">Repartidor</label>
                                 <select class="form-select" id="repartidor_nombre" name="repartidor_nombre">
                                     <option value="">Sin asignar</option>
-                                    <option value="Repartidor1" {% if ticket.repartidor_nombre == 'Repartidor1' %}selected{% endif %}>Repartidor 1</option>
-                                    <option value="Repartidor2" {% if ticket.repartidor_nombre == 'Repartidor2' %}selected{% endif %}>Repartidor 2</option>
-                                    <option value="Repartidor3" {% if ticket.repartidor_nombre == 'Repartidor3' %}selected{% endif %}>Repartidor 3</option>
-                                    <option value="Repartidor4" {% if ticket.repartidor_nombre == 'Repartidor4' %}selected{% endif %}>Repartidor 4</option>
-                                    <option value="Repartidor5" {% if ticket.repartidor_nombre == 'Repartidor5' %}selected{% endif %}>Repartidor 5</option>
+                                    {% for user_flota in usuarios_flota %}
+                                    <option value="{{ user_flota.nombre }}" {% if ticket.repartidor_nombre == user_flota.nombre %}selected{% endif %}>{{ user_flota.nombre }} ({{ user_flota.email }})</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>

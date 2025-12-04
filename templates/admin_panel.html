@@ -13,9 +13,6 @@
                 <button class="btn btn-outline-primary" onclick="refreshTickets()">
                     <i class="fas fa-sync-alt me-1"></i>Actualizar
                 </button>
-                <button class="btn btn-outline-success" onclick="exportTickets()">
-                    <i class="fas fa-download me-1"></i>Exportar
-                </button>
             </div>
         </div>
     </div>
@@ -172,11 +169,23 @@
         <div class="card">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="fas fa-ticket-alt me-1"></i>
-                        Ticket #{{ ticket.numero }}
-                    </h6>
-                    <div class="d-flex gap-1">
+                    <div>
+                        <h6 class="mb-0">
+                            <i class="fas fa-ticket-alt me-1"></i>
+                            Ticket #{{ ticket.numero }}
+                        </h6>
+                        {% if ticket.negocio_nombre %}
+                        <small class="text-info">
+                            <i class="fas fa-store me-1"></i>{{ ticket.negocio_nombre }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-1 align-items-center">
+                        {% if ticket.grupo_compra and ticket.tickets_grupo_total and ticket.tickets_grupo_total > 1 %}
+                        <span class="badge bg-purple" title="Parte de una compra múltiple - {{ ticket.tickets_grupo_total }} negocios">
+                            <i class="fas fa-layer-group me-1"></i>Grupo: {{ ticket.tickets_grupo_total }} negocios
+                        </span>
+                        {% endif %}
                         <span class="badge status-{{ ticket.estado }}">
                             {% if ticket.estado == 'pendiente' %}
                                 <i class="fas fa-clock me-1"></i>Pendiente
@@ -359,9 +368,6 @@
                     <button class="btn btn-sm btn-success" onclick="updateStatus({{ ticket.id }}, 'entregado')">
                         <i class="fas fa-check me-1"></i>Entregado
                     </button>
-                    <button class="btn btn-sm btn-warning" onclick="duplicarTicket({{ ticket.id }})">
-                        <i class="fas fa-copy me-1"></i>Duplicar
-                    </button>
                     <button class="btn btn-sm btn-danger" onclick="eliminarTicket({{ ticket.id }}, '{{ ticket.numero }}')">
                         <i class="fas fa-trash me-1"></i>Eliminar
                     </button>
@@ -387,11 +393,9 @@
                         <label for="selectRepartidor" class="form-label">Seleccionar Repartidor</label>
                         <select class="form-select" id="selectRepartidor" required>
                             <option value="">Seleccionar...</option>
-                            <option value="Repartidor1">Repartidor 1</option>
-                            <option value="Repartidor2">Repartidor 2</option>
-                            <option value="Repartidor3">Repartidor 3</option>
-                            <option value="Repartidor4">Repartidor 4</option>
-                            <option value="Repartidor5">Repartidor 5</option>
+                            {% for user_flota in usuarios_flota %}
+                            <option value="{{ user_flota.nombre }}">{{ user_flota.nombre }} ({{ user_flota.email }})</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </form>
@@ -480,11 +484,6 @@ function refreshTickets() {
     location.reload();
 }
 
-function exportTickets() {
-    // Función para exportar tickets (implementar según necesidades)
-    alert('Función de exportación en desarrollo');
-}
-
 function asignarRepartidor(ticketId) {
     document.getElementById('asignarTicketId').value = ticketId;
     asignarRepartidorModal.show();
@@ -555,12 +554,6 @@ function updateStatus(ticketId, newStatus) {
     });
 }
 
-function duplicarTicket(ticketId) {
-    if (confirm('¿Quieres duplicar este ticket? Se creará una copia con el mismo contenido.')) {
-        showNotification('Función de duplicación en desarrollo', 'info');
-    }
-}
-
 function eliminarTicket(ticketId, numeroTicket) {
     // Confirmación doble para eliminar tickets
     const confirmacion = prompt(`⚠️ ELIMINACIÓN PERMANENTE ⚠️\n\nPara eliminar el ticket ${numeroTicket} debes escribir exactamente:\n\nELIMINAR_PERMANENTEMENTE\n\nEsta acción NO se puede deshacer.`);
@@ -590,6 +583,7 @@ function eliminarTicket(ticketId, numeroTicket) {
         showNotification('Confirmación incorrecta. El ticket NO fue eliminado.', 'warning');
     }
 }
+
 
 function showNotification(message, type) {
     const notification = document.createElement('div');
