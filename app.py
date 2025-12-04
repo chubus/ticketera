@@ -2509,7 +2509,7 @@ def editar_ticket(ticket_id):
         nuevo_estado = request.form.get('estado')
         nueva_prioridad = request.form.get('prioridad')
         nuevas_indicaciones = request.form.get('indicaciones')
-        nuevo_repartidor = request.form.get('repartidor_nombre')
+        nuevo_repartidor_username = request.form.get('repartidor_nombre') # Ahora recibe username
         
         # Actualizar solo los campos que se enviaron
         if nuevo_estado:
@@ -2518,8 +2518,28 @@ def editar_ticket(ticket_id):
             ticket.prioridad = nueva_prioridad
         if nuevas_indicaciones is not None:  # Permitir strings vacíos
             ticket.indicaciones = nuevas_indicaciones
-        if nuevo_repartidor:
-            ticket.repartidor_nombre = nuevo_repartidor
+            
+        if nuevo_repartidor_username:
+            # Buscar usuario por username
+            user = User.query.filter_by(username=nuevo_repartidor_username).first()
+            if user:
+                ticket.asignado_a = user.id
+                ticket.repartidor_nombre = user.nombre
+                ticket.fecha_asignacion = datetime.utcnow()
+                if ticket.estado == 'pendiente':
+                    ticket.estado = 'en-camino'
+            else:
+                # Fallback si por alguna razón llega el nombre en lugar del username
+                # Intentar buscar por nombre
+                user_by_name = User.query.filter_by(nombre=nuevo_repartidor_username).first()
+                if user_by_name:
+                    ticket.asignado_a = user_by_name.id
+                    ticket.repartidor_nombre = user_by_name.nombre
+                    ticket.fecha_asignacion = datetime.utcnow()
+                else:
+                    # Si no se encuentra, guardar solo el nombre (legacy behavior) pero loguear warning
+                    print(f"⚠️ ADVERTENCIA: Asignando repartidor '{nuevo_repartidor_username}' sin ID de usuario asociado")
+                    ticket.repartidor_nombre = nuevo_repartidor_username
         
         # Guardar cambios
         db.session.commit()
@@ -2531,6 +2551,13 @@ def editar_ticket(ticket_id):
             'prioridad': ticket.prioridad,
             'repartidor': ticket.repartidor_nombre
         })
+        
+        # También emitir evento de asignación si hubo cambio de repartidor
+        if nuevo_repartidor_username:
+             socketio.emit('ticket_asignado', {
+                'ticket_id': ticket.id,
+                'repartidor': ticket.repartidor_nombre
+            })
         
         flash('Ticket actualizado correctamente', 'success')
         return redirect(url_for('panel'))
@@ -2633,7 +2660,8 @@ def asignar_repartidor(ticket_id):
 @login_required
 def detalle_ticket(ticket_id):
     ticket = Ticket.query.get_or_404(ticket_id)
-    return render_template('detalle_ticket.html', ticket=ticket)
+    usuarios_flota = User.query.filter_by(role='flota', activo=True).all()
+    return render_template('detalle_ticket.html', ticket=ticket, usuarios_flota=usuarios_flota)
 
 @app.route('/ticket/<int:ticket_id>/pdf')
 @login_required

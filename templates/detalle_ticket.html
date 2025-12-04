@@ -195,7 +195,7 @@
                         <h5 class="mb-0">
                             <i class="fas fa-dollar-sign me-2"></i>Precio Final de la Compra
                         </h5>
-                        <h4 class="mb-0">${{ "%.2f"|format(total_productos) }}</h4>
+                        <h4 class="mb-0">${{ "%.2f"|format(ticket.total if ticket.total else 0) }}</h4>
                     </div>
                 </div>
                 {% else %}
@@ -311,11 +311,9 @@
                         <label for="selectRepartidor" class="form-label">Seleccionar Repartidor</label>
                         <select class="form-select" id="selectRepartidor" required>
                             <option value="">Seleccionar...</option>
-                            <option value="Repartidor1">Repartidor 1</option>
-                            <option value="Repartidor2">Repartidor 2</option>
-                            <option value="Repartidor3">Repartidor 3</option>
-                            <option value="Repartidor4">Repartidor 4</option>
-                            <option value="Repartidor5">Repartidor 5</option>
+                            {% for user_flota in usuarios_flota %}
+                            <option value="{{ user_flota.username }}">{{ user_flota.nombre }} ({{ user_flota.email }})</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </form>

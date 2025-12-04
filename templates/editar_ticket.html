@@ -85,7 +85,7 @@
                                 <select class="form-select" id="repartidor_nombre" name="repartidor_nombre">
                                     <option value="">Sin asignar</option>
                                     {% for user_flota in usuarios_flota %}
-                                    <option value="{{ user_flota.nombre }}" {% if ticket.repartidor_nombre == user_flota.nombre %}selected{% endif %}>{{ user_flota.nombre }} ({{ user_flota.email }})</option>
+                                    <option value="{{ user_flota.username }}" {% if ticket.repartidor_nombre == user_flota.nombre %}selected{% endif %}>{{ user_flota.nombre }} ({{ user_flota.email }})</option>
                                     {% endfor %}
                                 </select>
                             </div>
