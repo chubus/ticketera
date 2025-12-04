@@ -282,6 +282,11 @@
             location.reload(); // Recargar para remover el ticket
         });
 
+        socket.on('ticket_asignado', function(data) {
+            console.log('Ticket asignado:', data);
+            location.reload(); // Recargar para mostrar el nuevo ticket asignado
+        });
+
         // Función para actualizar estado del ticket
         function actualizarEstado(ticketId, nuevoEstado) {
             const formData = new FormData();

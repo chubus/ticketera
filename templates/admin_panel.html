@@ -394,7 +394,7 @@
                         <select class="form-select" id="selectRepartidor" required>
                             <option value="">Seleccionar...</option>
                             {% for user_flota in usuarios_flota %}
-                            <option value="{{ user_flota.nombre }}">{{ user_flota.nombre }} ({{ user_flota.email }})</option>
+                            <option value="{{ user_flota.username }}">{{ user_flota.nombre }} ({{ user_flota.email }})</option>
                             {% endfor %}
                         </select>
                     </div>

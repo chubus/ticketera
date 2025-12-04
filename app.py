@@ -2230,6 +2230,13 @@ def recibir_ticket_externo():
         
         print(f"✅ {len(productos_validos)} productos validados correctamente")
         
+        # Recalcular total desde productos si el total recibido es 0 o inválido
+        if total_recibido <= 0 and productos_validos:
+            total_calculado = sum(p['subtotal'] for p in productos_validos)
+            if total_calculado > 0:
+                print(f"⚠️ CORRECCIÓN: Total recibido es {total_recibido}, usando total calculado de productos: ${total_calculado}")
+                total_recibido = total_calculado
+        
         # Crear el ticket con los datos recibidos
         ticket = Ticket(
             numero=numero_ticket or f'TICKET-{datetime.now().strftime("%Y%m%d%H%M%S")}',
@@ -2595,19 +2602,30 @@ def asignar_repartidor(ticket_id):
         return jsonify({'error': 'Acceso no permitido'}), 403
     
     ticket = Ticket.query.get_or_404(ticket_id)
-    repartidor = request.form.get('repartidor')
+    repartidor_username = request.form.get('repartidor')
     
-    if repartidor:
-        ticket.repartidor = repartidor
-        db.session.commit()
+    if repartidor_username:
+        # Buscar usuario por username
+        user = User.query.filter_by(username=repartidor_username).first()
         
-        # Emitir evento WebSocket
-        socketio.emit('ticket_asignado', {
-            'ticket_id': ticket.id,
-            'repartidor': repartidor
-        })
-        
-        return jsonify({'exito': True, 'mensaje': f'Ticket asignado a {repartidor}'})
+        if user:
+            ticket.asignado_a = user.id
+            ticket.repartidor_nombre = user.nombre  # Guardar el nombre real del repartidor
+            ticket.fecha_asignacion = datetime.utcnow()
+            ticket.estado = 'en-camino' # Actualizar estado al asignar
+            
+            db.session.commit()
+            
+            # Emitir evento WebSocket
+            socketio.emit('ticket_asignado', {
+                'ticket_id': ticket.id,
+                'repartidor': user.nombre,
+                'repartidor_username': user.username
+            })
+            
+            return jsonify({'exito': True, 'mensaje': f'Ticket asignado a {user.nombre}'})
+        else:
+            return jsonify({'error': f'Usuario repartidor "{repartidor_username}" no encontrado'}), 404
     
     return jsonify({'error': 'Repartidor no especificado'}), 400
 
